@@ -80,7 +80,8 @@ type View = HTMLElement | DocumentFragment;
  * Un componente de src/components/: una función que recibe datos y devuelve DOM (R afina el tipo, o admite null si
  * puede no haber nada que mostrar). Las demás funciones de esa carpeta son ayudantes, no componentes.
  */
-type Component<A extends unknown[] = [], R extends View | null = View> = (...args: A) => R;
+// interface y no type: así el editor muestra "Component<…>" al pasar el ratón, en vez de expandirlo a la firma.
+interface Component<A extends unknown[] = [], R extends View | null = View> { (...args: A): R }
 interface GuideOptions { cls: string; leagueStart: boolean; showZones: boolean }
 type StatKind = "dmg" | "def" | "other";
 /** Una entrada del índice: destino de una sección marcada con data-toc. */
