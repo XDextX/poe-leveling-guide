@@ -1,7 +1,7 @@
 /* Tarjeta de un tramo del leveling sugerido: habilidad, soportes y cuánto del árbol final tendrías. */
 
 /** Tarjeta del tramo: `tree` es el árbol de ese tramo y `prev` el del anterior, para listar los notables nuevos. */
-function stageCard(s: StageSkill, mainId: string, tree: TreeStage | undefined, prev: TreeStage | undefined, treesSuggested: boolean): HTMLDivElement {
+const stageCard: Component<[s: StageSkill, mainId: string, tree: TreeStage | undefined, prev: TreeStage | undefined, treesSuggested: boolean], HTMLDivElement> = (s, mainId, tree, prev, treesSuggested) => {
   const card = el("div", "stagecard");
   card.innerHTML = `<h3>Actos ${s.acts[0]}-${s.acts[1]} <span>· nv ${s.from}–${s.to}</span></h3>`;
   if (s.skill) card.append(gemLine(s.own ? "Tu habilidad" : "Habilidad", [s.skill], { note: s.mainAt ? `Cambia a ${esc(GEMS[mainId].name)} desde nv ${s.mainAt}` : "" }));
@@ -12,4 +12,4 @@ function stageCard(s: StageSkill, mainId: string, tree: TreeStage | undefined, p
     card.append(el("p", "note", `Árbol: ${treesSuggested ? "≈" + tree.points + " puntos, " : ""}${tree.nodes.length} nodos${fresh.length ? ". Nuevos notables: " + fresh.join(", ") : ""}. Míralo en el mapa de calor, más abajo.`));
   }
   return card;
-}
+};

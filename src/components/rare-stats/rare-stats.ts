@@ -1,7 +1,7 @@
 /* Prioridad de stats en los raros: cuántas piezas llevan cada tipo de stat, en barras. */
 
 /** Barras de stats de los raros, con la nota de qué piezas cuentan. */
-function rareStats(rares: Item[]): DocumentFragment {
+const rareStats: Component<[rares: Item[]], DocumentFragment> = rares => {
   const slots = [...new Set(rares.map(r => slotEs(r.slot)))].join(", ").toLowerCase();
   const ol = el("ol", "stats");
   for (const [label, n] of gearStatCounts(rares)) {
@@ -12,4 +12,4 @@ function rareStats(rares: Item[]): DocumentFragment {
   const frag = document.createDocumentFragment();
   frag.append(el("p", "note", `Cuántas de sus ${rares.length} piezas raras (${slots}) llevan cada tipo de stat.`), ol);
   return frag;
-}
+};

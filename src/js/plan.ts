@@ -39,9 +39,9 @@ function walk(steps: RouteStep[], cls: string, want: string[]): { out: PlannedSt
  */
 function plan(build: Build, cls: string, leagueStart: boolean, extra: string[] = []): Plan {
   const want: string[] = [];
-  for (const g of build.gems) {
-    if (g.kind === "normal" && g.id) want.push(g.id);
-    if ((g.kind === "vaal" || g.kind === "transfigured") && g.base && !want.includes(g.base)) want.push(g.base);
+  for (const gem of build.gems) {
+    if (gem.kind === "normal" && gem.id) want.push(gem.id);
+    if ((gem.kind === "vaal" || gem.kind === "transfigured") && gem.base && !want.includes(gem.base)) want.push(gem.base);
   }
   for (const id of extra) if (!want.includes(id)) want.push(id);
   const start = (START[cls] || []).filter(id => want.includes(id));

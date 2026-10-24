@@ -19,7 +19,7 @@ function costText(ids: string[]): string {
 }
 
 /** Una gema con su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
-function gemEl(id: string, withCost?: boolean): HTMLLabelElement {
+const gemEl: Component<[id: string, withCost?: boolean], HTMLLabelElement> = (id, withCost) => {
   const { name, attr, level } = GEMS[id];
   const isDone = doneStore.ids.has(id);
   const box = Object.assign(el("input"), { type: "checkbox", checked: isDone });
@@ -32,4 +32,4 @@ function gemEl(id: string, withCost?: boolean): HTMLLabelElement {
   }
   box.onchange = () => { doneStore.set(id, box.checked); l.classList.toggle("done", box.checked); };
   return l;
-}
+};

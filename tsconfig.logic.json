@@ -1,0 +1,6 @@
+{
+  // Capa de lógica (src/js/): se comprueba sola, sin componentes ni arranque. Si un módulo de src/js/ usa un componente
+  // (src/components/) o algo de src/app/, aquí falla con "Cannot find name": la lógica no depende de la interfaz.
+  "extends": "./tsconfig.json",
+  "include": ["src/js/**/*.ts", "src/types.d.ts"]
+}

@@ -5,8 +5,8 @@ const SESSION_KEY = "poe-gemas:sesion";
 // lo haría sobre una página aún vacía y luego saltaría. Lo restauramos nosotros, ya con la guía puesta.
 history.scrollRestoration = "manual";
 
-/** Valor del botón pulsado en una botonera del mapa de calor (data-s de las etapas, data-m de los modos). */
-const pressedValue = (selector: string, key: string): string | undefined => document.querySelector<HTMLElement>(`${selector} [aria-pressed="true"]`)?.dataset[key];
+/** Valor del botón pulsado en una botonera del mapa de calor (.stages las etapas, .kinds daño/defensa). */
+const pressedValue = (selector: string): string | undefined => document.querySelector<HTMLElement>(`${selector} [aria-pressed="true"]`)?.dataset.value;
 
 /** Guarda el estado actual; sin guía a la vista (campo vacío o código inválido) no hay nada que conservar. */
 function saveSession(): void {
@@ -15,7 +15,7 @@ function saveSession(): void {
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       code: form.code.value, cls: form.cls.value, league: form.league.checked, zones: form.zones.checked,
       open: [...$("out").querySelectorAll<HTMLDetailsElement>("details[id]")].filter(d => d.open).map(d => d.id),
-      stage: pressedValue(".stages", "s") ?? "-1", mode: pressedValue(".kinds", "m") ?? "both",
+      stage: pressedValue(".stages") ?? "-1", mode: pressedValue(".kinds") ?? "both",
       scroll: scrollY,
     }));
   } catch {}
@@ -35,8 +35,8 @@ async function restoreSession(): Promise<void> {
   // run() pone la clase de la build; si se estaba viendo otra, se recompone con ella.
   if (saved.cls && form.cls.value !== saved.cls) { form.cls.value = saved.cls; rerender(); }
   for (const d of $("out").querySelectorAll<HTMLDetailsElement>("details[id]")) d.open = saved.open.includes(d.id);
-  document.querySelector<HTMLElement>(`.stages [data-s="${saved.stage}"]`)?.click();
-  document.querySelector<HTMLElement>(`.kinds [data-m="${saved.mode}"]`)?.click();
+  document.querySelector<HTMLElement>(`.stages [data-value="${saved.stage}"]`)?.click();
+  document.querySelector<HTMLElement>(`.kinds [data-value="${saved.mode}"]`)?.click();
   // Dos fotogramas: el primero pinta el mapa de calor (que fija su alto), el segundo ya puede desplazarse.
   requestAnimationFrame(() => requestAnimationFrame(() => scrollTo({ top: saved.scroll, behavior: "instant" })));
 }

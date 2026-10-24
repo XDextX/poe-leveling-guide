@@ -1,8 +1,11 @@
 /* Botonera de opciones excluyentes, como el modo y la etapa del mapa de calor. */
 
-/** Botonera con un botón por opción [valor, etiqueta]; marca la pulsada y avisa con su valor. La primera empieza marcada. */
-function toggleGroup(label: string, options: [value: string, text: string][], onPick: (value: string) => void): HTMLDivElement {
-  const box = el("div", "modes");
+/**
+ * Botonera con un botón por opción [valor, etiqueta] (en data-value); marca la pulsada y avisa con su valor. La primera
+ * empieza marcada. `cls` la identifica en la página, por ejemplo para que la sesión la restaure.
+ */
+const toggleGroup: Component<[cls: string, label: string, options: [value: string, text: string][], onPick: (value: string) => void], HTMLDivElement> = (cls, label, options, onPick) => {
+  const box = el("div", "modes " + cls);
   box.setAttribute("role", "group");
   box.setAttribute("aria-label", label);
   for (const [value, text] of options) {
@@ -17,4 +20,4 @@ function toggleGroup(label: string, options: [value: string, text: string][], on
     onPick(b.dataset.value ?? "");
   });
   return box;
-}
+};

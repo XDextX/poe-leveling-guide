@@ -37,7 +37,7 @@ npm run dev
 | `npm run build` | Genera la web en `dist/`: junta `src/` en `index.html` y copia los datos de `gamedata/` y los archivos de `public/`. |
 | `npm run serve` | Sirve el `dist/` ya generado en http://localhost:8080, como lo sirve GitHub Pages. |
 | `npm run clean` | Borra `dist/`. |
-| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto, sin generar nada. |
+| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto, sin generar nada, y que la lógica (`src/js/`) no use la interfaz. |
 | `npm run data` | Descarga los datos del juego a `data/` (una petición por segundo). |
 | `npm run gamedata` | Reduce `data/` a `gamedata/`. |
 | `npm run update-data` | Liga nueva: `data`, `gamedata` y `build` seguidos. |
@@ -72,7 +72,7 @@ src/
   types.d.ts          los tipos compartidos por la app y los scripts
   styles.css          estilos base: tema, formulario, paneles
   icon.svg            el icono
-  js/                 lógica sin interfaz, un módulo por responsabilidad:
+  js/                 lógica sin interfaz, un módulo por responsabilidad (no puede usar componentes):
     dom.ts            utilidades del DOM: $, esc y el (crear elementos con texto seguro)
     data.ts           los datos con nombre de campo y utilidades comunes
     pob.ts            leer el código de Path of Building
@@ -80,9 +80,10 @@ src/
     plan.ts           qué gema se consigue en cada paso
     stats.ts          clasificación de stats en daño y defensa
     suggest.ts        el leveling sugerido
+  app/                arranque: une la lógica y los componentes
     session.ts        conservar la build y la vista al recargar
-    app.ts            arranque: compone la guía con los componentes
-  components/         interfaz: una carpeta por componente, con su TS y, si tiene estilos, su CSS
+    app.ts            lee el formulario y compone la guía con los componentes
+  components/         interfaz: una carpeta por componente, con su TS y, si tiene estilos, su CSS (ver «Componentes»)
     section/          sección desplegable y subtítulos (la base de las demás)
     named-list/       lista de pares nombre/texto
     toggle-group/     botonera de opciones excluyentes
@@ -110,6 +111,7 @@ src/
     tree-extras/      ascendencia y maestrías
     toc/              el índice
 tsconfig.json         tipos de la app (navegador)
+tsconfig.logic.json   la capa de lógica sola: falla si src/js/ usa un componente o algo de src/app/
 scripts/
   tsconfig.json       tipos de los scripts (Node)
   download-data.mts   descarga los datos a data/
@@ -121,7 +123,21 @@ scripts/
   lib/                un reductor por fuente de datos, el empaquetado, el servidor local y los datos del sitio (site.mts: URL, descripción, JSON-LD)
 ```
 
-Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`, en orden), todas las carpetas de `components/` (en orden alfabético: cada componente solo define funciones y solo da estilo a sus propias clases, así que el orden no importa) y por último `app.ts`. Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.
+Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`, en orden), todas las carpetas de `components/` (en orden alfabético: cada componente solo define funciones y solo da estilo a sus propias clases, así que el orden no importa) y por último `src/app/` (`session.ts` y `app.ts`). Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.
+
+## Componentes
+
+Un componente es una función de `src/components/` que recibe datos y devuelve DOM. Se declara con el tipo `Component` (de `src/types.d.ts`), así se ve en cada uno qué recibe y qué devuelve:
+
+```ts
+/** Etiqueta con un texto. */
+const badge: Component<[text: string], HTMLSpanElement> = text => el("span", "badge", text);
+```
+
+- `Component<[argumentos], Devuelve>`: lo que devuelve es un elemento o un `DocumentFragment` (`View`), o `| null` si a veces no hay nada que mostrar.
+- Las demás funciones de `src/components/` (`placeTip`, `uniqueIcon`, `drawHeat`…) son ayudantes, no componentes: no llevan ese tipo.
+- No hay `import`: todo es global y se llama por su nombre. Para añadir uno, crea `src/components/<nombre>/<nombre>.ts` (y `.css` si tiene estilos, solo para sus propias clases); el empaquetado lo encuentra solo.
+- La lógica (`src/js/`) no puede usar componentes: `npm run typecheck` lo comprueba con `tsconfig.logic.json`.
 
 ## Fuentes
 

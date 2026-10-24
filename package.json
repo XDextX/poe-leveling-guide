@@ -16,7 +16,7 @@
     "gamedata": "node --disable-warning=ExperimentalWarning scripts/gamedata.mts",
     "update-data": "npm run data && npm run gamedata && npm run build",
     "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/icons.ps1",
-    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json && tsc -p scripts/tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "24.19.1",

@@ -1,8 +1,8 @@
 /* La ruta de campaña: un desplegable por acto con sus pasos, notas y gemas. */
 
 /** La ruta, un desplegable por acto; sin "actividades de zona" solo quedan los pasos con gemas. */
-function routeSections(steps: PlannedStep[], start: string[], showZones: boolean): HTMLDetailsElement[] {
-  const sections: HTMLDetailsElement[] = [];
+const routeSections: Component<[steps: PlannedStep[], start: string[], showZones: boolean], DocumentFragment> = (steps, start, showZones) => {
+  const sections = document.createDocumentFragment();
   let act = 0, list: HTMLOListElement | null = null;
   for (const s of steps) {
     if (s.act !== act) {
@@ -10,7 +10,7 @@ function routeSections(steps: PlannedStep[], start: string[], showZones: boolean
       const n = steps.filter(x => x.act === act && x.gems.length).length;
       const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1, { id: "acto-" + act, label: String(act), group: "Ruta" });
       det.insertAdjacentHTML("beforeend", `<ol class="route"></ol>`);
-      sections.push(det);
+      sections.append(det);
       list = det.querySelector("ol")!;
       if (act === 1 && start.length) {
         const li = document.createElement("li");
@@ -34,4 +34,4 @@ function routeSections(steps: PlannedStep[], start: string[], showZones: boolean
     list!.append(li);
   }
   return sections;
-}
+};

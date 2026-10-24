@@ -1,7 +1,7 @@
 /* Gemas que no salen en la ruta y cómo conseguirlas. */
 
 /** Gemas que no salen en la ruta para esta clase y cómo conseguirlas. */
-function otherWaysSection(build: Build, plan: Plan): HTMLDetailsElement | null {
+const otherWaysSection: Component<[build: Build, plan: Plan], HTMLDetailsElement | null> = (build, plan) => {
   const { got, missing } = plan;
   const where = (id: string): string => { const at = got.get(id); return at ? ` (acto ${at.act}, ${at.quest})` : ""; };
   const notes = build.gems.filter(g => g.kind !== "normal").map((g): [string, string] => {
@@ -16,4 +16,4 @@ function otherWaysSection(build: Build, plan: Plan): HTMLDetailsElement | null {
   sec.insertAdjacentHTML("beforeend", "<ul></ul>");
   fillNamed(sec.querySelector("ul")!, notes);
   return sec;
-}
+};

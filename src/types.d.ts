@@ -74,6 +74,13 @@ interface PlannedStep { act: number; text: string; notes: string[]; gems: GemGro
 interface GotAt { act: number; quest: string }
 interface Plan { out: PlannedStep[]; got: Map<string, GotAt>; start: string[]; missing: string[] }
 interface StageSkill { acts: [number, number]; from: number; to: number; skill: string | null; own: boolean; supports: string[]; mainAt: number | null }
+/** Lo que devuelve un componente: un elemento o un fragmento listo para meter en la página. */
+type View = HTMLElement | DocumentFragment;
+/**
+ * Un componente de src/components/: una función que recibe datos y devuelve DOM (R afina el tipo, o admite null si
+ * puede no haber nada que mostrar). Las demás funciones de esa carpeta son ayudantes, no componentes.
+ */
+type Component<A extends unknown[] = [], R extends View | null = View> = (...args: A) => R;
 interface GuideOptions { cls: string; leagueStart: boolean; showZones: boolean }
 type StatKind = "dmg" | "def" | "other";
 /** Una entrada del índice: destino de una sección marcada con data-toc. */

@@ -33,7 +33,7 @@ function heatControls(canvas: HTMLCanvasElement, redraw: () => void, masteries: 
     tip.hidden = !best; if (!best) return;
     const taken = !!v.taken?.has(bestId);
     const effect = best.type === NODE.MASTERY && taken ? MASTERIES[bestId]?.[chosen.get(bestId) ?? ""] ?? "" : "";
-    tip.replaceChildren(...nodeTip(best, taken, v.num?.get(bestId), effect));
+    tip.replaceChildren(nodeTip(best, taken, v.num?.get(bestId), effect));
     placeTip(tip, ...v.pos!(best), canvas.clientWidth, canvas.clientHeight);
   };
 

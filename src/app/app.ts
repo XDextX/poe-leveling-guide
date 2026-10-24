@@ -13,13 +13,13 @@ function render(build: Build, { cls, leagueStart, showZones }: GuideOptions): vo
   const out = $("out");
   out.hidden = false;
   out.replaceChildren();
-  out.insertAdjacentHTML("beforeend", summaryHtml(build, result));
+  out.append(summaryPanel(build, result));
   $("who").textContent = cls + (cls === build.cls && build.ascend && build.ascend !== "None" ? " · " + build.ascend : "");
   if (skills.length && build.main) out.append(levelingSection(skills, authorTrees ? [] : trees, !authorTrees, build.main.id));
   if (build.items.length) out.append(gearSection(build.items));
   redrawHeat = null;
   if (build.tree.nodes.length) out.append(treeSection(build.tree, trees, !authorTrees));
-  out.append(...routeSections(result.out, result.start, showZones));
+  out.append(routeSections(result.out, result.start, showZones));
   const other = otherWaysSection(build, result);
   if (other) out.append(other);
   renderToc();

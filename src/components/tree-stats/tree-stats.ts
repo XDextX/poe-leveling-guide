@@ -1,7 +1,7 @@
 /* Stats sumadas del árbol, en columnas de daño, defensa y otros. */
 
 /** Resumen de puntos y una columna por tipo de stat, con las 14 primeras de cada una. */
-function treeStatsBlock(tree: BuildTree, mainCount: number, ascCount: number): DocumentFragment {
+const treeStatsBlock: Component<[tree: BuildTree, mainCount: number, ascCount: number], DocumentFragment> = (tree, mainCount, ascCount) => {
   const stats = treeStats(tree), cols = el("div", "tree-cols");
   for (const k of ["dmg", "def", "other"] as const) {
     if (!stats[k].length) continue;
@@ -15,4 +15,4 @@ function treeStatsBlock(tree: BuildTree, mainCount: number, ascCount: number): D
   const frag = document.createDocumentFragment();
   frag.append(el("p", "note", `${mainCount} puntos en el árbol, ${ascCount} notables de ascendencia y ${tree.masteries.length} maestrías. Clasificación aproximada por palabras clave.`), cols);
   return frag;
-}
+};

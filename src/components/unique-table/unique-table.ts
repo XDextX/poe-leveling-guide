@@ -1,7 +1,7 @@
 /* Tabla de los únicos de la build, por nivel requerido, con su icono y su ficha. */
 
 /** Tabla de únicos. Con ratón la ficha sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
-function uniqueTable(uniques: Item[]): HTMLTableElement {
+const uniqueTable: Component<[uniques: Item[]], HTMLTableElement> = uniques => {
   const table = el("table", "uniques");
   table.innerHTML = `<thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th></tr></thead>`;
   const tb = el("tbody");
@@ -21,4 +21,4 @@ function uniqueTable(uniques: Item[]): HTMLTableElement {
   tb.addEventListener("mouseleave", () => tb.querySelectorAll<HTMLElement>(".utip").forEach(t => t.style.cssText = ""));
   table.append(tb);
   return table;
-}
+};
