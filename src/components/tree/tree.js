@@ -11,7 +11,7 @@ function toggleGroup(root, selector, attr, onPick) {
 
 /** Árbol: stats sumadas, mapa de calor de daño/defensa (por etapas si las hay) y los puntos indispensables. */
 function treeSection(tree, stages, stagesSuggested) {
-  const sec = section("Árbol de pasivas", "act gear tree");
+  const sec = section("Árbol de pasivas", "act gear tree", true, { id: "arbol", label: "Árbol de pasivas" });
   const main = tree.nodes.filter(id => !NODES[id].ascendancy);
   const asc = tree.nodes.filter(id => NODES[id].ascendancy && NODES[id].type === NODE.NOTABLE);
   const key = main.filter(id => NODES[id].type === NODE.KEYSTONE || NODES[id].type === NODE.NOTABLE)

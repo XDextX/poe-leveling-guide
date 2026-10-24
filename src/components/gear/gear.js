@@ -2,7 +2,7 @@
 
 /** Equipo de la build: los únicos por nivel requerido y qué stats se repiten en sus raros. */
 function gearSection(items) {
-  const sec = section("Equipo de la build", "act gear");
+  const sec = section("Equipo de la build", "act gear", true, { id: "equipo", label: "Equipo" });
   // Por nivel requerido; los que no piden nivel (joyas) van al final.
   const uniques = items.filter(i => i.rarity === "UNIQUE").sort((a, b) => (a.req || 999) - (b.req || 999));
   if (uniques.length) {

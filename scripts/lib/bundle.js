@@ -5,7 +5,7 @@ const fs = require("fs"), path = require("path");
 const MODULES = ["data", "pob", "route", "plan", "stats", "suggest"];
 // Componentes de interfaz (src/components/<nombre>/<nombre>.{js,css}). El orden también es el del CSS:
 // leveling va después de gear porque su sección lleva las dos clases y .stagecard h3 debe ganar a .gear h3.
-const COMPONENTS = ["section", "summary", "gem", "route", "other-ways", "gear", "leveling", "heatmap", "tree"];
+const COMPONENTS = ["section", "summary", "gem", "route", "other-ways", "gear", "leveling", "heatmap", "tree", "toc"];
 // El arranque va al final: usa todo lo anterior y engancha el formulario.
 const ENTRY = "js/app.js";
 

@@ -18,6 +18,7 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 - **Leveling sugerido** (cuando la build no trae cómo subir): por tramos de la campaña, una habilidad parecida a la tuya que tu clase puede conseguir a ese nivel, soportes compatibles con ella (primero los de tu build) y un orden para coger los nodos de tu árbol final. Va siempre marcado como **sugerencia automática**: lo calcula la app, no es la guía del autor de la build. Si la build trae árboles de leveling, se usan esos.
 - **Equipo**: los únicos de la build ordenados por nivel requerido y qué stats se repiten en sus raros.
 - **Árbol de pasivas**: stats sumadas, un mapa de calor de las zonas de daño y defensa y los puntos indispensables (keystones y notables).
+- **Índice** con desplazamiento suave y la sección actual resaltada: fijo al lado de la guía en pantallas anchas y, en el celular, en un botón flotante que lo abre como panel.
 - Opciones: inicio de liga, mostrar u ocultar las actividades de zona (oculto, la ruta queda solo con los pasos con gemas), cambio de clase y casillas para marcar las gemas conseguidas (se guardan en tu navegador).
 
 ## Regenerar los datos
@@ -59,6 +60,7 @@ src/
     leveling/         tarjetas del leveling sugerido
     heatmap/          el mapa de calor
     tree/             stats del árbol, mapa por etapas e indispensables
+    toc/              el índice
 scripts/
   download-data.js    descarga los datos a data/
   build.js            reduce los datos a gamedata/ y genera index.html

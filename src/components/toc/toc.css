@@ -1,0 +1,34 @@
+/* Índice de la guía: en pantalla estrecha, un botón flotante lo abre como panel; en ancha, fijo a la izquierda de la guía. */
+.toc { font-size: .85rem; gap: 8px; }
+.toc-title { font-family: var(--display); color: var(--accent); letter-spacing: .04em; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.toc a { color: var(--muted); text-decoration: none; border-radius: 4px; padding: 2px 4px; }
+.toc a:hover { color: var(--fg); }
+.toc a[aria-current] { color: var(--accent); font-weight: 600; }
+.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toc-group { display: block; color: var(--muted); padding: 2px 4px; }
+.toc-chips { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 4px; }
+.toc a.chip { font-family: var(--mono); font-size: .75rem; min-width: 1.6em; text-align: center; border: 1px solid var(--line); padding: 1px 4px; }
+.toc a.chip[aria-current] { border-color: var(--accent); }
+[data-toc] { scroll-margin-top: 16px; }
+
+/* Pantalla estrecha: el índice es un panel sobre la página, abierto con el botón flotante. */
+.toc { position: fixed; z-index: 20; box-sizing: border-box; max-height: 65vh; overflow-y: auto;
+  left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 8px 28px rgb(0 0 0 / .35); }
+.toc:not(.open) { display: none; }
+.toc a { padding-block: 6px; }
+.toc a.chip { padding: 6px 8px; font-size: .85rem; min-width: 2.2em; }
+.toc-toggle { position: fixed; z-index: 21; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  font: inherit; font-weight: 600; color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 999px;
+  padding: 12px 18px; cursor: pointer; box-shadow: 0 4px 16px rgb(0 0 0 / .3); }
+.toc-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* La guía mide 780px centrada; el índice (200px) se coloca a su izquierda con 32px de aire cuando cabe entero. */
+@media (min-width: 1260px) {
+  .toc, .toc:not(.open) { display: grid; left: calc(50% - 390px - 232px); right: auto; top: 32px; bottom: auto; width: 200px;
+    max-height: calc(100vh - 64px); box-shadow: none; }
+  .toc a { padding-block: 2px; }
+  .toc a.chip { padding: 1px 4px; font-size: .75rem; min-width: 1.6em; }
+  .toc-toggle { display: none; }
+}

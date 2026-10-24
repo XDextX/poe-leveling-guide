@@ -2,7 +2,7 @@
 
 /** Leveling sugerido: por tramo, la habilidad y sus soportes y cuánto del árbol final tendrías. */
 function levelingSection(skills, trees, treesSuggested, mainId) {
-  const sec = section("Leveling sugerido", "act gear leveling");
+  const sec = section("Leveling sugerido", "act gear leveling", true, { id: "leveling", label: "Leveling sugerido" });
   sec.insertAdjacentHTML("beforeend", `
     <p class="banner"><b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
     que tu clase puede conseguir a ese nivel (mismo tipo y misma arma), soportes que de verdad se pueden enlazar a ella (primero los de tu build) y

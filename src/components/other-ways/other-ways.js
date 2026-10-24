@@ -12,7 +12,7 @@ function otherWaysSection(build, plan) {
   });
   for (const id of missing) notes.push([GEMS[id].name, "No sale en ninguna misión ni vendedor de la ruta para esta clase: drop o mercado."]);
   if (!notes.length) return null;
-  const sec = section("Por otras vías", "act other");
+  const sec = section("Por otras vías", "act other", true, { id: "otras-vias", label: "Por otras vías" });
   sec.insertAdjacentHTML("beforeend", "<ul></ul>");
   fillNamed(sec.querySelector("ul"), notes);
   return sec;

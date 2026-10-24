@@ -22,7 +22,11 @@ function render(build, { cls, leagueStart, showZones }) {
   out.append(...routeSections(result.out, result.start, showZones));
   const other = otherWaysSection(build, result);
   if (other) out.append(other);
+  renderToc();
 }
+
+/** Sin guía (campo vacío o código inválido) tampoco hay índice. */
+const hideGuide = () => { $("out").hidden = $("toc").hidden = $("toc-toggle").hidden = true; };
 
 let build = null;
 const options = () => ({ cls: $("cls").value, leagueStart: $("league").checked, showZones: $("zones").checked });
@@ -30,7 +34,7 @@ const rerender = () => build && render(build, options());
 
 async function run() {
   $("msg").className = ""; $("msg").textContent = "";
-  if (!$("code").value.trim()) { $("out").hidden = true; $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
+  if (!$("code").value.trim()) { hideGuide(); $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
   try {
     build = parseBuild(await decode($("code").value));
     if (!build.gems.length) throw userError("la build no tiene gemas");
@@ -38,7 +42,7 @@ async function run() {
     rerender();
     $("msg").textContent = `Build leída: ${build.gems.length} gemas.`;
   } catch (e) {
-    $("out").hidden = true;
+    hideGuide();
     $("msg").className = "error";
     // Los errores del navegador (base64 o zlib inválidos) no dicen nada útil; los nuestros sí.
     const why = e.own ? e.message : "no tiene el formato de un código de Path of Building";

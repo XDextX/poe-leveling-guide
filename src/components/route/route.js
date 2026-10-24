@@ -8,7 +8,7 @@ function routeSections(steps, start, showZones) {
     if (s.act !== act) {
       act = s.act;
       const n = steps.filter(x => x.act === act && x.gems.length).length;
-      const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1);
+      const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1, { id: "acto-" + act, label: String(act), group: "Ruta" });
       det.insertAdjacentHTML("beforeend", `<ol class="route"></ol>`);
       sections.push(det);
       list = det.querySelector("ol");

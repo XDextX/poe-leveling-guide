@@ -134,6 +134,41 @@ ol.key li { display: grid; grid-template-columns: 1.8rem 1fr; gap: 8px; align-it
 ol.key .num { font-family: var(--mono); font-size: .75rem; border: 1.5px solid var(--accent); border-radius: 50%; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; }
 ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
 .extras { margin: 0; padding-left: 16px; display: grid; gap: 6px; font-size: .88rem; }
+
+/* Índice de la guía: en pantalla estrecha, un botón flotante lo abre como panel; en ancha, fijo a la izquierda de la guía. */
+.toc { font-size: .85rem; gap: 8px; }
+.toc-title { font-family: var(--display); color: var(--accent); letter-spacing: .04em; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.toc a { color: var(--muted); text-decoration: none; border-radius: 4px; padding: 2px 4px; }
+.toc a:hover { color: var(--fg); }
+.toc a[aria-current] { color: var(--accent); font-weight: 600; }
+.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toc-group { display: block; color: var(--muted); padding: 2px 4px; }
+.toc-chips { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 4px; }
+.toc a.chip { font-family: var(--mono); font-size: .75rem; min-width: 1.6em; text-align: center; border: 1px solid var(--line); padding: 1px 4px; }
+.toc a.chip[aria-current] { border-color: var(--accent); }
+[data-toc] { scroll-margin-top: 16px; }
+
+/* Pantalla estrecha: el índice es un panel sobre la página, abierto con el botón flotante. */
+.toc { position: fixed; z-index: 20; box-sizing: border-box; max-height: 65vh; overflow-y: auto;
+  left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 8px 28px rgb(0 0 0 / .35); }
+.toc:not(.open) { display: none; }
+.toc a { padding-block: 6px; }
+.toc a.chip { padding: 6px 8px; font-size: .85rem; min-width: 2.2em; }
+.toc-toggle { position: fixed; z-index: 21; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  font: inherit; font-weight: 600; color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 999px;
+  padding: 12px 18px; cursor: pointer; box-shadow: 0 4px 16px rgb(0 0 0 / .3); }
+.toc-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* La guía mide 780px centrada; el índice (200px) se coloca a su izquierda con 32px de aire cuando cabe entero. */
+@media (min-width: 1260px) {
+  .toc, .toc:not(.open) { display: grid; left: calc(50% - 390px - 232px); right: auto; top: 32px; bottom: auto; width: 200px;
+    max-height: calc(100vh - 64px); box-shadow: none; }
+  .toc a { padding-block: 2px; }
+  .toc a.chip { padding: 1px 4px; font-size: .75rem; min-width: 1.6em; }
+  .toc-toggle { display: none; }
+}
 </style>
 
 <main>
@@ -155,8 +190,10 @@ ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
     <div id="msg" aria-live="polite"></div>
   </section>
 
+  <nav id="toc" class="panel toc" aria-label="Índice" hidden></nav>
+  <button id="toc-toggle" class="toc-toggle" aria-controls="toc" aria-expanded="false" hidden>Índice</button>
   <div id="out" class="panel" hidden></div>
-  <section class="panel sources">
+  <section class="panel sources" id="fuentes" data-toc="Fuentes">
     <h2>Fuentes</h2>
     <p class="note">Todo se descargó una vez, el 2026-10-24, y va con la app (en la carpeta gamedata/): funciona sin conexión y no envía tu build a ningún sitio.</p>
     <dl>
@@ -682,13 +719,25 @@ function suggestTrees(tree, killBandits) {
 
 /* Sección desplegable y lista nombre/texto, la base de las demás secciones. */
 
-/** Sección desplegable con su título (HTML) ya puesto. */
-function section(summaryHtml, className, open = true) {
+/**
+ * Sección desplegable con su título (HTML) ya puesto.
+ * `toc` la apunta en el índice: { id, label, group } (group agrupa entradas, como los actos bajo "Ruta").
+ */
+function section(summaryHtml, className, open = true, toc = null) {
   const sec = document.createElement("details");
   sec.className = className;
   sec.open = open;
   sec.innerHTML = `<summary>${summaryHtml}</summary>`;
+  if (toc) tocTarget(sec, toc);
   return sec;
+}
+
+/** Marca un elemento como destino del índice. */
+function tocTarget(el, { id, label, group }) {
+  el.id = id;
+  el.dataset.toc = label;
+  if (group) el.dataset.tocGroup = group;
+  return el;
 }
 
 /** Lista de pares [nombre, texto] como <li><b>nombre</b><p>texto</p></li>, sin interpretar HTML. */
@@ -709,7 +758,7 @@ function summaryHtml(build, plan) {
   const special = build.gems.filter(g => g.kind !== "normal");
   const rewards = steps.reduce((n, s) => n + s.gems.filter(g => !g.buy).length, 0);
   const boughtIds = steps.flatMap(s => s.gems.filter(g => g.buy).flatMap(g => g.ids));
-  return `<div class="summary">
+  return `<div class="summary" id="resumen" data-toc="Resumen">
     <span><b id="who"></b></span><span><b>${build.gems.length}</b> gemas</span>
     <span><b>${rewards}</b> como recompensa</span><span><b>${boughtIds.length}</b> compradas</span>
     <span><b>${missing.length + special.length}</b> por otras vías</span>
@@ -782,7 +831,7 @@ function routeSections(steps, start, showZones) {
     if (s.act !== act) {
       act = s.act;
       const n = steps.filter(x => x.act === act && x.gems.length).length;
-      const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1);
+      const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1, { id: "acto-" + act, label: String(act), group: "Ruta" });
       det.insertAdjacentHTML("beforeend", `<ol class="route"></ol>`);
       sections.push(det);
       list = det.querySelector("ol");
@@ -824,7 +873,7 @@ function otherWaysSection(build, plan) {
   });
   for (const id of missing) notes.push([GEMS[id].name, "No sale en ninguna misión ni vendedor de la ruta para esta clase: drop o mercado."]);
   if (!notes.length) return null;
-  const sec = section("Por otras vías", "act other");
+  const sec = section("Por otras vías", "act other", true, { id: "otras-vias", label: "Por otras vías" });
   sec.insertAdjacentHTML("beforeend", "<ul></ul>");
   fillNamed(sec.querySelector("ul"), notes);
   return sec;
@@ -834,7 +883,7 @@ function otherWaysSection(build, plan) {
 
 /** Equipo de la build: los únicos por nivel requerido y qué stats se repiten en sus raros. */
 function gearSection(items) {
-  const sec = section("Equipo de la build", "act gear");
+  const sec = section("Equipo de la build", "act gear", true, { id: "equipo", label: "Equipo" });
   // Por nivel requerido; los que no piden nivel (joyas) van al final.
   const uniques = items.filter(i => i.rarity === "UNIQUE").sort((a, b) => (a.req || 999) - (b.req || 999));
   if (uniques.length) {
@@ -870,7 +919,7 @@ function gearSection(items) {
 
 /** Leveling sugerido: por tramo, la habilidad y sus soportes y cuánto del árbol final tendrías. */
 function levelingSection(skills, trees, treesSuggested, mainId) {
-  const sec = section("Leveling sugerido", "act gear leveling");
+  const sec = section("Leveling sugerido", "act gear leveling", true, { id: "leveling", label: "Leveling sugerido" });
   sec.insertAdjacentHTML("beforeend", `
     <p class="banner"><b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
     que tu clase puede conseguir a ese nivel (mismo tipo y misma arma), soportes que de verdad se pueden enlazar a ella (primero los de tu build) y
@@ -987,7 +1036,7 @@ function toggleGroup(root, selector, attr, onPick) {
 
 /** Árbol: stats sumadas, mapa de calor de daño/defensa (por etapas si las hay) y los puntos indispensables. */
 function treeSection(tree, stages, stagesSuggested) {
-  const sec = section("Árbol de pasivas", "act gear tree");
+  const sec = section("Árbol de pasivas", "act gear tree", true, { id: "arbol", label: "Árbol de pasivas" });
   const main = tree.nodes.filter(id => !NODES[id].ascendancy);
   const asc = tree.nodes.filter(id => NODES[id].ascendancy && NODES[id].type === NODE.NOTABLE);
   const key = main.filter(id => NODES[id].type === NODE.KEYSTONE || NODES[id].type === NODE.NOTABLE)
@@ -1042,6 +1091,88 @@ function treeSection(tree, stages, stagesSuggested) {
   return sec;
 }
 
+/* Índice de la guía: un enlace por sección marcada con data-toc, desplazamiento suave y la sección actual resaltada.
+   En pantalla ancha va fijo al lado de la guía; en estrecha, un botón flotante lo abre como panel. */
+
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+// Mismo ancho que la media query de toc.css a partir del cual el índice cabe al lado de la guía.
+const tocBeside = matchMedia("(min-width: 1260px)");
+// Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
+const SPY_LINE = 100;
+let tocTargets = [], tocLinks = new Map(), tocPinned = null;
+
+/** Abre o cierra el índice en pantalla estrecha (en ancha siempre está a la vista). */
+function setTocOpen(open) {
+  $("toc").classList.toggle("open", open);
+  $("toc-toggle").setAttribute("aria-expanded", open);
+}
+
+/** Lleva a una sección: la despliega si estaba plegada y se desplaza hasta ella (sin animar si el sistema pide reducir movimiento). */
+function goTo(target) {
+  if (target.tagName === "DETAILS") target.open = true;
+  tocPinned = target;
+  if (!tocBeside.matches) setTocOpen(false);
+  const from = scrollY;
+  target.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+  // Algunos navegadores ignoran el desplazamiento suave (la emulación de móvil de Chromium, por ejemplo):
+  // si la página no se ha movido, se salta sin animar.
+  setTimeout(() => {
+    if (scrollY === from && Math.abs(target.getBoundingClientRect().top) > SPY_LINE) target.scrollIntoView({ block: "start" });
+    updateTocCurrent();
+  }, 400);
+  // Si ya no hay sitio para desplazarse (final de la página), no llega ningún "scroll": se actualiza aquí.
+  updateTocCurrent();
+}
+
+/** Sección actual: la última cuyo inicio ya pasó la línea; al final de la página, la pulsada si está a la vista. */
+function updateTocCurrent() {
+  const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+  const pinnedInView = tocPinned && tocPinned.getBoundingClientRect().top < innerHeight;
+  const current = atBottom && pinnedInView ? tocPinned : tocTargets.findLast(t => t.getBoundingClientRect().top <= SPY_LINE);
+  tocLinks.forEach((a, t) => a.toggleAttribute("aria-current", t === current));
+}
+
+/** Rellena el índice con los destinos de la página, en orden; las entradas con grupo (los actos) van juntas en una fila. */
+function renderToc() {
+  const nav = $("toc");
+  tocTargets = [...document.querySelectorAll("main [data-toc]")].filter(el => !el.closest("[hidden]"));
+  tocLinks = new Map(); tocPinned = null;
+  nav.innerHTML = `<b class="toc-title">Índice</b><ol></ol>`;
+  const ol = nav.querySelector("ol"), groups = new Map();
+  for (const el of tocTargets) {
+    const a = document.createElement("a");
+    a.href = "#" + el.id;
+    a.textContent = el.dataset.toc;
+    a.onclick = e => { e.preventDefault(); goTo(el); };
+    tocLinks.set(el, a);
+    const group = el.dataset.tocGroup;
+    if (!group) { const li = document.createElement("li"); li.append(a); ol.append(li); continue; }
+    if (!groups.has(group)) {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="toc-group"></span><span class="toc-chips"></span>`;
+      li.firstChild.textContent = group;
+      ol.append(li);
+      groups.set(group, li.lastChild);
+    }
+    a.className = "chip";
+    a.setAttribute("aria-label", `${group} ${el.dataset.toc}`);
+    groups.get(group).append(a);
+  }
+  nav.hidden = $("toc-toggle").hidden = tocTargets.length === 0;
+  setTocOpen(false);
+  updateTocCurrent();
+}
+
+// Un solo oyente de desplazamiento para todo, agrupado por fotograma.
+let tocFrame = 0;
+addEventListener("scroll", () => { if (!tocFrame) tocFrame = requestAnimationFrame(() => { tocFrame = 0; updateTocCurrent(); }); }, { passive: true });
+// La rueda o el dedo del usuario sueltan la sección pulsada: a partir de ahí manda la posición.
+for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => { tocPinned = null; }, { passive: true });
+
+$("toc-toggle").onclick = e => { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); };
+addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
+addEventListener("click", e => { if (!tocBeside.matches && !e.target.closest("#toc")) setTocOpen(false); });
+
 /* Arranque: lee el formulario, compone la guía y la vuelve a componer cuando cambia una opción. */
 
 /** Compone toda la guía para una build con las opciones dadas. */
@@ -1066,7 +1197,11 @@ function render(build, { cls, leagueStart, showZones }) {
   out.append(...routeSections(result.out, result.start, showZones));
   const other = otherWaysSection(build, result);
   if (other) out.append(other);
+  renderToc();
 }
+
+/** Sin guía (campo vacío o código inválido) tampoco hay índice. */
+const hideGuide = () => { $("out").hidden = $("toc").hidden = $("toc-toggle").hidden = true; };
 
 let build = null;
 const options = () => ({ cls: $("cls").value, leagueStart: $("league").checked, showZones: $("zones").checked });
@@ -1074,7 +1209,7 @@ const rerender = () => build && render(build, options());
 
 async function run() {
   $("msg").className = ""; $("msg").textContent = "";
-  if (!$("code").value.trim()) { $("out").hidden = true; $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
+  if (!$("code").value.trim()) { hideGuide(); $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
   try {
     build = parseBuild(await decode($("code").value));
     if (!build.gems.length) throw userError("la build no tiene gemas");
@@ -1082,7 +1217,7 @@ async function run() {
     rerender();
     $("msg").textContent = `Build leída: ${build.gems.length} gemas.`;
   } catch (e) {
-    $("out").hidden = true;
+    hideGuide();
     $("msg").className = "error";
     // Los errores del navegador (base64 o zlib inválidos) no dicen nada útil; los nuestros sí.
     const why = e.own ? e.message : "no tiene el formato de un código de Path of Building";

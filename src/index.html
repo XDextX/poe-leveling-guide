@@ -26,8 +26,10 @@
     <div id="msg" aria-live="polite"></div>
   </section>
 
+  <nav id="toc" class="panel toc" aria-label="Índice" hidden></nav>
+  <button id="toc-toggle" class="toc-toggle" aria-controls="toc" aria-expanded="false" hidden>Índice</button>
   <div id="out" class="panel" hidden></div>
-  <section class="panel sources">
+  <section class="panel sources" id="fuentes" data-toc="Fuentes">
     <h2>Fuentes</h2>
     <p class="note">Todo se descargó una vez, el __DATE__, y va con la app (en la carpeta gamedata/): funciona sin conexión y no envía tu build a ningún sitio.</p>
     <dl>
