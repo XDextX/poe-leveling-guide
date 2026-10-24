@@ -1,0 +1,2 @@
+/* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
+canvas.heat { display: block; max-width: 100%; border-radius: 8px; background: var(--field); }

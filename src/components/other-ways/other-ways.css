@@ -1,0 +1,4 @@
+/* Gemas que no salen en la ruta y cómo conseguirlas. */
+.other ul { margin: 0; padding-left: 18px; }
+.other li { padding: 6px 0; }
+.other p { margin: 0; color: var(--muted); font-size: .85rem; }

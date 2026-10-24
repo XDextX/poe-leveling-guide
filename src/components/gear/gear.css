@@ -1,0 +1,13 @@
+/* Equipo de la build: únicos por nivel y prioridad de stats de los raros. */
+.gear h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 6px; }
+.gear table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.gear th { text-align: left; font-weight: 500; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 4px 8px 4px 0; }
+.gear td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); }
+.gear .n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.gear .unique { color: var(--accent); }
+.gear small { color: var(--muted); }
+ol.stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; gap: 10px; align-items: center; font-size: .88rem; }
+ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
+ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }

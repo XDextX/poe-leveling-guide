@@ -1,0 +1,3 @@
+/* Sección desplegable y lista nombre/texto, la base de las demás secciones. */
+.act > summary { font-family: var(--display); font-size: 1.1rem; color: var(--accent); letter-spacing: .04em; cursor: pointer; padding: 6px 0; }
+.act > summary span { font-family: var(--body); font-size: .8rem; color: var(--muted); letter-spacing: 0; }

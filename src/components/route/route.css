@@ -1,0 +1,14 @@
+/* La ruta de campaña: un desplegable por acto con sus pasos, notas y gemas. */
+ol.route { list-style: none; margin: 0; padding: 0; }
+.route > li { padding: 8px 0 8px 12px; border-left: 2px solid var(--line); display: grid; gap: 4px; }
+.route > li.has-gems { border-left-color: var(--accent); }
+.route .text { line-height: 1.5; }
+.route .notes { margin: 0; padding-left: 18px; color: var(--muted); font-size: .82rem; }
+.area { font-weight: 600; }
+.lvl { font-family: var(--mono); font-size: .72rem; color: var(--muted); margin-left: 4px; }
+.kill { color: var(--kill); font-weight: 600; }
+.questname { color: var(--quest); font-weight: 600; }
+.qtext { color: var(--accent); font-style: italic; }
+.wp { color: var(--wp); font-weight: 600; }
+.tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; }
+.dir { font-family: var(--mono); color: var(--accent); }

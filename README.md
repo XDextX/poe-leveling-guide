@@ -29,7 +29,40 @@ node scripts/download-data.js
 node scripts/build.js
 ```
 
-`download-data.js` descarga los archivos a `data/` (una petición por segundo) y `build.js` los reduce y genera `index.html` a partir de `src/template.html`. La carpeta `data/` no se sube al repositorio.
+`download-data.js` descarga los archivos a `data/` (una petición por segundo) y `build.js` los reduce y junta `src/` en `index.html`. La carpeta `data/` no se sube al repositorio.
+
+## Estructura
+
+```
+index.html            la app generada: un solo archivo, sin dependencias
+src/
+  index.html          el marcado de la página
+  styles.css          estilos base: tema, formulario, paneles
+  js/                 lógica sin interfaz, un módulo por responsabilidad:
+    data.js           los datos con nombre de campo y utilidades comunes
+    pob.js            leer el código de Path of Building
+    route.js          la ruta de campaña y sus marcas
+    plan.js           qué gema se consigue en cada paso
+    stats.js          clasificación de stats en daño y defensa
+    suggest.js        el leveling sugerido
+    app.js            arranque: compone la guía con los componentes
+  components/         interfaz: cada componente con su JS y su CSS
+    section/          sección desplegable (la base de las demás)
+    summary/          resumen de gemas, bandidos y moneda
+    gem/              gema con casilla, líneas de gemas y costes
+    route/            la ruta acto por acto
+    other-ways/       gemas que no salen en la ruta
+    gear/             únicos y prioridad de stats del equipo
+    leveling/         tarjetas del leveling sugerido
+    heatmap/          el mapa de calor
+    tree/             stats del árbol, mapa por etapas e indispensables
+scripts/
+  download-data.js    descarga los datos a data/
+  build.js            reduce los datos y genera index.html
+  lib/                un reductor por fuente de datos y el empaquetado
+```
+
+Todo comparte un único `<script>` y un único `<style>`, así que no hacen falta herramientas de compilación: `scripts/lib/bundle.js` concatena la lógica (`MODULES`), los componentes (`COMPONENTS`, que también fija el orden del CSS) y por último `app.js`.
 
 ## Fuentes
 

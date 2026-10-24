@@ -1,0 +1,47 @@
+/* Mini apps de PoE: misma estructura que las de Warframe, con el dorado de los objetos únicos como único color propio. */
+:root {
+  --bg: #f4f2ee; --card: #ffffff; --fg: #1e1b16; --muted: #6a6358; --line: #ddd7cc;
+  --field: #faf8f4; --accent: #8a5a12; --accent-ink: #ffffff; --soft: #f3ece0;
+  --str: #b8322a; --dex: #2f8a3c; --int: #2f5fb8; --none: #8a8478; --kill: #a3271f; --quest: #7a4a9c; --wp: #1f6f8b;
+  --display: "Cinzel", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f0d0a; --card: #18150f; --fg: #ece5d8; --muted: #a39a8a; --line: #2f2a20;
+  --field: #1f1b14; --accent: #d9a54a; --accent-ink: #17120a; --soft: #241e14;
+  --str: #ec6a5e; --dex: #63c06f; --int: #6f9ff0; --none: #a39a8a; --kill: #f07a6e; --quest: #c49ae6; --wp: #6cc3dd; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f0d0a; --card: #18150f; --fg: #ece5d8; --muted: #a39a8a; --line: #2f2a20;
+  --field: #1f1b14; --accent: #d9a54a; --accent-ink: #17120a; --soft: #241e14;
+  --str: #ec6a5e; --dex: #63c06f; --int: #6f9ff0; --none: #a39a8a; --kill: #f07a6e; --quest: #c49ae6; --wp: #6cc3dd; color-scheme: dark }
+
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px;
+  padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+/* .panel usa display: grid, que si no anularía el atributo hidden. */
+[hidden] { display: none !important; }
+main { max-width: 780px; margin: 0 auto; display: grid; gap: 16px; }
+h1 { font-family: var(--display); font-size: 1.7rem; margin: 0; letter-spacing: .03em; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+label.field { display: grid; gap: 6px; font-weight: 600; font-size: .85rem; }
+textarea, select { font: inherit; font-weight: 400; color: var(--fg); background: var(--field);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; box-sizing: border-box; }
+textarea { font-family: var(--mono); font-size: .75rem; min-height: 90px; resize: vertical; word-break: break-all; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.row label.field { flex: 1 1 160px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: .85rem; cursor: pointer; }
+.check input { accent-color: var(--accent); }
+button.primary { font: inherit; font-weight: 600; color: var(--accent-ink); background: var(--accent); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#msg { font-size: .85rem; color: var(--muted); min-height: 1.2em; }
+#msg.error { color: var(--str); }
+.sources h2 { font-family: var(--display); font-size: 1.1rem; color: var(--accent); margin: 0; letter-spacing: .04em; }
+.sources dl { margin: 0; display: grid; gap: 10px; font-size: .88rem; }
+.sources dt { font-weight: 600; }
+.sources dd { margin: 2px 0 0; color: var(--muted); }
+.sources a, .note a { color: var(--accent); }
+.note { font-size: .8rem; color: var(--muted); }
+.note pre { white-space: pre-wrap; font-size: .72rem; }
