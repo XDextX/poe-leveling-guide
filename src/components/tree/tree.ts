@@ -31,9 +31,9 @@ function treeSection(tree: BuildTree, stages: TreeStage[], stagesSuggested: bool
   sec.insertAdjacentHTML("beforeend", `<h3>Mapa de calor</h3>
     ${stages.length ? `<div class="modes stages" role="group" aria-label="Etapa del árbol"><button data-s="-1" aria-pressed="true">Final</button>${stages.map((s, i) => `<button data-s="${i}" aria-pressed="false">${esc(s.title)}</button>`).join("")}</div>` : ""}
     <div class="modes kinds" role="group" aria-label="Qué mostrar"><button data-m="both" aria-pressed="true">Ambos</button><button data-m="dmg" aria-pressed="false">Daño</button><button data-m="def" aria-pressed="false">Defensa</button></div>
-    <canvas class="heat" role="img" aria-label="Árbol de pasivas con las zonas de daño en rojo y las de defensa en azul"></canvas>
+    <div class="heat-wrap"><canvas class="heat" role="img" aria-label="Árbol de pasivas con las zonas de daño en rojo y las de defensa en azul"></canvas></div>
     <p class="note stage-note"></p>
-    <p class="note"><span class="kind dmg">rojo</span>: zonas que aportan daño · <span class="kind def">azul</span>: defensa · los números marcan los puntos indispensables de la lista.</p>`);
+    <p class="note"><span class="kind dmg">rojo</span>: zonas que aportan daño · <span class="kind def">azul</span>: defensa · los números marcan los puntos indispensables de la lista. Arrastra para mover, Ctrl+rueda o pellizca para hacer zoom, y pasa el ratón o toca un nodo para ver qué hace.</p>`);
   const canvas = sec.querySelector("canvas")!;
   let mode = "both", stage = -1;
   const draw = () => {
@@ -45,6 +45,7 @@ function treeSection(tree: BuildTree, stages: TreeStage[], stagesSuggested: bool
   toggleGroup(sec, ".kinds", "m", v => { mode = v; draw(); });
   toggleGroup(sec, ".stages", "s", v => { stage = +v; draw(); });
   redrawHeat = draw;
+  heatControls(canvas, draw, tree.masteries);
   requestAnimationFrame(draw);
 
   sec.insertAdjacentHTML("beforeend", `<h3>Puntos indispensables</h3><p class="note">Las keystones y los notables que tiene cogidos la build; el resto son nodos pequeños o de paso.</p><ol class="key"></ol>`);
@@ -52,7 +53,8 @@ function treeSection(tree: BuildTree, stages: TreeStage[], stagesSuggested: bool
   key.forEach((id, i) => {
     const n = NODES[id], kind = nodeKind(id);
     const li = document.createElement("li");
-    li.innerHTML = `<span class="num">${i + 1}</span><div><b></b> <span class="kind ${kind === "keystone" ? "key" : kind}">${kind === "keystone" ? "Keystone" : KIND_ES[kind]}</span><p></p></div>`;
+    li.innerHTML = `<span class="num">${i + 1}</span><span></span><div><b></b> <span class="kind ${kind === "keystone" ? "key" : kind}">${kind === "keystone" ? "Keystone" : KIND_ES[kind]}</span><p></p></div>`;
+    li.children[1].replaceWith(nodeIcon(n, 28) ?? document.createElement("span"));
     li.querySelector("b")!.textContent = n.name;
     li.querySelector("p")!.textContent = n.stats.join(" · ");
     ol.append(li);

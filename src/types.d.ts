@@ -14,8 +14,10 @@ type OfferRow = [npc: string, rewards: Record<string, ClassMask>, vendor: Record
 interface QuestRaw { n: string; o: Record<string, OfferRow> }
 /** Zona: [nombre, acto, nivel, ciudad (1/0), ciudad del acto, recetas de crafteo] */
 type AreaRow = [name: string, act: number, level: number, town: 0 | 1, townId: string | null, recipes: string[]];
-/** Nodo del árbol: [x, y, tipo, nombre, stats separadas por \n, ascendencia] */
-type NodeRow = [x: number, y: number, type: number, name: string, stats: string, ascendancy: string];
+/** Nodo del árbol: [x, y, tipo, nombre, stats separadas por \n, ascendencia, aclaraciones separadas por \n, icono] */
+type NodeRow = [x: number, y: number, type: number, name: string, stats: string, ascendancy: string, reminder: string, icon: NodeIcon | 0];
+/** Icono en una hoja de sprites: [hoja (índice en sheets), x, y, ancho, alto] */
+type NodeIcon = [sheet: number, x: number, y: number, w: number, h: number];
 interface TreeRaw {
   nodes: Record<string, NodeRow>;
   /** Pares [a, b] en un array plano. */
@@ -24,6 +26,8 @@ interface TreeRaw {
   masteries: Record<string, Record<string, string>>;
   /** classId de Path of Building → nodo inicial */
   starts: Record<string, string>;
+  /** Hojas de sprites de los iconos (CDN de GGG): [url, ancho, alto] */
+  sheets: [url: string, w: number, h: number][];
 }
 interface GameDataRaw {
   CLASSES: string[];
@@ -44,7 +48,7 @@ interface Offer { npc: string; rewards: Record<string, ClassMask>; vendor: Recor
 interface Quest { name: string; offers: Record<string, Offer> }
 interface Area { name: string; act: number; level: number; town: boolean; townId: string | null; recipes: string[] }
 interface Skill { tags: string[]; types: string[]; weapons: string[]; allowed: string[]; excluded: string[] }
-interface TreeNode { x: number; y: number; type: number; name: string; stats: string[]; ascendancy: string }
+interface TreeNode { x: number; y: number; type: number; name: string; stats: string[]; ascendancy: string; reminder: string[]; icon: NodeIcon | 0 }
 
 /* ---------- La build, leída del código de Path of Building (src/js/pob.ts) ---------- */
 

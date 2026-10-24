@@ -11,18 +11,29 @@ export interface SourceNode {
   name?: string; stats?: string[]; group?: number; orbit: number; orbitIndex: number; out?: string[];
   isProxy?: boolean; isKeystone?: boolean; isMastery?: boolean; isNotable?: boolean; isJewelSocket?: boolean;
   expansionJewel?: unknown; classStartIndex?: number; ascendancyName?: string;
-  masteryEffects?: { effect: number; stats: string[] }[];
+  masteryEffects?: { effect: number; stats: string[] }[]; reminderText?: string[]; icon?: string;
 }
+type Sprite = Record<string, { filename: string; w: number; h: number; coords: Record<string, { x: number; y: number; w: number; h: number }> }>;
 export interface SourceTree {
   constants: { skillsPerOrbit: number[]; orbitRadii: number[] };
   groups: Record<string, { x: number; y: number }>;
   nodes: Record<string, SourceNode>;
+  sprites: Record<string, Sprite>;
 }
+// Hoja de iconos por tipo de nodo, al zoom más alto de los que da el export.
+const SPRITE: Partial<Record<number, string>> = { [TYPE.SMALL]: "normalActive", [TYPE.NOTABLE]: "notableActive", [TYPE.KEYSTONE]: "keystoneActive", [TYPE.MASTERY]: "mastery" };
 
 /** Nodos con su posición ya calculada, aristas en un array plano y el nodo inicial de cada clase (índice = classId de PoB). */
 export function reduceTree(tree: SourceTree): TreeRaw {
   const { skillsPerOrbit, orbitRadii } = tree.constants;
-  const T: TreeRaw = { nodes: {}, edges: [], masteries: {}, starts: {} };
+  const T: TreeRaw = { nodes: {}, edges: [], masteries: {}, starts: {}, sheets: [] };
+  const sheetOf = new Map<string, number>();
+  const icon = (type: number, path?: string): NodeRow[7] => {
+    const key = SPRITE[type], zooms = key && tree.sprites[key], sheet = zooms && zooms[Object.keys(zooms).at(-1)!], c = sheet && path && sheet.coords[path];
+    if (!c) return 0;
+    if (!sheetOf.has(sheet.filename)) { sheetOf.set(sheet.filename, T.sheets.length); T.sheets.push([sheet.filename, sheet.w, sheet.h]); }
+    return [sheetOf.get(sheet.filename)!, c.x, c.y, c.w, c.h];
+  };
   for (const [id, n] of Object.entries(tree.nodes)) {
     const g = n.group !== undefined ? tree.groups[n.group] : undefined;
     if (!g || n.isProxy || n.expansionJewel && !n.isJewelSocket) continue;
@@ -30,7 +41,8 @@ export function reduceTree(tree: SourceTree): TreeRaw {
     const a = (ANGLES[count] ? ANGLES[count][n.orbitIndex] : 360 * n.orbitIndex / count) * Math.PI / 180;
     const type = n.isKeystone ? TYPE.KEYSTONE : n.isMastery ? TYPE.MASTERY : n.isJewelSocket ? TYPE.JEWEL
       : n.classStartIndex !== undefined ? TYPE.START : n.isNotable ? TYPE.NOTABLE : TYPE.SMALL;
-    T.nodes[id] = [Math.round(g.x + r * Math.sin(a)), Math.round(g.y - r * Math.cos(a)), type, n.name || "", (n.stats || []).join("\n"), n.ascendancyName || ""];
+    T.nodes[id] = [Math.round(g.x + r * Math.sin(a)), Math.round(g.y - r * Math.cos(a)), type, n.name || "", (n.stats || []).join("\n"), n.ascendancyName || "",
+      (n.reminderText || []).join("\n"), n.ascendancyName ? 0 : icon(type, n.icon)];
     if (n.classStartIndex !== undefined) T.starts[n.classStartIndex] = id;
     if (n.masteryEffects) T.masteries[id] = Object.fromEntries(n.masteryEffects.map(e => [e.effect, e.stats.join("\n")]));
   }

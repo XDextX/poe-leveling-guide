@@ -8,7 +8,7 @@
 .modes button { font: inherit; font-size: .82rem; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
 .modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 ol.key { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-ol.key li { display: grid; grid-template-columns: 1.8rem 1fr; gap: 8px; align-items: start; font-size: .88rem; }
+ol.key li { display: grid; grid-template-columns: 1.8rem 28px 1fr; gap: 8px; align-items: start; font-size: .88rem; }
 ol.key .num { font-family: var(--mono); font-size: .75rem; border: 1.5px solid var(--accent); border-radius: 50%; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; }
 ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
 .extras { margin: 0; padding-left: 16px; display: grid; gap: 6px; font-size: .88rem; }

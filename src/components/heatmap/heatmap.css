@@ -1,2 +1,14 @@
 /* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
 canvas.heat { display: block; max-width: 100%; border-radius: 8px; background: var(--field); }
+.heat-wrap { position: relative; }
+canvas.heat { cursor: grab; }
+canvas.heat:active { cursor: grabbing; }
+.heat-tip { position: absolute; max-width: min(320px, 90%); padding: 8px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px #0004; font-size: 13px; pointer-events: none; }
+.heat-tip p { margin: 2px 0 0; }
+.heat-zoom { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.heat-zoom button { width: 32px; height: 32px; padding: 0; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: 16px; cursor: pointer; }
+.heat-tip-head { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.heat-tip-head small { display: block; color: var(--muted); font-size: 11px; }
+.heat-tip-head small.taken { color: var(--accent); }
+.node-icon { flex: none; border-radius: 50%; }
+.heat-tip p.reminder { color: var(--muted); font-style: italic; font-size: 12px; }
