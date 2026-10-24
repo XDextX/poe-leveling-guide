@@ -1,4 +1,13 @@
-/* Datos del juego (los genera scripts/build.js en DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
+/* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
+
+// Si alguien copia solo index.html, sin la carpeta gamedata/, se dice qué falta en vez de dejar la página rota en silencio.
+const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T"].filter(k => !(window.DATA && k in window.DATA));
+if (MISSING.length) {
+  document.getElementById("msg").className = "error";
+  document.getElementById("msg").textContent = "Faltan los datos del juego: la carpeta gamedata/ tiene que estar junto a index.html. Copia la carpeta entera de la app.";
+  document.getElementById("go").disabled = true;
+  throw new Error("Faltan datos en window.DATA: " + MISSING.join(", "));
+}
 
 const mapValues = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v, k)]));
 

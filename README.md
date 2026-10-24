@@ -2,11 +2,11 @@
 
 Guía de campaña para **Path of Exile 1** a partir de tu build de Path of Building: la ruta zona por zona, con las gemas de tu build en el momento exacto en que puedes conseguirlas.
 
-Es un único archivo HTML. Funciona sin conexión y sin instalar nada: tu build se lee en el navegador y no se envía a ningún sitio.
+Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexión y sin instalar nada: tu build se lee en el navegador y no se envía a ningún sitio.
 
 ## Cómo usarla
 
-1. Abre `index.html` en el navegador.
+1. Abre `index.html` en el navegador. Si la copias a otro sitio, copia la carpeta entera: `index.html` necesita `gamedata/` a su lado.
 2. En Path of Building: **Import/Export Build → Generate** y copia el código.
 3. Pégalo en la app y pulsa **Crear guía**.
 
@@ -22,19 +22,20 @@ Es un único archivo HTML. Funciona sin conexión y sin instalar nada: tu build 
 
 ## Regenerar los datos
 
-Los datos van dentro de `index.html`. Para actualizarlos a una liga nueva hace falta [Node.js](https://nodejs.org) 18 o superior:
+Los datos van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva hace falta [Node.js](https://nodejs.org) 18 o superior:
 
 ```bash
 node scripts/download-data.js
 node scripts/build.js
 ```
 
-`download-data.js` descarga los archivos a `data/` (una petición por segundo) y `build.js` los reduce y junta `src/` en `index.html`. La carpeta `data/` no se sube al repositorio.
+`download-data.js` descarga los archivos a `data/` (una petición por segundo) y `build.js` los reduce a `gamedata/` y junta `src/` en `index.html`. La carpeta `data/` no se sube al repositorio.
 
 ## Estructura
 
 ```
-index.html            la app generada: un solo archivo, sin dependencias
+index.html            la app generada, sin dependencias
+gamedata/             los datos del juego, generados: gems.js, campaign.js y tree.js
 favicon.ico           el icono (16 a 256 px); dentro de la app va en SVG
 src/
   index.html          el marcado de la página
@@ -60,7 +61,7 @@ src/
     tree/             stats del árbol, mapa por etapas e indispensables
 scripts/
   download-data.js    descarga los datos a data/
-  build.js            reduce los datos y genera index.html
+  build.js            reduce los datos a gamedata/ y genera index.html
   lib/                un reductor por fuente de datos y el empaquetado
 ```
 
