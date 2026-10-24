@@ -1,6 +1,17 @@
 /* Lectura del código de exportación de Path of Building: clase, gemas, habilidad principal, equipo y árbol. */
 
-import { GEMS, NODES, byName, isActive, isSupport, userError } from "./data";
+import { GEMS, NODES } from "./data";
+import { userError } from "./errors";
+import { isActive, isSupport } from "./gems";
+
+// Nombre en minúsculas → id, para las gemas que PoB da por nombre. PoB omite " Support" en las de soporte, así que se
+// registran ambas formas.
+const byName = new Map<string, string>();
+for (const [id, g] of Object.entries(GEMS)) {
+  const n = g.name.toLowerCase();
+  if (!byName.has(n)) byName.set(n, id);
+  if (n.endsWith(" support") && !byName.has(n.slice(0, -8))) byName.set(n.slice(0, -8), id);
+}
 
 /** Código de PoB → XML: base64 "url-safe" comprimido con zlib. */
 export async function decode(code: string): Promise<string> {

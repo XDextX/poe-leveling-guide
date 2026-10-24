@@ -74,7 +74,10 @@ src/
   icon.svg            el icono
   jsx/                el runtime del JSX: crea nodos DOM en el navegador y escribe HTML en el prerender
   js/                 lógica sin interfaz, un módulo por responsabilidad (no puede importar la interfaz ni tocar la página):
-    data.ts           los datos con nombre de campo y utilidades comunes
+    data.ts           los datos del juego de la página (window.DATA), ya con nombre
+    decode.ts         decodeGameData: los datos crudos a objetos con nombre (función pura, sirve también en Node)
+    gems.ts           reglas sobre gemas (soporte o habilidad)
+    errors.ts         errores con mensaje para el usuario
     pob.ts            leer el código de Path of Building
     route.ts          la ruta de campaña y sus marcas (y esc, para su HTML)
     plan.ts           qué gema se consigue en cada paso

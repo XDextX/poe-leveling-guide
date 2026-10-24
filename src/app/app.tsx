@@ -1,6 +1,7 @@
 /* La app: la página con sus eventos, la build leída y la guía, que se vuelve a componer cuando cambia una opción. */
 
-import { CLASSES, isUserError, userError } from "../js/data";
+import { CLASSES } from "../js/data";
+import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
 import { decode, parseBuild } from "../js/pob";
 import { doneStore, setSuggested } from "../components/gem/gem";
