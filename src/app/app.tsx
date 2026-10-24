@@ -9,7 +9,7 @@ import { doneStore, setSuggested } from "../components/gem/gem";
 import { Guide } from "../components/guide/guide";
 import { setRedrawHeat } from "../components/heatmap/heatmap";
 import { Page } from "../components/page/page";
-import { initToc, renderToc } from "../components/toc/toc";
+import { hideToc, initToc, renderToc } from "../components/toc-nav/toc-nav";
 import { startSession } from "./session";
 import type { FormControls } from "./session";
 
@@ -31,7 +31,7 @@ export const App: Component<{}, HTMLElement> = () => {
   // Los elementos de la propia página que hay que leer o cambiar.
   const find = <T extends HTMLElement = HTMLElement>(id: string): T => page.querySelector<T>("#" + id)!;
   const form: FormControls = { code: find("code"), cls: find("cls"), league: find("league"), zones: find("zones") };
-  const guide = find("out"), msg = find("msg"), toc = find("toc"), tocButton = find("toc-toggle");
+  const guide = find("out"), msg = find("msg");
 
   const say = (text: string, error = false) => { msg.className = error ? "error" : ""; msg.textContent = text; };
   const options = (): GuideOptions => ({ cls: form.cls.value, leagueStart: form.league.checked, showZones: form.zones.checked });
@@ -55,7 +55,8 @@ export const App: Component<{}, HTMLElement> = () => {
   function hideGuide(): void {
     setRedrawHeat(null);
     guide.replaceChildren();
-    guide.hidden = toc.hidden = tocButton.hidden = true;
+    guide.hidden = true;
+    hideToc();
   }
 
   /** Lee el código del formulario y, si es válido, compone la guía. */

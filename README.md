@@ -97,7 +97,7 @@ src/
     page/             la página entera
     header/           la cabecera
     build-form/       el formulario de la build
-    toc-nav/          el índice y su botón (vacíos hasta que hay guía)
+    toc-nav/          el índice: su marcado y su botón (vacíos hasta que hay guía), los enlaces, la sección actual y el desplazamiento
     about/            «Qué hace»
     sources/          «Fuentes»
     guide/            la guía entera de una build (sus secciones)
@@ -126,7 +126,6 @@ src/
     node-icon/        icono de un nodo (CDN de GGG)
     key-nodes/        puntos indispensables
     tree-extras/      ascendencia y maestrías
-    toc/              la lógica del índice (enlaces, sección actual, desplazamiento)
 tsconfig.json         tipos de la app (navegador)
 tests/                pruebas de la lógica (npm test): setup.ts pone los datos del juego en window.DATA y helpers.ts arma builds a mano
 scripts/
