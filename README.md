@@ -80,9 +80,10 @@ src/
     plan.ts           qué gema se consigue en cada paso
     stats.ts          clasificación de stats en daño y defensa
     suggest.ts        el leveling sugerido
+    guide.ts          la guía de una build, calculada (leveling, árboles, plan de gemas)
   main.tsx            punto de entrada: estilos base, comprobación de los datos y montaje de <App>
   app/                la app
-    app.tsx           <App>: la página con sus eventos, la build leída y la guía
+    app.tsx           <App>: la página con sus eventos y la build leída; compone la guía al leerla o al cambiar una opción
     guard.ts          si faltan los datos del juego, lo avisa y para (main.tsx lo importa antes que la app)
     session.ts        conservar la build y la vista al recargar
     document.tsx      <Head> y el prerender que usa vite.config.ts
@@ -93,6 +94,7 @@ src/
     toc-nav/          el índice y su botón (vacíos hasta que hay guía)
     about/            «Qué hace»
     sources/          «Fuentes»
+    guide/            la guía entera de una build (sus secciones)
     section/          sección desplegable y subtítulos (la base de las demás)
     named-list/       lista de pares nombre/texto
     toggle-group/     botonera de opciones excluyentes
@@ -162,7 +164,7 @@ import { Badge } from "../badge/badge";
 - **Props comprobadas:** TypeScript revisa las props dentro del JSX: una prop que no existe o una obligatoria que falta es un error en `npm run typecheck`.
 - **Sin importar `h`:** el JSX usa el runtime automático (`jsxImportSource`), así que no hace falta importar nada para escribir JSX.
 - **Diferencias con React:** se escribe `class` (no `className`); los eventos son `onClick`, `onChange`, `onMousemove`… (nombre del evento del DOM tras `on`); `html` pone HTML sin escapar, solo para HTML que genera la propia app. El texto entre etiquetas o en `{…}` siempre va como texto, nunca como HTML.
-- **Sin estado reactivo ni redibujado:** un componente se ejecuta una vez y devuelve DOM. `<App>` (`src/app/app.tsx`) guarda la build leída en una variable propia y, cuando algo cambia, vuelve a componer la guía (`renderGuide`); el mapa de calor modifica su DOM directamente. Lo que necesita la página ya montada (el índice, la sesión) lo hace `<App>` en un `queueMicrotask`, el equivalente a un `useEffect`.
+- **Sin estado reactivo ni redibujado:** un componente se ejecuta una vez y devuelve DOM. `<App>` (`src/app/app.tsx`) guarda la build leída en una variable propia y, cuando algo cambia, vuelve a componer la guía: la calcula `buildGuide` (`src/js/guide.ts`) y la dibuja `<Guide>`; el mapa de calor modifica su DOM directamente. Lo que necesita la página ya montada (el índice, la sesión) lo hace `<App>` en un `queueMicrotask`, el equivalente a un `useEffect`.
 - **Tipo de una expresión JSX:** es `Node`; si necesitas el elemento concreto, afínalo con `as` (`<canvas /> as HTMLCanvasElement`).
 - **Componentes y ayudantes:** `Component<Props, Devuelve>` devuelve un elemento o un `DocumentFragment` (`View`), o `| null` si a veces no hay nada que mostrar. Las demás funciones de `src/components/` (`placeTip`, `uniqueIcon`, `drawHeat`, `heatControls`…) son ayudantes, no componentes.
 - **Prerender:** los componentes de la página (`page/` y los que usa) se ejecutan también en Node, así que no pueden tocar `document` ni `window` al crearse ni al importarse; los eventos sí, porque solo se ejecutan en el navegador.
