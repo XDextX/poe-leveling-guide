@@ -65,3 +65,62 @@ describe("parseItemText", () => {
       .toMatchObject({ name: "Gale Tread", base: "Slink Boots", mods: ["30% increased Movement Speed"] });
   });
 });
+
+// Las reglas de ItemClass:CheckModLineVariant (Item.lua de Path of Building) y el formato que escribe BuildRaw.
+describe("variantes de los únicos", () => {
+  const mods = (...lines: string[]) => parseItemText("Slot", item("Rarity: UNIQUE", "Test Unique", "Test Base", ...lines)).mods;
+
+  it("cuenta también los mods de la variante alternativa", () => {
+    expect(mods(
+      "Variant: Uno", "Variant: Dos", "Variant: Tres", "Selected Variant: 1", "Has Alt Variant: true", "Selected Alt Variant: 3",
+      "Implicits: 0", "{variant:1}Mod de la 1", "{variant:2}Mod de la 2", "{variant:3}Mod de la 3", "Siempre",
+    )).toEqual(["Mod de la 1", "Mod de la 3", "Siempre"]);
+  });
+
+  it("admite la variante elegida y varias alternativas a la vez", () => {
+    expect(mods(
+      "Variant: a", "Variant: b", "Variant: c", "Variant: d", "Selected Variant: 2",
+      "Has Alt Variant: true", "Selected Alt Variant: 4", "Has Alt Variant Two: true", "Selected Alt Variant Two: 1",
+      "Implicits: 0", "{variant:1}uno", "{variant:2}dos", "{variant:3}tres", "{variant:4}cuatro",
+    )).toEqual(["uno", "dos", "cuatro"]);
+  });
+
+  it("ignora la alternativa elegida si el objeto no la declara con «Has Alt Variant»", () => {
+    expect(mods("Variant: a", "Variant: b", "Selected Variant: 1", "Selected Alt Variant: 2", "Implicits: 0", "{variant:1}uno", "{variant:2}dos"))
+      .toEqual(["uno"]);
+  });
+
+  it("sin variante elegida usa la última de la lista, como PoB", () => {
+    expect(mods("Variant: a", "Variant: b", "Variant: c", "Implicits: 0", "{variant:1}uno", "{variant:3}tres", "Siempre"))
+      .toEqual(["tres", "Siempre"]);
+    expect(mods("Variant: a", "Variant: b", "Selected Variant: 1", "Has Alt Variant: true", "Implicits: 0", "{variant:1}uno", "{variant:2}dos"))
+      .toEqual(["uno", "dos"]);
+  });
+
+  it("si el objeto no declara ninguna variante, no descarta ningún mod", () => {
+    expect(mods("Implicits: 0", "{variant:1}uno", "{variant:2}dos")).toEqual(["uno", "dos"]);
+  });
+
+  describe("con grupos y versiones", () => {
+    const grouped = (...lines: string[]) => mods("Version: v1", "Version: v2", "Selected Version: 2", "Variant: a", "Variant: b", "Selected Variant Group: 1=2", "Implicits: 0", ...lines);
+
+    it("deja el mod de la variante elegida en su grupo y de la versión elegida", () => {
+      expect(grouped(
+        "{variant:1}{group:1}grupo 1 variante a", "{variant:2}{group:1}grupo 1 variante b", "{version:1}solo v1", "{version:2}solo v2", "común",
+      )).toEqual(["grupo 1 variante b", "solo v2", "común"]);
+    });
+
+    it("descarta los mods con variante pero sin grupo, y los de un grupo sin variante", () => {
+      expect(grouped("{variant:2}suelta", "{group:1}sin variante", "{variant:2}{group:9}de otro grupo", "común")).toEqual(["común"]);
+    });
+
+    it("sin «Selected Version» descarta los mods que piden una versión", () => {
+      expect(mods("Variant: a", "Selected Variant Group: 1=1", "Implicits: 0", "{version:1}pide versión", "{variant:1}{group:1}en su grupo", "común"))
+        .toEqual(["en su grupo", "común"]);
+    });
+
+    it("un mod puede valer para varios grupos", () => {
+      expect(grouped("{variant:2}{group:1,2}en dos grupos")).toEqual(["en dos grupos"]);
+    });
+  });
+});
