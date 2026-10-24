@@ -3,7 +3,7 @@
 const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, ".."), dataDir = path.join(root, "data");
 const read = f => JSON.parse(fs.readFileSync(path.join(dataDir, f), "utf8"));
-const quests = read("quests.json"), gems = read("gems.json"), chars = read("characters.json"), areas = read("areas.json"), tree = read("tree.json");
+const quests = read("quests.json"), gems = read("gems.json"), chars = read("characters.json"), areas = read("areas.json"), tree = read("tree.json"), repoe = read("repoe-gems.json");
 
 const CLASSES = ["Marauder", "Duelist", "Ranger", "Shadow", "Witch", "Templar", "Scion"];
 const mask = classes => classes.length ? classes.reduce((m, c) => m | 1 << CLASSES.indexOf(c), 0) : 127;
@@ -12,6 +12,17 @@ const short = id => id.replace("Metadata/Items/Gems/", "");
 // Gema: [nombre, atributo (s/d/i/-), nivel requerido]. Las "Royale" son del antiguo modo battle royale y repiten nombre.
 const G = {};
 for (const g of Object.values(gems)) if (!g.id.includes("Royale")) G[short(g.id)] = [g.name, (g.primary_attribute || "-")[0], g.required_level];
+
+// Etiquetas y tipos de RePoE, solo de las gemas que conocemos: [etiquetas, tipos, armas, soporte: tipos admitidos, soporte: excluidos]
+// Los tipos admitidos de un soporte vienen en notación polaca inversa (["Spell", "Totemable", "AND"]).
+const GENERIC_TAGS = new Set(["strength", "dexterity", "intelligence", "grants_active_skill", "support", "gem"]);
+const K = {};
+for (const v of Object.values(repoe)) {
+  const id = v.base_item && short(v.base_item.id);
+  if (!id || !G[id] || v.base_item.release_state !== "released" || K[id]) continue;
+  K[id] = [(v.tags || []).filter(t => !GENERIC_TAGS.has(t)), v.active_skill?.types || [], v.active_skill?.weapon_restrictions || [],
+    v.support_gem?.allowed_types || [], v.support_gem?.excluded_types || []];
+}
 
 // Misión: { n: nombre, o: { oferta: [npc, {gema: máscara de clases}, {gema: [máscara, vendedor]}] } }
 const Q = {};
@@ -34,7 +45,7 @@ for (const a of Object.values(areas)) A[a.id] = [a.map_name || a.name, a.act, a.
 const ANGLES = { 16: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330],
   40: [0, 10, 20, 30, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 135, 140, 150, 160, 170, 180, 190, 200, 210, 220, 225, 230, 240, 250, 260, 270, 280, 290, 300, 310, 315, 320, 330, 340, 350] };
 const { skillsPerOrbit, orbitRadii } = tree.constants;
-const T = { nodes: {}, edges: [], masteries: {} };
+const T = { nodes: {}, edges: [], masteries: {}, starts: {} };
 for (const [id, n] of Object.entries(tree.nodes)) {
   const g = tree.groups[n.group];
   if (!g || n.isProxy || n.expansionJewel && !n.isJewelSocket) continue;
@@ -43,19 +54,21 @@ for (const [id, n] of Object.entries(tree.nodes)) {
   const a = deg * Math.PI / 180;
   const type = n.isKeystone ? 2 : n.isMastery ? 3 : n.isJewelSocket ? 4 : n.classStartIndex !== undefined ? 5 : n.isNotable ? 1 : 0;
   T.nodes[id] = [Math.round(g.x + r * Math.sin(a)), Math.round(g.y - r * Math.cos(a)), type, n.name || "", (n.stats || []).join("\n"), n.ascendancyName || ""];
+  // Nodo inicial por clase, con el mismo índice que el classId de Path of Building.
+  if (n.classStartIndex !== undefined) T.starts[n.classStartIndex] = id;
   if (n.masteryEffects) T.masteries[id] = Object.fromEntries(n.masteryEffects.map(e => [e.effect, e.stats.join("\n")]));
 }
 for (const [id, n] of Object.entries(tree.nodes))
   for (const o of n.out || []) {
     const a = T.nodes[id], b = T.nodes[o];
     // Ni aristas hacia maestrías ni entre la ascendencia y el árbol principal: no son caminos reales.
-    if (a && b && a[2] !== 3 && b[2] !== 3 && a[5] === b[5] && a[2] !== 5 && b[2] !== 5) T.edges.push(+id, +o);
+    if (a && b && a[2] !== 3 && b[2] !== 3 && a[5] === b[5]) T.edges.push(+id, +o);
   }
 
 const ROUTE = Array.from({ length: 10 }, (_, i) => fs.readFileSync(path.join(dataDir, "routes", `act-${i + 1}.txt`), "utf8")).join("\n");
 const START = Object.fromEntries(Object.entries(chars).map(([c, v]) => [c, [short(v.start_gem_id), short(v.chest_gem_id)]]));
 
-const data = JSON.stringify({ CLASSES, G, Q, A, ROUTE, START, T });
+const data = JSON.stringify({ CLASSES, G, Q, A, ROUTE, START, T, K });
 const license = fs.readFileSync(path.join(dataDir, "exile-leveling-LICENSE"), "utf8").replace(/[<&]/g, c => c === "<" ? "&lt;" : "&amp;");
 const date = fs.readFileSync(path.join(dataDir, "downloaded.txt"), "utf8").trim();
 const html = fs.readFileSync(path.join(root, "src", "template.html"), "utf8").replace("__DATA__", () => data).replaceAll("__DATE__", date)

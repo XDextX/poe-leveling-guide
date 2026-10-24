@@ -86,6 +86,15 @@ ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; g
 ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
 ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
+.banner { margin: 4px 0 0; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: 8px; font-size: .84rem; color: var(--muted); }
+.banner b { color: var(--accent); }
+.stagecards { display: grid; gap: 10px; margin-top: 10px; }
+.stagecard { background: var(--soft); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
+.stagecard h3 { margin: 0; font-size: .9rem; color: var(--fg); text-transform: none; letter-spacing: 0; }
+.stagecard h3 span { color: var(--muted); font-weight: 400; }
+.stagecard .note { margin: 0; }
+em.sug { font-style: normal; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); border: 1px dashed var(--accent); border-radius: 4px; padding: 0 4px; }
+.modes + .modes { margin-top: 6px; }
 .sources h2 { font-family: var(--display); font-size: 1.1rem; color: var(--accent); margin: 0; letter-spacing: .04em; }
 .sources dl { margin: 0; display: grid; gap: 10px; font-size: .88rem; }
 .sources dt { font-weight: 600; }
@@ -135,12 +144,14 @@ ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
       <dd><a href="https://github.com/HeartofPhos/exile-leveling">exile-leveling</a>, de HeartofPhos (licencia MIT). Las notas de cada zona están en inglés, como en el original; aquí solo se traducen los verbos con que empiezan los pasos.</dd>
       <dt>Árbol de pasivas</dt>
       <dd><a href="https://github.com/grindinggear/skilltree-export">skilltree-export</a>, el export oficial de Grinding Gear Games: posiciones, stats, conexiones y maestrías de cada nodo.</dd>
+      <dt>Etiquetas, tipos y compatibilidad de soportes de las gemas</dt>
+      <dd><a href="https://github.com/repoe-fork/repoe-fork">RePoE</a> (licencia MIT), un volcado de los datos del juego; los datos en sí son de Grinding Gear Games. Se usan para las sugerencias de leveling.</dd>
       <dt>Coste de las gemas en el vendedor</dt>
       <dd>Tabla por nivel requerido tomada de <a href="https://github.com/Blemming/PoE-newleague">PoE-newleague</a>, de Blemming (menos de 8: Wisdom; 8-15: Transmutation; 16-27: Alteration; 28-37: Chance; 38 o más: Alchemy).</dd>
       <dt>Tu build</dt>
       <dd>El código de exportación de <a href="https://pathofbuilding.community/">Path of Building</a>, que se descomprime en tu navegador: clase, gemas, equipo y árbol salen de ahí.</dd>
       <dt>Criterios propios de esta app</dt>
-      <dd>Qué recompensa elegir en cada misión, la clasificación de stats en daño, defensa y otros (por palabras clave, aproximada), el mapa de calor y qué cuenta como punto indispensable (keystones y notables) son decisiones de esta app, no datos oficiales.</dd>
+      <dd>Qué recompensa elegir en cada misión, la clasificación de stats en daño, defensa y otros (por palabras clave, aproximada), el mapa de calor, qué cuenta como punto indispensable (keystones y notables) y todo el leveling sugerido (habilidad, soportes y orden del árbol por tramos) son decisiones de esta app, no datos oficiales.</dd>
     </dl>
     <p class="note">Path of Exile es una marca de Grinding Gear Games. Esta app no está afiliada a GGG ni a los autores de las herramientas citadas.</p>
     <details class="note"><summary>Licencia de exile-leveling</summary><pre>__LICENSE__</pre></details>
@@ -148,7 +159,7 @@ ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
 </main>
 
 <script>
-const { CLASSES, G, Q, A, ROUTE, START, T } = __DATA__;
+const { CLASSES, G, Q, A, ROUTE, START, T, K } = __DATA__;
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 // Nombre en minúsculas → id; PoB omite " Support" en las gemas de soporte, así que se registran ambas formas.
@@ -189,17 +200,35 @@ function parseBuild(xml) {
     seen.add(name.toLowerCase());
     gems.push(classify(name, id));
   }
-  return { cls: b?.getAttribute("className"), ascend: b?.getAttribute("ascendClassName"), bandit: b?.getAttribute("bandit") || "None", gems, items: parseItems(doc), tree: parseTree(doc) };
+  return { cls: b?.getAttribute("className"), ascend: b?.getAttribute("ascendClassName"), bandit: b?.getAttribute("bandit") || "None", gems, items: parseItems(doc), tree: parseTree(doc), main: mainSkill(doc) };
 }
 
-/** Árbol activo → { nodes: [id], masteries: [[nodo, efecto]] }; los nodos de joyas cluster no están en el árbol base y se ignoran. */
+/**
+ * Árbol activo → { nodes, masteries, classId, stages }; los nodos de joyas cluster no están en el árbol base y se ignoran.
+ * stages son los demás árboles de la build, si el autor los incluyó (suelen ser los de leveling): [{ title, nodes }].
+ */
 function parseTree(doc) {
-  const specs = doc.querySelectorAll("Tree > Spec");
-  const spec = specs[(+doc.querySelector("Tree")?.getAttribute("activeSpec") || 1) - 1] || specs[0];
-  if (!spec) return { nodes: [], masteries: [] };
-  const nodes = (spec.getAttribute("nodes") || "").split(",").filter(id => T.nodes[id]);
+  const specs = [...doc.querySelectorAll("Tree > Spec")];
+  const active = (+doc.querySelector("Tree")?.getAttribute("activeSpec") || 1) - 1;
+  const spec = specs[active] || specs[0];
+  if (!spec) return { nodes: [], masteries: [], classId: null, stages: [] };
+  const nodesOf = s => (s.getAttribute("nodes") || "").split(",").filter(id => T.nodes[id]);
   const masteries = [...(spec.getAttribute("masteryEffects") || "").matchAll(/\{(\d+),(\d+)\}/g)].map(m => [m[1], m[2]]);
-  return { nodes, masteries };
+  const stages = specs.length > 1 ? specs.filter(s => s !== spec).map((s, i) => ({ title: s.getAttribute("title") || `Árbol ${i + 1}`, nodes: nodesOf(s) })) : [];
+  return { nodes: nodesOf(spec), masteries, classId: spec.getAttribute("classId"), stages };
+}
+
+/** Habilidad principal: la primera gema activa del grupo que Path of Building marca como principal. */
+function mainSkill(doc) {
+  const set = doc.querySelector(`Skills > SkillSet[id="${doc.querySelector("Skills")?.getAttribute("activeSkillSet")}"]`) || doc.querySelector("Skills > SkillSet") || doc.querySelector("Skills");
+  const groups = [...(set?.querySelectorAll(":scope > Skill") || [])];
+  const group = groups[(+doc.querySelector("Build")?.getAttribute("mainSocketGroup") || 1) - 1] || groups[0];
+  const ids = [...(group?.querySelectorAll("Gem") || [])].map(el => {
+    const id = (el.getAttribute("gemId") || "").replace("Metadata/Items/Gems/", "");
+    return G[id] ? id : byName.get((el.getAttribute("nameSpec") || "").toLowerCase());
+  }).filter(Boolean);
+  const active = ids.find(id => K[id] && !K[id][3].length);
+  return active ? { id: active, supports: ids.filter(id => id !== active && K[id]?.[3].length) } : null;
 }
 
 /** Objetos equipados (conjunto activo) y joyas del árbol activo → [{ slot, rarity, name, base, req, mods }]. */
@@ -345,13 +374,141 @@ function walk(steps, cls, want) {
   return { out, got };
 }
 
+/* ---------- Sugerencias de leveling (heurísticas, se muestran siempre como "sugerencia automática") ---------- */
+
+const STAGES = [[1, 2], [3, 4], [5, 6], [7, 10]];
+// Nivel aproximado al acabar un acto: el de la zona de más nivel de ese acto.
+const actLevel = act => Math.max(...Object.values(A).filter(a => a[1] === act && !a[3]).map(a => a[2]));
+
+/** Primer acto de la ruta en que la clase puede conseguir cada gema (como recompensa o comprándola). */
+function availability(cls, defs) {
+  const bit = 1 << CLASSES.indexOf(cls), avail = {};
+  (START[cls] || []).forEach(id => avail[id] = 1);
+  for (const step of parseRoute(defs))
+    for (const m of step.line.matchAll(/\{quest\|([^}]*)\}/g)) {
+      const [qid, ...offers] = m[1].split("|"), q = Q[qid];
+      if (!q) continue;
+      for (const oid of offers.length ? offers : Object.keys(q.o)) {
+        const o = q.o[oid];
+        if (!o) continue;
+        for (const [id, mk] of Object.entries(o[1])) if (mk & bit && !(id in avail)) avail[id] = step.act;
+        for (const [id, [mk]] of Object.entries(o[2])) if (mk & bit && !(id in avail)) avail[id] = step.act;
+      }
+    }
+  return avail;
+}
+
+/** Evalúa una lista de tipos en notación polaca inversa (["Spell", "Totemable", "AND"]) contra los tipos de una habilidad. */
+function rpn(expr, types) {
+  const st = [];
+  for (const t of expr) {
+    if (t === "AND" || t === "OR") { const b = st.pop(), a = st.pop(); st.push(t === "AND" ? a && b : a || b); }
+    else st.push(types.includes(t));
+  }
+  return st.some(Boolean);
+}
+const canSupport = (sup, skill) => K[sup][3].length > 0 && rpn(K[sup][3], K[skill][1]) && !(K[sup][4].length && rpn(K[sup][4], K[skill][1]));
+const similarity = (a, b) => { const x = new Set(K[a][0]), y = K[b][0]; const inter = y.filter(t => x.has(t)).length; return inter / (new Set([...x, ...y]).size || 1); };
+// Habilidades que no sirven para matar mientras subes, salvo que la build principal también sea de ese tipo.
+const UTILITY_TAGS = ["aura", "herald", "movement", "travel", "blink", "guard", "warcry", "curse", "mark", "link", "banner", "golem", "stance", "vaal", "minion", "totem", "trap", "mine", "brand", "trigger"];
+
+/** Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden. */
+function suggestSkills(main, cls, defs) {
+  const avail = availability(cls, defs), mainTags = new Set(K[main.id][0]), mainTypes = K[main.id][1], mainWeapons = K[main.id][2];
+  const isAttack = mainTypes.includes("Attack"), isSpell = mainTypes.includes("Spell");
+  const skillOk = id => {
+    const [tags, types, weapons, allowed] = K[id];
+    if (allowed.length || !(id in avail)) return false;
+    if (types.includes("Attack") !== isAttack || types.includes("Spell") !== isSpell) return false;
+    if (tags.some(t => UTILITY_TAGS.includes(t) && !mainTags.has(t))) return false;
+    return !(mainWeapons.length && weapons.length && !weapons.some(w => mainWeapons.includes(w)));
+  };
+  const out = [];
+  let from = 1, prev = null;
+  for (const [first, last] of STAGES) {
+    const to = actLevel(last), usable = from + 4;
+    let skill = null, own = false;
+    if (avail[main.id] <= first && G[main.id][2] <= usable) { skill = main.id; own = true; }
+    else {
+      const cands = Object.keys(K).filter(id => skillOk(id) && avail[id] <= first && G[id][2] <= usable);
+      cands.sort((a, b) => similarity(main.id, b) - similarity(main.id, a) || G[b][2] - G[a][2]);
+      skill = cands[0] || prev;
+    }
+    let supports = [];
+    if (skill) {
+      const ok = id => K[id] && id in avail && avail[id] <= last && G[id][2] <= to && canSupport(id, skill);
+      const fromBuild = main.supports.filter(ok);
+      const others = Object.keys(K).filter(id => K[id][3].length && ok(id) && !fromBuild.includes(id) && !K[id][0].includes("vaal"))
+        .sort((a, b) => similarity(main.id, b) - similarity(main.id, a) || G[b][2] - G[a][2]);
+      supports = [...fromBuild, ...others].slice(0, 4);
+    }
+    out.push({ acts: [first, last], from, to, skill, own, supports, mainAt: !own && avail[main.id] <= last ? Math.max(G[main.id][2], from) : null });
+    prev = skill; from = to;
+  }
+  return out;
+}
+
+// Vecinos de cada nodo del árbol, en los dos sentidos.
+const ADJ = new Map();
+for (let i = 0; i < T.edges.length; i += 2) {
+  const a = String(T.edges[i]), b = String(T.edges[i + 1]);
+  ADJ.has(a) || ADJ.set(a, []); ADJ.has(b) || ADJ.set(b, []);
+  ADJ.get(a).push(b); ADJ.get(b).push(a);
+}
+
+/**
+ * Árbol de leveling sugerido: crece desde el inicio de la clase solo por nodos del árbol final y, en cada paso,
+ * coge el camino que más aporta por punto gastado. Puntos por tramo ≈ nivel − 1 + puntos de misión (≈22 en la campaña, +2 si se matan los bandidos).
+ */
+function suggestTrees(tree, killBandits) {
+  const start = T.starts[tree.classId];
+  if (!start) return [];
+  const final = new Set(tree.nodes.filter(id => T.nodes[id][2] !== 3 && !T.nodes[id][5] && id !== start));
+  const taken = new Set([start]), out = [];
+  for (const [si, [, last]] of STAGES.entries()) {
+    const level = actLevel(last), points = level - 1 + Math.round(22 * last / 10) + (killBandits && last >= 2 ? 2 : 0);
+    const defW = [1.5, 1.3, 1.1, 1][si];
+    const value = id => {
+      // Las keystones definen la build final pero suelen tener un coste (Perfect Agony quita el daño extra de los críticos):
+      // casi no cuentan hasta el último tramo.
+      const n = T.nodes[id], base = n[2] === 2 ? (si === STAGES.length - 1 ? 4 : 0.1) : n[2] === 1 ? 3 : n[2] === 4 ? 0.3 : 1;
+      let v = 0;
+      for (const line of n[4] ? n[4].split("\n") : []) { const k = statKind(line); v += k === "def" ? defW : k === "dmg" ? 1 : 0.5; if (/maximum Life/i.test(line)) v += 1; }
+      return n[4] ? base * v : 0.2;
+    };
+    let budget = points - (taken.size - 1);
+    while (budget > 0) {
+      const parent = new Map(), queue = [...taken], seen = new Set(taken);
+      while (queue.length) {
+        const cur = queue.shift();
+        for (const nb of ADJ.get(cur) || []) if (final.has(nb) && !seen.has(nb)) { seen.add(nb); parent.set(nb, cur); queue.push(nb); }
+      }
+      let best = null;
+      for (const t of parent.keys()) {
+        const path = [];
+        for (let c = t; !taken.has(c); c = parent.get(c)) path.push(c);
+        if (path.length > budget) continue;
+        const score = path.reduce((s, id) => s + value(id), 0) / path.length;
+        if (!best || score > best.score) best = { score, path };
+      }
+      if (!best) break;
+      best.path.forEach(id => taken.add(id));
+      budget -= best.path.length;
+    }
+    out.push({ title: `Actos ${STAGES[si][0]}-${last}`, level, points, nodes: [...taken].filter(id => id !== start) });
+  }
+  return out;
+}
+
 /** Ruta y gemas para una build; la Biblioteca (Siosa) solo se incluye si aporta alguna gema. */
-function plan(build, cls, leagueStart) {
+function plan(build, cls, leagueStart, extra = []) {
   const want = [];
   for (const g of build.gems) {
     if (g.kind === "normal") want.push(g.id);
     if ((g.kind === "vaal" || g.kind === "transfigured") && g.base && !want.includes(g.base)) want.push(g.base);
   }
+  // Las gemas de leveling sugeridas van detrás: si una recompensa sirve para ambas, gana la de la build.
+  for (const id of extra) if (!want.includes(id)) want.push(id);
   const [startGem, chestGem] = START[cls] || [];
   const start = [startGem, chestGem].filter(id => want.includes(id));
   const rest = want.filter(id => !start.includes(id));
@@ -362,6 +519,9 @@ function plan(build, cls, leagueStart) {
   start.forEach(id => result.got.set(id, { act: 1, quest: "Inicio" }));
   return { ...result, start, missing: rest.filter(id => !result.got.has(id)) };
 }
+
+// Gemas de leveling sugeridas que no están en la build: se marcan como "sugerida" allí donde aparezcan.
+let suggested = new Set();
 
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 let doneKey = "", done = new Set();
@@ -374,6 +534,7 @@ function gemEl(id, withCost) {
   l.className = "gem" + (done.has(id) ? " done" : "");
   l.innerHTML = `<input type="checkbox"><i class="${attr}"></i><span></span><small>nv ${lvl}${withCost ? " · " + cost(lvl).replace(/^(Orb of|Scroll of) /, "") : ""}</small>`;
   l.querySelector("span").textContent = name;
+  if (suggested.has(id)) l.insertAdjacentHTML("beforeend", `<em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>`);
   const box = l.querySelector("input");
   box.checked = done.has(id);
   box.onchange = () => { box.checked ? done.add(id) : done.delete(id); l.classList.toggle("done", box.checked); saveDone(); };
@@ -473,7 +634,7 @@ function nodeScore(id) {
 }
 
 /** Árbol: stats sumadas, mapa de calor de daño/defensa y los puntos indispensables (keystones y notables). */
-function treeSection(tree) {
+function treeSection(tree, stages, stagesSuggested) {
   const sec = document.createElement("details");
   sec.className = "act gear tree";
   sec.open = true;
@@ -497,18 +658,28 @@ function treeSection(tree) {
 
   // Mapa de calor
   sec.insertAdjacentHTML("beforeend", `<h3>Mapa de calor</h3>
-    <div class="modes" role="group" aria-label="Qué mostrar"><button data-m="both" aria-pressed="true">Ambos</button><button data-m="dmg" aria-pressed="false">Daño</button><button data-m="def" aria-pressed="false">Defensa</button></div>
+    ${stages.length ? `<div class="modes stages" role="group" aria-label="Etapa del árbol"><button data-s="-1" aria-pressed="true">Final</button>${stages.map((s, i) => `<button data-s="${i}" aria-pressed="false">${esc(s.title)}</button>`).join("")}</div>` : ""}
+    <div class="modes kinds" role="group" aria-label="Qué mostrar"><button data-m="both" aria-pressed="true">Ambos</button><button data-m="dmg" aria-pressed="false">Daño</button><button data-m="def" aria-pressed="false">Defensa</button></div>
     <canvas class="heat" role="img" aria-label="Árbol de pasivas con las zonas de daño en rojo y las de defensa en azul"></canvas>
+    <p class="note stage-note"></p>
     <p class="note"><span class="kind dmg">rojo</span>: zonas que aportan daño · <span class="kind def">azul</span>: defensa · los números marcan los puntos indispensables de la lista.</p>`);
   const canvas = sec.querySelector("canvas");
-  let mode = "both";
-  const draw = () => drawHeat(canvas, main, key, mode);
-  sec.querySelector(".modes").addEventListener("click", e => {
+  let mode = "both", stage = -1;
+  const draw = () => {
+    const nodes = stage < 0 ? main : stages[stage].nodes.filter(id => !T.nodes[id][5]), set = new Set(nodes);
+    // El encuadre sigue siendo el del árbol final, para que las etapas se comparen en el mismo sitio.
+    drawHeat(canvas, nodes, key.map((id, i) => [id, i + 1]).filter(([id]) => set.has(id)), mode, main);
+    const st = stages[stage];
+    sec.querySelector(".stage-note").textContent = !st ? "" : (stagesSuggested ? `Sugerencia automática: ≈${st.points} puntos hasta nv ≈${st.level}, solo con nodos de tu árbol final. ` : `Árbol "${st.title}" de la build. `) + `${nodes.length} nodos cogidos.`;
+  };
+  const pick = (sel, attr, fn) => sec.querySelector(sel)?.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
-    mode = b.dataset.m;
-    sec.querySelectorAll(".modes button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    fn(b.dataset[attr]);
+    sec.querySelectorAll(sel + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
     draw();
   });
+  pick(".kinds", "m", v => mode = v);
+  pick(".stages", "s", v => stage = +v);
   redrawHeat = draw;
   requestAnimationFrame(draw);
 
@@ -534,11 +705,11 @@ function treeSection(tree) {
 }
 
 /** Pinta el árbol: aristas y nodos tenues, el calor de los nodos cogidos y los puntos indispensables numerados. */
-function drawHeat(canvas, main, key, mode) {
+function drawHeat(canvas, main, key, mode, frame = main) {
   const css = getComputedStyle(document.documentElement), col = v => css.getPropertyValue(v).trim();
   const all = Object.values(T.nodes).filter(n => !n[5]);
   // Encuadre sobre la zona de la build, con margen: el árbol entero deja los puntos de la build diminutos.
-  const own = main.map(id => T.nodes[id]), pad = 1200;
+  const own = frame.map(id => T.nodes[id]), pad = 1200;
   const xs = own.map(n => n[0]), ys = own.map(n => n[1]);
   const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad, minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
   const w = canvas.parentElement.clientWidth, h = Math.min(Math.round(w * (maxY - minY) / (maxX - minX)), Math.round(innerHeight * 0.8)), dpr = devicePixelRatio || 1;
@@ -594,11 +765,12 @@ function drawHeat(canvas, main, key, mode) {
 
   ctx.font = `600 ${10 * dpr}px ${col("--mono") || "monospace"}`;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  key.forEach((id, i) => {
+  // key: [[nodo, número en la lista de indispensables]], para que el número no cambie al filtrar por etapa.
+  key.forEach(([id, num]) => {
     const n = T.nodes[id], x = X(n[0]), y = Y(n[1]);
     ctx.fillStyle = col("--card"); ctx.strokeStyle = col("--accent"); ctx.lineWidth = 1.5 * dpr;
     ctx.beginPath(); ctx.arc(x, y, 6.5 * dpr, 0, 7); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = col("--fg"); ctx.fillText(i + 1, x, y + 0.5 * dpr);
+    ctx.fillStyle = col("--fg"); ctx.fillText(num, x, y + 0.5 * dpr);
   });
 }
 const hexAlpha = a => Math.round(a * 255).toString(16).padStart(2, "0");
@@ -607,8 +779,57 @@ let redrawHeat = null;
 addEventListener("resize", () => redrawHeat?.());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => redrawHeat?.());
 
+/** Leveling sugerido: por tramo, la habilidad y sus soportes y cuánto del árbol final tendrías. */
+function levelingSection(skills, trees, treesSuggested) {
+  const sec = document.createElement("details");
+  sec.className = "act gear leveling";
+  sec.open = true;
+  sec.innerHTML = `<summary>Leveling sugerido</summary>
+    <p class="banner"><b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
+    que tu clase puede conseguir a ese nivel (mismo tipo y misma arma), soportes que de verdad se pueden enlazar a ella (primero los de tu build) y
+    ${treesSuggested ? "un orden para coger los nodos de tu árbol final." : "los árboles que trae tu build."} No es la guía del autor de la build ni lo que suele usar la comunidad.</p>
+    <div class="stagecards"></div>`;
+  const box = sec.querySelector(".stagecards");
+  skills.forEach((s, i) => {
+    const card = document.createElement("div");
+    card.className = "stagecard";
+    card.innerHTML = `<h3>Actos ${s.acts[0]}-${s.acts[1]} <span>· nv ${s.from}–${s.to}</span></h3>`;
+    if (s.skill) {
+      const line = document.createElement("div");
+      line.className = "line";
+      line.innerHTML = `<span class="how">${s.own ? "Tu habilidad" : "Habilidad"}</span>`;
+      line.append(gemEl(s.skill));
+      if (s.mainAt) line.insertAdjacentHTML("beforeend", `<span class="cost">Cambia a ${esc(G[build.main.id][0])} desde nv ${s.mainAt}</span>`);
+      card.append(line);
+    }
+    if (s.supports.length) {
+      const line = document.createElement("div");
+      line.className = "line";
+      line.innerHTML = `<span class="how">Soportes</span>`;
+      s.supports.forEach(id => line.append(gemEl(id)));
+      line.insertAdjacentHTML("beforeend", `<span class="cost">por orden: con pocos enlaces, usa los primeros</span>`);
+      card.append(line);
+    }
+    const t = trees[i];
+    if (t) {
+      const prev = new Set(i ? trees[i - 1].nodes : []);
+      const fresh = t.nodes.filter(id => !prev.has(id) && (T.nodes[id][2] === 1 || T.nodes[id][2] === 2)).map(id => T.nodes[id][3]);
+      card.insertAdjacentHTML("beforeend", `<p class="note">Árbol: ${treesSuggested ? "≈" + t.points + " puntos, " : ""}${t.nodes.length} nodos${fresh.length ? ". Nuevos notables: " + esc(fresh.join(", ")) : ""}. Míralo en el mapa de calor, más abajo.</p>`);
+    }
+    box.append(card);
+  });
+  return sec;
+}
+
 function render(build, cls, leagueStart) {
-  const { out: steps, got, start, missing } = plan(build, cls, leagueStart);
+  const defs = new Set(["BANDIT_" + (build.bandit === "None" ? "KILL" : build.bandit.toUpperCase()), "LIBRARY"]);
+  if (leagueStart) defs.add("LEAGUE_START");
+  const skills = build.main && K[build.main.id] ? suggestSkills(build.main, cls, defs) : [];
+  const own = new Set(build.gems.map(g => g.id).filter(Boolean));
+  suggested = new Set(skills.flatMap(s => [s.skill, ...s.supports]).filter(id => id && !own.has(id)));
+  const authorTrees = build.tree.stages.length > 0;
+  const trees = authorTrees ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
+  const { out: steps, got, start, missing } = plan(build, cls, leagueStart, [...suggested]);
   loadDone("poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|"));
   const out = $("out");
   out.hidden = false;
@@ -622,12 +843,14 @@ function render(build, cls, leagueStart) {
     <span><b id="who"></b></span><span><b>${build.gems.length}</b> gemas</span>
     <span><b>${rewards}</b> como recompensa</span><span><b>${bought}</b> compradas</span>
     <span><b>${missing.length + special.length}</b> por otras vías</span>
+    ${suggested.size ? `<span>(recompensas y compras incluyen <b>${suggested.size}</b> sugeridas de leveling)</span>` : ""}
     <span>Bandidos: <b>${build.bandit === "None" ? "matarlos a todos" : "ayudar a " + esc(build.bandit)}</b></span></div>
     <div class="summary">Moneda para todas las compras: <b>${Object.entries(totalCost).map(([c, n]) => `${n}× ${esc(c)}`).join(", ") || "nada"}</b></div>`);
   $("who").textContent = cls + (cls === build.cls && build.ascend && build.ascend !== "None" ? " · " + build.ascend : "");
+  if (skills.length) out.append(levelingSection(skills, authorTrees ? [] : trees, !authorTrees));
   if (build.items.length) out.append(gearSection(build.items));
   redrawHeat = null;
-  if (build.tree.nodes.length) out.append(treeSection(build.tree));
+  if (build.tree.nodes.length) out.append(treeSection(build.tree, trees, !authorTrees));
 
   let act = 0, list = null;
   for (const [i, s] of steps.entries()) {

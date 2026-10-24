@@ -8,6 +8,7 @@ const FILES = [
   ...Array.from({ length: 10 }, (_, i) => [`${LEVELING}/common/data/routes/act-${i + 1}.txt`, `routes/act-${i + 1}.txt`]),
   [`${LEVELING}/LICENSE`, "exile-leveling-LICENSE"],
   ["https://raw.githubusercontent.com/grindinggear/skilltree-export/master/data.json", "tree.json"],
+  ["https://repoe-fork.github.io/gems.min.json", "repoe-gems.json"],
 ];
 
 (async () => {
