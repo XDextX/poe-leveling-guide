@@ -15,9 +15,9 @@ interface GuideProps {
 }
 
 /** Las secciones de la guía; cada una sale solo si la build tiene con qué rellenarla. */
-export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, who, skills, treeStages, treesSuggested, levelingTrees }, showZones }) => (
+export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, cls, ascend, skills, treeStages, treesSuggested, levelingTrees }, showZones }) => (
   <>
-    <Summary build={build} plan={plan} who={who} />
+    <Summary build={build} plan={plan} cls={cls} ascend={ascend} />
     {skills.length > 0 && build.main && <LevelingSection skills={skills} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main.id} />}
     {build.items.length > 0 && <GearSection items={build.items} />}
     {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}

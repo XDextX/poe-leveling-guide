@@ -8,8 +8,9 @@ import { suggestSkills, suggestTrees } from "./suggest";
 /** Todo lo que necesita <Guide> para dibujar la guía de una build. */
 export interface GuideData {
   build: Build;
-  /** Clase (y ascendencia) que se está viendo, para el resumen. */
-  who: string;
+  /** Clase que se está viendo, y su ascendencia si es la de la build (con otra clase no aplica). */
+  cls: string;
+  ascend: string | null;
   /** Leveling sugerido por tramos (vacío si la habilidad principal no se reconoce). */
   skills: StageSkill[];
   /** Gemas de leveling sugeridas que no están en la build. */
@@ -34,7 +35,7 @@ export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions
   return {
     build, skills, suggested, treeStages, treesSuggested,
     levelingTrees: treesSuggested ? treeStages : [],
-    who: cls + (cls === build.cls && build.ascend && build.ascend !== "None" ? " · " + build.ascend : ""),
+    cls, ascend: cls === build.cls && build.ascend && build.ascend !== "None" ? build.ascend : null,
     plan: plan(build, cls, leagueStart, [...suggested]),
   };
 }

@@ -6,12 +6,13 @@ import "./summary.css";
 interface SummaryProps {
   build: Build;
   plan: Plan;
-  /** Clase (y ascendencia) que se está viendo. */
-  who: string;
+  /** Clase que se está viendo y, si aplica, su ascendencia. */
+  cls: string;
+  ascend: string | null;
 }
 
 /** Las dos líneas del resumen. */
-export const Summary: Component<SummaryProps, DocumentFragment> = ({ build, plan, who }) => {
+export const Summary: Component<SummaryProps, DocumentFragment> = ({ build, plan, cls, ascend }) => {
   const { out: steps, missing } = plan;
   const special = build.gems.filter(g => g.kind !== "normal");
   const rewards = steps.reduce((n, s) => n + s.gems.filter(g => !g.buy).length, 0);
@@ -19,7 +20,7 @@ export const Summary: Component<SummaryProps, DocumentFragment> = ({ build, plan
   return (
     <>
       <div class="summary" id="resumen" data-toc="Resumen">
-        <span><b>{who}</b></span>
+        <span><b>{ascend ? `${cls} · ${ascend}` : cls}</b></span>
         <span><b>{build.gems.length}</b> gemas</span>
         <span><b>{rewards}</b> como recompensa</span>
         <span><b>{boughtIds.length}</b> compradas</span>
