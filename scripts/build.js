@@ -1,6 +1,6 @@
 // Genera index.html: reduce los datos de data/ a lo que necesita la guía y los inyecta en src/template.html.
 // Uso: node scripts/build.js   (antes, si faltan los datos: node scripts/download-data.js)
-const fs = require("fs"), path = require("path"), zlib = require("zlib");
+const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, ".."), dataDir = path.join(root, "data");
 const read = f => JSON.parse(fs.readFileSync(path.join(dataDir, f), "utf8"));
 const quests = read("quests.json"), gems = read("gems.json"), chars = read("characters.json"), areas = read("areas.json"), tree = read("tree.json");
@@ -55,17 +55,10 @@ for (const [id, n] of Object.entries(tree.nodes))
 const ROUTE = Array.from({ length: 10 }, (_, i) => fs.readFileSync(path.join(dataDir, "routes", `act-${i + 1}.txt`), "utf8")).join("\n");
 const START = Object.fromEntries(Object.entries(chars).map(([c, v]) => [c, [short(v.start_gem_id), short(v.chest_gem_id)]]));
 
-// Build de ejemplo en el formato de exportación de PoB (XML comprimido con zlib, base64 url-safe).
-const exampleGems = ["Fireball", "Arcane Surge", "Spell Echo", "Elemental Focus", "Controlled Destruction", "Flame Dash",
-  "Flammability", "Herald of Ash", "Vaal Fireball", "Ice Nova of Frostbolts", "Awakened Spell Echo", "Empower"];
-const xml = `<?xml version="1.0" encoding="UTF-8"?><PathOfBuilding><Build level="90" className="Witch" ascendClassName="Elementalist" bandit="None"/>` +
-  `<Skills><SkillSet id="1"><Skill enabled="true">${exampleGems.map(n => `<Gem nameSpec="${n}" level="20" quality="0" enabled="true"/>`).join("")}</Skill></SkillSet></Skills></PathOfBuilding>`;
-const example = zlib.deflateSync(xml).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
-
 const data = JSON.stringify({ CLASSES, G, Q, A, ROUTE, START, T });
 const license = fs.readFileSync(path.join(dataDir, "exile-leveling-LICENSE"), "utf8").replace(/[<&]/g, c => c === "<" ? "&lt;" : "&amp;");
 const date = fs.readFileSync(path.join(dataDir, "downloaded.txt"), "utf8").trim();
 const html = fs.readFileSync(path.join(root, "src", "template.html"), "utf8").replace("__DATA__", () => data).replaceAll("__DATE__", date)
-  .replace("__EXAMPLE__", example).replace("__LICENSE__", () => license);
+  .replace("__LICENSE__", () => license);
 fs.writeFileSync(path.join(root, "index.html"), html);
 console.log(`index.html: ${Object.keys(G).length} gemas, ${Object.keys(Q).length} misiones, ${Object.keys(A).length} zonas, ${Object.keys(T.nodes).length} nodos del árbol, ${(html.length / 1024).toFixed(0)} KB`);

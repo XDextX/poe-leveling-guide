@@ -25,6 +25,8 @@
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px;
   padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+/* .panel usa display: grid, que si no anularía el atributo hidden. */
+[hidden] { display: none !important; }
 main { max-width: 780px; margin: 0 auto; display: grid; gap: 16px; }
 h1 { font-family: var(--display); font-size: 1.7rem; margin: 0; letter-spacing: .03em; }
 .sub { color: var(--muted); font-size: .85rem; margin-top: 4px; }
@@ -688,6 +690,7 @@ let build = null;
 const rerender = () => build && render(build, $("cls").value, $("league").checked);
 async function run() {
   $("msg").className = ""; $("msg").textContent = "";
+  if (!$("code").value.trim()) { $("out").hidden = true; $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
   try {
     build = parseBuild(await decode($("code").value));
     if (!build.gems.length) throw own("la build no tiene gemas");
@@ -705,8 +708,5 @@ async function run() {
 $("go").onclick = run;
 $("cls").onchange = rerender;
 $("league").onchange = rerender;
-
-// Build de ejemplo para que la página abra con una guía visible.
-$("code").value = "__EXAMPLE__";
-run().then(() => { if (build) $("msg").textContent = "Esto es una build de ejemplo. Pega el código de la tuya y pulsa Crear guía."; });
+$("msg").textContent = "Pega el código de tu build y pulsa Crear guía.";
 </script>
