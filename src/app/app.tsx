@@ -57,20 +57,26 @@ export const rerender = (): void => { if (build) render(build, options()); };
 
 export async function run(): Promise<void> {
   $("msg").className = ""; $("msg").textContent = "";
+  // Sin código válido no queda ninguna build: si no, cambiar una opción volvería a mostrar la anterior.
+  build = null;
   if (!form.code.value.trim()) { hideGuide(); $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
+  let read: Build;
+  // Solo leer el código va en el try: un fallo al dibujar la guía es un error de la app, no un código mal copiado.
   try {
-    build = parseBuild(await decode(form.code.value));
-    if (!build.gems.length) throw userError("la build no tiene gemas");
-    if (build.cls && CLASSES.includes(build.cls)) form.cls.value = build.cls;
-    rerender();
-    $("msg").textContent = `Build leída: ${build.gems.length} gemas.`;
+    read = parseBuild(await decode(form.code.value));
+    if (!read.gems.length) throw userError("la build no tiene gemas");
   } catch (e) {
     hideGuide();
     $("msg").className = "error";
     // Los errores del navegador (base64 o zlib inválidos) no dicen nada útil; los nuestros sí.
     const why = isUserError(e) ? e.message : "no tiene el formato de un código de Path of Building";
     $("msg").textContent = "No he podido leer el código: " + why + ". Cópialo de nuevo desde Path of Building, en Import/Export Build → Generate.";
+    return;
   }
+  build = read;
+  if (build.cls && CLASSES.includes(build.cls)) form.cls.value = build.cls;
+  rerender();
+  $("msg").textContent = `Build leída: ${build.gems.length} gemas.`;
 }
 
 // La página llega ya escrita en index.html (la prerenderiza el build); aquí se cambia por la misma página, creada con sus eventos.
