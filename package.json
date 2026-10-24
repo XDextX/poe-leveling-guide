@@ -16,12 +16,14 @@
     "gamedata": "node --disable-warning=ExperimentalWarning scripts/gamedata.mts",
     "update-data": "npm run data && npm run gamedata && npm run build",
     "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/icons.ps1",
-    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && node scripts/check-layers.mts"
+    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json && node scripts/check-layers.mts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
     "typescript": "7.0.2",
     "vite": "8.3.5",
-    "vite-plugin-singlefile": "2.3.4"
+    "vite-plugin-singlefile": "2.3.4",
+    "vitest": "5.0.5"
   }
 }

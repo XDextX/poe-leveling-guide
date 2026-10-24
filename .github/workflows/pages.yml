@@ -1,5 +1,5 @@
-# Publica la web en GitHub Pages en cada push a main: npm run build genera dist/ desde src/, gamedata/ y public/.
-# No descarga datos del juego: usa los de gamedata/, que van en el repositorio.
+# Publica la web en GitHub Pages en cada push a main: comprueba tipos y pruebas, y npm run build genera dist/ desde src/ y public/.
+# No descarga datos del juego: usa los de public/gamedata/, que van en el repositorio.
 # Requiere en Settings → Pages: Source = "GitHub Actions".
 name: Publicar en GitHub Pages
 
@@ -29,6 +29,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

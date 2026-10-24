@@ -2,6 +2,7 @@
 // el CSS dentro, vite-plugin-singlefile), que funciona también abierto con doble clic. public/ se copia tal cual
 // (iconos y public/gamedata/, los datos del juego). index.html es una plantilla con tres huecos que rellena el plugin
 // prerender: el <head>, la página ya escrita (para buscadores y sin JavaScript) y los <script> de los datos.
+/// <reference types="vitest/config" />
 import fs from "node:fs";
 import path from "node:path";
 import { createServer, defineConfig, type Plugin, type UserConfig, type ViteDevServer } from "vite";
@@ -57,4 +58,7 @@ export default defineConfig({
   define: { PAGE_DATE: JSON.stringify(date), PAGE_LICENSE: JSON.stringify(license) },
   plugins: [prerender(), viteSingleFile()],
   build: { outDir: "dist", emptyOutDir: true },
+  // npm test (Vitest): la lógica de src/js/ en Node, con los mismos imports y JSX que la app. tests/setup.ts pone los
+  // datos del juego en window.DATA, como hacen gamedata/*.js en el navegador.
+  test: { include: ["tests/**/*.test.ts"], setupFiles: ["tests/setup.ts"], environment: "node" },
 });

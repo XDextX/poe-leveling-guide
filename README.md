@@ -37,7 +37,8 @@ npm run dev
 | `npm run build` | Genera la web en `dist/`: un solo `index.html` con todo el JS y el CSS dentro, la página ya escrita (prerender), `sitemap.xml` y lo que hay en `public/` (iconos y datos del juego). |
 | `npm run serve` | Sirve el `dist/` ya generado (`vite preview`), como lo sirve GitHub Pages. |
 | `npm run clean` | Borra `dist/`. |
-| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto (app, scripts y `vite.config.ts`) y que la lógica (`src/js/`) no importe la interfaz ni toque la página. |
+| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto (app, scripts, pruebas y `vite.config.ts`) y que la lógica (`src/js/`) no importe la interfaz ni toque la página. |
+| `npm test` | Pruebas de la lógica con [Vitest](https://vitest.dev), en Node y con los datos reales de `public/gamedata/`. |
 | `npm run data` | Descarga los datos del juego a `data/` (una petición por segundo). |
 | `npm run gamedata` | Reduce `data/` a `public/gamedata/`. |
 | `npm run update-data` | Liga nueva: `data`, `gamedata` y `build` seguidos. |
@@ -45,7 +46,7 @@ npm run dev
 
 `dist/index.html` funciona también abierto con doble clic, sin servidor: el JS va dentro del propio HTML (`vite-plugin-singlefile`) y los datos se cargan con `<script src>`. Las carpetas `dist/`, `data/` y `node_modules/` no se suben al repositorio.
 
-**Publicación:** en cada push a `main`, el workflow `.github/workflows/pages.yml` comprueba los tipos, ejecuta `npm run build` y publica `dist/` en GitHub Pages (en Settings → Pages, la fuente es "GitHub Actions"). No descarga nada: usa `public/gamedata/`, que va en el repositorio.
+**Publicación:** en cada push a `main`, el workflow `.github/workflows/pages.yml` comprueba los tipos y las pruebas, ejecuta `npm run build` y publica `dist/` en GitHub Pages (en Settings → Pages, la fuente es "GitHub Actions"). No descarga nada: usa `public/gamedata/`, que va en el repositorio.
 
 ## Regenerar los datos
 
@@ -127,6 +128,7 @@ src/
     tree-extras/      ascendencia y maestrías
     toc/              la lógica del índice (enlaces, sección actual, desplazamiento)
 tsconfig.json         tipos de la app (navegador)
+tests/                pruebas de la lógica (npm test): setup.ts pone los datos del juego en window.DATA y helpers.ts arma builds a mano
 scripts/
   tsconfig.json       tipos de los scripts (Node) y de vite.config.ts
   download-data.mts   descarga los datos a data/

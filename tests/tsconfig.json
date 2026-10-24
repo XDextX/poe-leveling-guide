@@ -1,0 +1,9 @@
+{
+  // Tipos de las pruebas (npm test con Vitest): los de la app más los de Node, porque tests/setup.ts lee public/gamedata/.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts", "../src/**/*.tsx"]
+}
