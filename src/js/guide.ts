@@ -26,7 +26,8 @@ export interface GuideData {
 /** Calcula la guía de una build para las opciones dadas. */
 export function buildGuide(build: Build, { cls, leagueStart, showZones }: GuideOptions): GuideData {
   const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, new Set([...routeDefs(build, leagueStart), "LIBRARY"])) : [];
-  const own = new Set(build.gems.map(g => g.id).filter((id): id is string => !!id));
+  // Las de la build y, de sus Vaal y transfiguradas, la gema base: también hay que conseguirla, así que no es "sugerida".
+  const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
   const suggested = new Set(skills.flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id && !own.has(id)));
   const authorTrees = build.tree.stages.length > 0;
   const trees = authorTrees ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
