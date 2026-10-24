@@ -60,7 +60,7 @@ npm run update-data
 ## Estructura
 
 ```
-index.html            plantilla de Vite con tres huecos: el <head>, la página prerenderizada y los <script> de los datos
+index.html            plantilla de Vite con tres huecos (el <head>, la página prerenderizada y los <script> de los datos) y src/main.tsx
 vite.config.ts        build y servidor de desarrollo; su plugin "prerender" rellena los huecos de index.html
 public/               lo que se copia tal cual a dist/
   gamedata/           los datos del juego reducidos (gems.js, campaign.js, tree.js, items.js), su fecha y la licencia de exile-leveling
@@ -80,10 +80,10 @@ src/
     plan.ts           qué gema se consigue en cada paso
     stats.ts          clasificación de stats en daño y defensa
     suggest.ts        el leveling sugerido
-  app/                arranque
-    app.tsx           punto de entrada: monta <Page>, lee el formulario y compone la guía
-    guard.ts          si faltan los datos del juego, lo avisa y para (se importa el primero)
-    dom.ts            $ (elemento por id) y form (los controles del formulario)
+  main.tsx            punto de entrada: estilos base, comprobación de los datos y montaje de <App>
+  app/                la app
+    app.tsx           <App>: la página con sus eventos, la build leída y la guía
+    guard.ts          si faltan los datos del juego, lo avisa y para (main.tsx lo importa antes que la app)
     session.ts        conservar la build y la vista al recargar
     document.tsx      <Head> y el prerender que usa vite.config.ts
   components/         interfaz: una carpeta por componente, con su .tsx y, si tiene estilos, su .css (ver «Componentes»)
@@ -129,7 +129,7 @@ scripts/
   lib/                un reductor por fuente de datos, gamedata/ y los datos del sitio (site.mts: URL, descripción, JSON-LD, sitemap)
 ```
 
-**Cómo se genera la página:** la página entera son componentes. En el build, el plugin `prerender` de `vite.config.ts` ejecuta `src/app/document.tsx` en Node (con `ssrLoadModule` de Vite) y escribe el `<head>` y `<Page>` ya en HTML dentro de `index.html`, así los buscadores, las previsualizaciones y quien no tiene JavaScript ven el contenido. En el navegador, `app.tsx` vuelve a crear `<Page>` con sus eventos y la cambia por la prerenderizada, que es idéntica.
+**Cómo se genera la página:** la página entera son componentes. En el build, el plugin `prerender` de `vite.config.ts` ejecuta `src/app/document.tsx` en Node (con `ssrLoadModule` de Vite) y escribe el `<head>` y `<Page>` ya en HTML dentro de `index.html`, así los buscadores, las previsualizaciones y quien no tiene JavaScript ven el contenido. En el navegador, `main.tsx` monta `<App>`, que vuelve a crear `<Page>` con sus eventos, en lugar de la prerenderizada, que es idéntica.
 
 ## Componentes
 
@@ -162,7 +162,7 @@ import { Badge } from "../badge/badge";
 - **Props comprobadas:** TypeScript revisa las props dentro del JSX: una prop que no existe o una obligatoria que falta es un error en `npm run typecheck`.
 - **Sin importar `h`:** el JSX usa el runtime automático (`jsxImportSource`), así que no hace falta importar nada para escribir JSX.
 - **Diferencias con React:** se escribe `class` (no `className`); los eventos son `onClick`, `onChange`, `onMousemove`… (nombre del evento del DOM tras `on`); `html` pone HTML sin escapar, solo para HTML que genera la propia app. El texto entre etiquetas o en `{…}` siempre va como texto, nunca como HTML.
-- **Sin estado ni redibujado:** un componente se ejecuta una vez y devuelve DOM. Si algo cambia, se vuelve a componer la guía (`render` en `app.tsx`) o se modifica el DOM directamente, como hace el mapa de calor.
+- **Sin estado reactivo ni redibujado:** un componente se ejecuta una vez y devuelve DOM. `<App>` (`src/app/app.tsx`) guarda la build leída en una variable propia y, cuando algo cambia, vuelve a componer la guía (`renderGuide`); el mapa de calor modifica su DOM directamente. Lo que necesita la página ya montada (el índice, la sesión) lo hace `<App>` en un `queueMicrotask`, el equivalente a un `useEffect`.
 - **Tipo de una expresión JSX:** es `Node`; si necesitas el elemento concreto, afínalo con `as` (`<canvas /> as HTMLCanvasElement`).
 - **Componentes y ayudantes:** `Component<Props, Devuelve>` devuelve un elemento o un `DocumentFragment` (`View`), o `| null` si a veces no hay nada que mostrar. Las demás funciones de `src/components/` (`placeTip`, `uniqueIcon`, `drawHeat`, `heatControls`…) son ayudantes, no componentes.
 - **Prerender:** los componentes de la página (`page/` y los que usa) se ejecutan también en Node, así que no pueden tocar `document` ni `window` al crearse ni al importarse; los eventos sí, porque solo se ejecutan en el navegador.
