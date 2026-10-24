@@ -8,10 +8,14 @@ import { Summary } from "../summary/summary";
 import { TreeSection } from "../tree/tree";
 import type { GuideData } from "../../js/guide";
 
-interface GuideProps { data: GuideData }
+interface GuideProps {
+  data: GuideData;
+  /** Mostrar también los pasos de la ruta sin gemas ("Actividades de zona"). */
+  showZones: boolean;
+}
 
 /** Las secciones de la guía; cada una sale solo si la build tiene con qué rellenarla. */
-export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, who, skills, trees, authorTrees, showZones } }) => (
+export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, who, skills, trees, authorTrees }, showZones }) => (
   <>
     <Summary build={build} plan={plan} who={who} />
     {skills.length > 0 && build.main && <LevelingSection skills={skills} trees={authorTrees ? [] : trees} treesSuggested={!authorTrees} mainId={build.main.id} />}

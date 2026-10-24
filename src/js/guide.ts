@@ -8,7 +8,6 @@ import { suggestSkills, suggestTrees } from "./suggest";
 /** Todo lo que necesita <Guide> para dibujar la guía de una build. */
 export interface GuideData {
   build: Build;
-  showZones: boolean;
   /** Clase (y ascendencia) que se está viendo, para el resumen. */
   who: string;
   /** Leveling sugerido por tramos (vacío si la habilidad principal no se reconoce). */
@@ -19,12 +18,10 @@ export interface GuideData {
   trees: TreeStage[];
   authorTrees: boolean;
   plan: Plan;
-  /** Clave con la que se guardan en el navegador las gemas marcadas como conseguidas. */
-  doneKey: string;
 }
 
-/** Calcula la guía de una build para las opciones dadas. */
-export function buildGuide(build: Build, { cls, leagueStart, showZones }: GuideOptions): GuideData {
+/** Calcula la guía de una build para la clase y el modo (inicio de liga o no) dados. Mostrar las zonas es cosa del dibujo. */
+export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions, "cls" | "leagueStart">): GuideData {
   const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, routeDefs(build, leagueStart, { library: true })) : [];
   // Las de la build y, de sus Vaal y transfiguradas, la gema base: también hay que conseguirla, así que no es "sugerida".
   const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
@@ -32,9 +29,8 @@ export function buildGuide(build: Build, { cls, leagueStart, showZones }: GuideO
   const authorTrees = build.tree.stages.length > 0;
   const trees = authorTrees ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
   return {
-    build, showZones, skills, suggested, trees, authorTrees,
+    build, skills, suggested, trees, authorTrees,
     who: cls + (cls === build.cls && build.ascend && build.ascend !== "None" ? " · " + build.ascend : ""),
     plan: plan(build, cls, leagueStart, [...suggested]),
-    doneKey: "poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|"),
   };
 }

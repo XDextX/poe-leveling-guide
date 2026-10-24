@@ -12,7 +12,11 @@ export function setSuggested(ids: Set<string>): void { suggested = ids; }
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 export const doneStore = {
   key: "", ids: new Set<string>(),
-  load(key: string) { this.key = key; try { this.ids = new Set<string>(JSON.parse(localStorage.getItem(key) ?? "null") || []); } catch { this.ids = new Set<string>(); } },
+  /** Carga las marcadas de una build vista con una clase: cada combinación se guarda aparte. */
+  load(cls: string, build: Build) {
+    this.key = "poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|");
+    try { this.ids = new Set<string>(JSON.parse(localStorage.getItem(this.key) ?? "null") || []); } catch { this.ids = new Set<string>(); }
+  },
   set(id: string, on: boolean) { on ? this.ids.add(id) : this.ids.delete(id); try { localStorage.setItem(this.key, JSON.stringify([...this.ids])); } catch {} },
 };
 

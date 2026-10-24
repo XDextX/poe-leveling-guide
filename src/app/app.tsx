@@ -36,12 +36,12 @@ export const App: Component<{}, HTMLElement> = () => {
   /** Compone la guía de la build actual con las opciones del formulario. */
   function rerender(): void {
     if (!build) return;
-    const data = buildGuide(build, options());
+    const opts = options(), data = buildGuide(build, opts);
     // Estado que leen los componentes de las gemas y del mapa de calor (TreeSection engancha el mapa nuevo).
     setSuggested(data.suggested);
-    doneStore.load(data.doneKey);
+    doneStore.load(opts.cls, build);
     setRedrawHeat(null);
-    guide.replaceChildren(<Guide data={data} />);
+    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} />);
     guide.hidden = false;
     renderToc();
   }
