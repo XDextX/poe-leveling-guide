@@ -28,11 +28,22 @@ Hace falta [Node.js](https://nodejs.org) 22.18 o superior, que ejecuta TypeScrip
 
 ```bash
 npm install
-npm run build
-npm run typecheck
+npm run dev
 ```
 
-`npm run build` genera la web en `dist/`: junta `src/` en `index.html` y copia los datos de `gamedata/` y los archivos de `public/`. `npm run typecheck` comprueba los tipos con `tsc` en modo estricto, sin generar nada. Las carpetas `dist/`, `data/` y `node_modules/` no se suben al repositorio.
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Genera `dist/`, la sirve en http://localhost:8080 y la vuelve a generar al guardar cambios en `src/`, `gamedata/` o `public/` (recarga el navegador a mano). |
+| `npm run build` | Genera la web en `dist/`: junta `src/` en `index.html` y copia los datos de `gamedata/` y los archivos de `public/`. |
+| `npm run serve` | Sirve el `dist/` ya generado en http://localhost:8080, como lo sirve GitHub Pages. |
+| `npm run clean` | Borra `dist/`. |
+| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto, sin generar nada. |
+| `npm run data` | Descarga los datos del juego a `data/` (una petición por segundo). |
+| `npm run gamedata` | Reduce `data/` a `gamedata/`. |
+| `npm run update-data` | Liga nueva: `data`, `gamedata` y `build` seguidos. |
+| `npm run icons` | Vuelve a generar los iconos y la imagen para redes de `public/` (Windows). |
+
+`dev` y `serve` aceptan otro puerto con la variable `PORT` (por ejemplo `PORT=3000 npm run dev`) y solo escuchan en tu equipo. Las carpetas `dist/`, `data/` y `node_modules/` no se suben al repositorio.
 
 **Publicación:** en cada push a `main`, el workflow `.github/workflows/pages.yml` comprueba los tipos, ejecuta `npm run build` y publica `dist/` en GitHub Pages (en Settings → Pages, la fuente es "GitHub Actions"). No descarga nada: usa `gamedata/`, que va en el repositorio.
 
@@ -41,12 +52,10 @@ npm run typecheck
 Los datos del juego van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva:
 
 ```bash
-npm run data
-npm run gamedata
-npm run build
+npm run update-data
 ```
 
-`npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run gamedata` los reduce a `gamedata/`, junto con la fecha de descarga y la licencia de exile-leveling. Después hay que subir `gamedata/` al repositorio.
+`npm run update-data` equivale a `npm run data`, `npm run gamedata` y `npm run build` seguidos. `npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run gamedata` los reduce a `gamedata/`, junto con la fecha de descarga y la licencia de exile-leveling. Después hay que subir `gamedata/` al repositorio.
 
 ## Estructura
 
@@ -107,7 +116,9 @@ scripts/
   gamedata.mts        reduce los datos de data/ a gamedata/
   icons.ps1           genera los iconos y la imagen para redes de public/ (Windows)
   build.mts           genera dist/: index.html, sitemap.xml y la copia de gamedata/ y public/
-  lib/                un reductor por fuente de datos, el empaquetado y los datos del sitio (site.mts: URL, descripción, JSON-LD)
+  serve.mts           sirve dist/ en local
+  dev.mts             build + serve, y build de nuevo al cambiar algo
+  lib/                un reductor por fuente de datos, el empaquetado, el servidor local y los datos del sitio (site.mts: URL, descripción, JSON-LD)
 ```
 
 Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`, en orden), todas las carpetas de `components/` (en orden alfabético: cada componente solo define funciones y solo da estilo a sus propias clases, así que el orden no importa) y por último `app.ts`. Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.

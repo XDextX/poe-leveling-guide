@@ -9,8 +9,13 @@
   },
   "scripts": {
     "build": "node --disable-warning=ExperimentalWarning scripts/build.mts",
+    "dev": "node --disable-warning=ExperimentalWarning scripts/dev.mts",
+    "serve": "node --disable-warning=ExperimentalWarning scripts/serve.mts",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "data": "node scripts/download-data.mts",
     "gamedata": "node --disable-warning=ExperimentalWarning scripts/gamedata.mts",
+    "update-data": "npm run data && npm run gamedata && npm run build",
+    "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/icons.ps1",
     "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json"
   },
   "devDependencies": {
