@@ -23,7 +23,7 @@ let tocTargets: HTMLElement[] = [], tocPinned: HTMLElement | null = null;
 export const TocNav: Component<{}, DocumentFragment> = () => (
   <>
     <nav id="toc" class="panel toc" aria-label="Índice" hidden />
-    <button id="toc-toggle" class="toc-toggle" aria-controls="toc" aria-expanded="false" hidden onClick={(e: MouseEvent) => toggleToc(e)}>Índice</button>
+    <button id="toc-toggle" class="toc-toggle" aria-controls="toc" aria-expanded="false" hidden onClick={toggleToc}>Índice</button>
   </>
 ) as DocumentFragment;
 
@@ -108,7 +108,7 @@ export function hideToc(): void {
 }
 
 /** Clic en el botón flotante: abre o cierra el panel. */
-function toggleToc(e: MouseEvent): void { e.stopPropagation(); setTocOpen(!tocNav().classList.contains("open")); }
+function toggleToc(): void { setTocOpen(!tocNav().classList.contains("open")); }
 
 let tocFrame = 0;
 /** Engancha los oyentes de la ventana; lo llama el arranque una sola vez. */
@@ -118,5 +118,6 @@ export function initToc(): void {
   // La rueda o el dedo del usuario sueltan la sección pulsada: a partir de ahí manda la posición.
   for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => { tocPinned = null; }, { passive: true });
   addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
-  addEventListener("click", e => { if (!tocBeside() && !(e.target as Element).closest("#toc")) setTocOpen(false); });
+  // Un clic fuera del panel lo cierra; dentro del panel o en su botón no (el botón ya lo abre o lo cierra él).
+  addEventListener("click", e => { if (!tocBeside() && !(e.target as Element).closest("#toc, #toc-toggle")) setTocOpen(false); });
 }
