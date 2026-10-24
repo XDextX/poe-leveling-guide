@@ -135,6 +135,17 @@ ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
 .gear .ico { flex: none; width: 40px; height: 40px; }
 .gear .ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .gear td { vertical-align: middle; }
+/* Ficha del único, con los colores del juego: cabecera marrón dorada y mods en azul. */
+.gear td:first-child { position: relative; }
+.gear .item { cursor: help; }
+.gear .utip { display: none; pointer-events: none; position: absolute; left: 0; top: 100%; z-index: 5; width: min(360px, 85vw); background: #0c0a08; border: 1px solid #af6025; text-align: center; font-size: .85rem; box-shadow: 0 6px 18px #0008; }
+.gear tr:hover .utip, .gear .item:focus + .utip, .gear .item:focus-within + .utip { display: block; }
+.gear .utip p { margin: 0; padding: 1px 10px; }
+.gear .utip > div + div { border-top: 1px solid #af602566; padding: 6px 0; }
+.gear .utip-head { background: #2a1a0c; color: #af6025; font-weight: 600; padding: 6px 0; }
+.gear .utip-req { color: #7f7f7f; }
+.gear .utip-mods { color: #8888ff; }
+.gear .utip-icon { display: block; margin: 8px auto 2px; max-height: 120px; }
 
 /* Leveling sugerido: una tarjeta por tramo con habilidad, soportes y árbol. */
 .banner { margin: 4px 0 0; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: 8px; font-size: .84rem; color: var(--muted); }
@@ -424,7 +435,24 @@ function mainSkill(doc          )                   {
   return active ? { id: active, supports: ids.filter(id => id !== active && isSupport(id)) } : null;
 }
 
-/** Objetos equipados (conjunto activo) y joyas del árbol activo → [{ slot, rarity, name, base, req, mods }]. */
+/**
+ * Mod de PoB tal como se ve en el juego, o null si es de otra variante del único.
+ * PoB guarda todas las variantes ({variant:1,2}) y los rangos con la tirada aparte ({range:0.3}(10-20)%).
+ */
+function modText(line        , variant        )                {
+  const v = line.match(/\{variant:([\d,]+)\}/);
+  if (v && variant && !v[1].split(",").includes(variant)) return null;
+  const r = Number(line.match(/\{range:([\d.]+)\}/)?.[1] ?? NaN);
+  let t = line.replace(/\{[^}]*\}/g, "").trim();
+  // shortcut: redondeo simple al número de decimales del rango; PoB redondea igual en casi todos los mods.
+  if (!isNaN(r)) t = t.replace(/\((-?[\d.]+)-(-?[\d.]+)\)/g, (_, a        , b        ) => {
+    const dec = Math.max(...[a, b].map(s => s.split(".")[1]?.length ?? 0));
+    return String(+(+a + (+b - +a) * r).toFixed(dec));
+  });
+  return t || null;
+}
+
+/** Objetos equipados (conjunto activo) y joyas del árbol activo → [{ slot, rarity, name, base, req, mods, implicits }]; los primeros `implicits` mods son los implícitos. */
 function parseItems(doc          )         {
   const text = new Map([...doc.querySelectorAll("Items > Item")].map(el => [el.getAttribute("id") ?? "", el.textContent ?? ""]));
   const itemsEl = doc.querySelector("Items");
@@ -437,9 +465,11 @@ function parseItems(doc          )         {
     const raw = text.get(id) ?? "", L = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
     const rarity = (L[0] || "").replace("Rarity: ", "");
     const named = rarity === "RARE" || rarity === "UNIQUE";
-    const imp = L.findIndex(l => l.startsWith("Implicits:"));
-    const mods = imp < 0 ? [] : L.slice(imp + 1).map(l => l.replace(/\{[^}]*\}/g, "").trim()).filter(Boolean);
-    return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods };
+    const imp = L.findIndex(l => l.startsWith("Implicits:")), variant = (raw.match(/Selected Variant: (\d+)/) || [])[1] ?? "";
+    const clean = (lines          ) => lines.map(l => modText(l, variant)).filter((t)              => !!t);
+    const implicits = imp < 0 ? [] : clean(L.slice(imp + 1, imp + 1 + (+L[imp].slice(10) || 0)));
+    const mods = imp < 0 ? [] : [...implicits, ...clean(L.slice(imp + 1 + (+L[imp].slice(10) || 0)))];
+    return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods, implicits: implicits.length };
   });
 }
 
@@ -997,6 +1027,23 @@ function otherWaysSection(build       , plan      )                            {
 
 /* Equipo de la build: únicos por nivel y prioridad de stats de los raros. */
 
+/** Ficha del único al estilo del juego: nombre, base, nivel, implícitos y mods tal como los trae la build. Se ve al pasar el ratón o al tocar. */
+function uniqueTip(u      , icon        )                 {
+  const tip = document.createElement("div"), add = (cls        , lines          ) => {
+    if (!lines.length) return;
+    const div = document.createElement("div"); div.className = cls;
+    for (const t of lines) div.append(Object.assign(document.createElement("p"), { textContent: t }));
+    tip.append(div);
+  };
+  tip.className = "utip";
+  add("utip-head", [u.name, u.base]);
+  if (icon) tip.append(Object.assign(document.createElement("img"), { className: "utip-icon", src: icon, alt: "" }));
+  add("utip-req", u.req ? [`Nivel requerido ${u.req}`] : []);
+  add("utip-mods", u.mods.slice(0, u.implicits));
+  add("utip-mods", u.mods.slice(u.implicits));
+  return tip;
+}
+
 /** Equipo de la build: los únicos por nivel requerido y qué stats se repiten en sus raros. */
 function gearSection(items        )                     {
   const sec = section("Equipo de la build", "act gear", true, { id: "equipo", label: "Equipo" });
@@ -1005,19 +1052,25 @@ function gearSection(items        )                     {
   if (uniques.length) {
     sec.insertAdjacentHTML("beforeend", `<h3>Únicos</h3><table><thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th></tr></thead><tbody></tbody></table>`);
     const tb = sec.querySelector("tbody") ;
+    // Con ratón la ficha sigue al cursor, sin salirse de la ventana; al tocar o con el teclado se queda bajo el objeto.
+    tb.addEventListener("mousemove", e => {
+      const tip = (e.target           ).closest("tr")?.querySelector             (".utip"); if (!tip) return;
+      const x = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 8), below = e.clientY + 16 + tip.offsetHeight <= innerHeight;
+      tip.style.cssText = `position:fixed;left:${Math.max(8, x)}px;top:${below ? e.clientY + 16 : Math.max(8, e.clientY - 16 - tip.offsetHeight)}px`;
+    });
+    tb.addEventListener("mouseleave", () => tb.querySelectorAll             (".utip").forEach(t => t.style.cssText = ""));
     for (const u of uniques) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td><span class="item"><span class="ico"></span><span><b class="unique"></b><small></small></span></span></td><td></td><td class="n"></td>`;
+      tr.innerHTML = `<td><span class="item" tabindex="0"><span class="ico"></span><span><b class="unique"></b><small></small></span></span></td><td></td><td class="n"></td>`;
       tr.querySelector("b") .textContent = u.name;
       // Icono del CDN de GGG; PoB antepone "Foulborn " a los únicos mutados: se usa el arte del normal.
-      const icon = UNIQUES[u.name.replace(/^Foulborn /, "")];
-      if (icon) {
-        const [p, w, h] = icon, img = Object.assign(document.createElement("img"), { src: `https://web.poecdn.com/image/Art/${p}.png?scale=1&w=${w}&h=${h}`, alt: "", loading: "lazy" });
-        tr.querySelector(".ico") .append(img);
-      }
+      const art = UNIQUES[u.name.replace(/^Foulborn /, "")];
+      const icon = art ? `https://web.poecdn.com/image/Art/${art[0]}.png?scale=1&w=${art[1]}&h=${art[2]}` : "";
+      if (icon) tr.querySelector(".ico") .append(Object.assign(document.createElement("img"), { src: icon, alt: "", loading: "lazy" }));
       tr.querySelector("small") .textContent = " " + u.base;
       tr.children[1].textContent = slotEs(u.slot);
       tr.children[2].textContent = u.req ? String(u.req) : "—";
+      tr.children[0].append(uniqueTip(u, icon));
       tb.append(tr);
     }
   }

@@ -57,7 +57,7 @@ interface TreeNode { x: number; y: number; type: number; name: string; stats: st
 
 type GemKind = "normal" | "vaal" | "transfigured" | "awakened" | "unknown";
 interface BuildGem { name: string; id: string | null; kind: GemKind; base?: string }
-interface Item { slot: string; rarity: string; name: string; base: string; req: number; mods: string[] }
+interface Item { slot: string; rarity: string; name: string; base: string; req: number; mods: string[]; implicits: number }
 interface TreeStage { title: string; nodes: string[]; level?: number; points?: number }
 interface BuildTree { nodes: string[]; masteries: [node: string, effect: string][]; classId: string | null; stages: TreeStage[] }
 interface MainSkill { id: string; supports: string[] }

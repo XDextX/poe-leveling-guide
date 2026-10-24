@@ -16,3 +16,14 @@ ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
 .gear .ico { flex: none; width: 40px; height: 40px; }
 .gear .ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .gear td { vertical-align: middle; }
+/* Ficha del único, con los colores del juego: cabecera marrón dorada y mods en azul. */
+.gear td:first-child { position: relative; }
+.gear .item { cursor: help; }
+.gear .utip { display: none; pointer-events: none; position: absolute; left: 0; top: 100%; z-index: 5; width: min(360px, 85vw); background: #0c0a08; border: 1px solid #af6025; text-align: center; font-size: .85rem; box-shadow: 0 6px 18px #0008; }
+.gear tr:hover .utip, .gear .item:focus + .utip, .gear .item:focus-within + .utip { display: block; }
+.gear .utip p { margin: 0; padding: 1px 10px; }
+.gear .utip > div + div { border-top: 1px solid #af602566; padding: 6px 0; }
+.gear .utip-head { background: #2a1a0c; color: #af6025; font-weight: 600; padding: 6px 0; }
+.gear .utip-req { color: #7f7f7f; }
+.gear .utip-mods { color: #8888ff; }
+.gear .utip-icon { display: block; margin: 8px auto 2px; max-height: 120px; }
