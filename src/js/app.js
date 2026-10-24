@@ -54,3 +54,4 @@ CLASSES.forEach(c => $("cls").add(new Option(c, c)));
 $("go").onclick = run;
 for (const id of ["cls", "league", "zones"]) $(id).onchange = rerender;
 $("msg").textContent = "Pega el código de tu build y pulsa Crear guía.";
+restoreSession();

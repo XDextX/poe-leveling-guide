@@ -19,6 +19,7 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 - **Equipo**: los únicos de la build ordenados por nivel requerido y qué stats se repiten en sus raros.
 - **Árbol de pasivas**: stats sumadas, un mapa de calor de las zonas de daño y defensa y los puntos indispensables (keystones y notables).
 - **Índice** con desplazamiento suave y la sección actual resaltada: fijo al lado de la guía en pantallas anchas y, en el celular, en un botón flotante que lo abre como panel.
+- **Recargar no pierde nada:** la build, las opciones, lo que tienes desplegado, el mapa de calor y la posición de lectura se guardan en tu navegador y vuelven al recargar. Vaciar el campo y pulsar Crear guía lo borra.
 - Opciones: inicio de liga, mostrar u ocultar las actividades de zona (oculto, la ruta queda solo con los pasos con gemas), cambio de clase y casillas para marcar las gemas conseguidas (se guardan en tu navegador).
 
 ## Regenerar los datos
@@ -52,6 +53,7 @@ src/
     plan.js           qué gema se consigue en cada paso
     stats.js          clasificación de stats en daño y defensa
     suggest.js        el leveling sugerido
+    session.js        conservar la build y la vista al recargar
     app.js            arranque: compone la guía con los componentes
   components/         interfaz: cada componente con su JS y su CSS
     section/          sección desplegable (la base de las demás)

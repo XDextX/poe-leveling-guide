@@ -3,7 +3,7 @@ const fs = require("fs"), path = require("path");
 const { SITE, jsonLd, attr } = require("./site");
 
 // Lógica sin interfaz (src/js/), en orden de carga: cada módulo puede usar lo que definen los anteriores.
-const MODULES = ["data", "pob", "route", "plan", "stats", "suggest"];
+const MODULES = ["data", "pob", "route", "plan", "stats", "suggest", "session"];
 // Componentes de interfaz (src/components/<nombre>/<nombre>.{js,css}). El orden también es el del CSS:
 // leveling va después de gear porque su sección lleva las dos clases y .stagecard h3 debe ganar a .gear h3.
 const COMPONENTS = ["section", "summary", "gem", "route", "other-ways", "gear", "leveling", "heatmap", "tree", "toc"];
