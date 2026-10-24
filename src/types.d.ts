@@ -38,7 +38,10 @@ interface GameDataRaw {
   START: Record<string, [start: string, chest: string]>;
   ROUTE: string;
   T: TreeRaw;
+  U: Record<string, UniqueRow>;
 }
+/** Único: [ruta del icono bajo web.poecdn.com/image/Art/, ancho y alto en casillas] */
+type UniqueRow = [path: string, w: number, h: number];
 interface Window { DATA?: Partial<GameDataRaw> }
 
 /* ---------- Datos con nombre, como los usa la app (src/js/data.ts) ---------- */

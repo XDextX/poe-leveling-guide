@@ -10,8 +10,14 @@ function gearSection(items: Item[]): HTMLDetailsElement {
     const tb = sec.querySelector("tbody")!;
     for (const u of uniques) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td><b class="unique"></b><small></small></td><td></td><td class="n"></td>`;
+      tr.innerHTML = `<td><span class="item"><span class="ico"></span><span><b class="unique"></b><small></small></span></span></td><td></td><td class="n"></td>`;
       tr.querySelector("b")!.textContent = u.name;
+      // Icono del CDN de GGG; PoB antepone "Foulborn " a los únicos mutados: se usa el arte del normal.
+      const icon = UNIQUES[u.name.replace(/^Foulborn /, "")];
+      if (icon) {
+        const [p, w, h] = icon, img = Object.assign(document.createElement("img"), { src: `https://web.poecdn.com/image/Art/${p}.png?scale=1&w=${w}&h=${h}`, alt: "", loading: "lazy" });
+        tr.querySelector(".ico")!.append(img);
+      }
       tr.querySelector("small")!.textContent = " " + u.base;
       tr.children[1].textContent = slotEs(u.slot);
       tr.children[2].textContent = u.req ? String(u.req) : "—";

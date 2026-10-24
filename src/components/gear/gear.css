@@ -11,3 +11,8 @@ ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; g
 ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
 ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
+.gear .item { display: flex; align-items: center; gap: 8px; }
+/* Caja fija para el icono, haya o no: los nombres quedan alineados aunque el arte sea alto, ancho o falte. */
+.gear .ico { flex: none; width: 40px; height: 40px; }
+.gear .ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.gear td { vertical-align: middle; }

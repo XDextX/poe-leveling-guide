@@ -130,6 +130,11 @@ ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; g
 ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
 ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
+.gear .item { display: flex; align-items: center; gap: 8px; }
+/* Caja fija para el icono, haya o no: los nombres quedan alineados aunque el arte sea alto, ancho o falte. */
+.gear .ico { flex: none; width: 40px; height: 40px; }
+.gear .ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.gear td { vertical-align: middle; }
 
 /* Leveling sugerido: una tarjeta por tramo con habilidad, soportes y árbol. */
 .banner { margin: 4px 0 0; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: 8px; font-size: .84rem; color: var(--muted); }
@@ -286,6 +291,7 @@ SOFTWARE.
 <script src="gamedata/gems.js"></script>
 <script src="gamedata/campaign.js"></script>
 <script src="gamedata/tree.js"></script>
+<script src="gamedata/items.js"></script>
 <script>
 /* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
 
@@ -319,7 +325,7 @@ const AREAS = mapValues               (RAW.A, ([name, act, level, town, townId, 
 const SKILLS = mapValues                 (RAW.K, ([tags, types, weapons, allowed, excluded]) => ({ tags, types, weapons, allowed, excluded }));
 const NODE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 }         ;
 const NODES = mapValues                   (RAW.T.nodes, ([x, y, type, name, stats, ascendancy, reminder, icon]) => ({ x, y, type, name, stats: stats ? stats.split("\n") : [], ascendancy, reminder: reminder ? reminder.split("\n") : [], icon }));
-const EDGES = RAW.T.edges, MASTERIES = RAW.T.masteries, CLASS_STARTS = RAW.T.starts, SHEETS = RAW.T.sheets;
+const EDGES = RAW.T.edges, MASTERIES = RAW.T.masteries, CLASS_STARTS = RAW.T.starts, SHEETS = RAW.T.sheets, UNIQUES = RAW.U;
 
 const isSupport = (id        )          => (SKILLS[id]?.allowed.length ?? 0) > 0;
 const isActive = (id        )          => !!SKILLS[id] && !isSupport(id);
@@ -1001,8 +1007,14 @@ function gearSection(items        )                     {
     const tb = sec.querySelector("tbody") ;
     for (const u of uniques) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td><b class="unique"></b><small></small></td><td></td><td class="n"></td>`;
+      tr.innerHTML = `<td><span class="item"><span class="ico"></span><span><b class="unique"></b><small></small></span></span></td><td></td><td class="n"></td>`;
       tr.querySelector("b") .textContent = u.name;
+      // Icono del CDN de GGG; PoB antepone "Foulborn " a los únicos mutados: se usa el arte del normal.
+      const icon = UNIQUES[u.name.replace(/^Foulborn /, "")];
+      if (icon) {
+        const [p, w, h] = icon, img = Object.assign(document.createElement("img"), { src: `https://web.poecdn.com/image/Art/${p}.png?scale=1&w=${w}&h=${h}`, alt: "", loading: "lazy" });
+        tr.querySelector(".ico") .append(img);
+      }
       tr.querySelector("small") .textContent = " " + u.base;
       tr.children[1].textContent = slotEs(u.slot);
       tr.children[2].textContent = u.req ? String(u.req) : "—";

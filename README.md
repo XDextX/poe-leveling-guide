@@ -16,7 +16,7 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 - **Gemas de tu build en cada misión**: qué recompensa elegir y qué comprar a cada vendedor, con su coste en moneda y el total que necesitas.
 - **Gemas que no salen en la campaña**: Vaal, transfiguradas, despertadas y las que solo caen en drop, con cómo conseguirlas.
 - **Leveling sugerido** (cuando la build no trae cómo subir): por tramos de la campaña, una habilidad parecida a la tuya que tu clase puede conseguir a ese nivel, soportes compatibles con ella (primero los de tu build) y un orden para coger los nodos de tu árbol final. Va siempre marcado como **sugerencia automática**: lo calcula la app, no es la guía del autor de la build. Si la build trae árboles de leveling, se usan esos.
-- **Equipo**: los únicos de la build ordenados por nivel requerido y qué stats se repiten en sus raros.
+- **Equipo**: los únicos de la build con su icono, ordenados por nivel requerido, y qué stats se repiten en sus raros. Los iconos se cargan del CDN de GGG: sin conexión no aparecen.
 - **Árbol de pasivas**: stats sumadas, un mapa de calor de las zonas de daño y defensa y los puntos indispensables (keystones y notables). El mapa se puede arrastrar y ampliar (Ctrl+rueda, pellizco o botones), y al pasar el ratón o tocar un nodo muestra su icono, sus stats, si está cogido y, en las maestrías, el efecto elegido. Los iconos se cargan del CDN de GGG: sin conexión no aparecen.
 - **Índice** con desplazamiento suave y la sección actual resaltada: fijo al lado de la guía en pantallas anchas y, en el celular, en un botón flotante que lo abre como panel.
 - **Recargar no pierde nada:** la build, las opciones, lo que tienes desplegado, el mapa de calor y la posición de lectura se guardan en tu navegador y vuelven al recargar. Vaciar el campo y pulsar Crear guía lo borra.
@@ -84,7 +84,7 @@ Todo comparte un único `<script>` y un único `<style>`, así que no hace falta
 
 - **Ruta, zonas, misiones, recompensas, vendedores y gemas**: [exile-leveling](https://github.com/HeartofPhos/exile-leveling), de HeartofPhos (licencia MIT).
 - **Árbol de pasivas**: [skilltree-export](https://github.com/grindinggear/skilltree-export), el export oficial de Grinding Gear Games.
-- **Etiquetas, tipos y compatibilidad de soportes de las gemas**: [RePoE](https://github.com/repoe-fork/repoe-fork) (licencia MIT; los datos en sí son de Grinding Gear Games).
+- **Etiquetas, tipos y compatibilidad de soportes de las gemas, e iconos de los únicos**: [RePoE](https://github.com/repoe-fork/repoe-fork) (licencia MIT; los datos en sí son de Grinding Gear Games).
 - **Coste de las gemas en el vendedor**: tabla por nivel requerido tomada de [PoE-newleague](https://github.com/Blemming/PoE-newleague), de Blemming.
 - **Formato de la build**: el código de exportación de [Path of Building](https://pathofbuilding.community/).
 

@@ -30,7 +30,7 @@ const AREAS = mapValues<AreaRow, Area>(RAW.A, ([name, act, level, town, townId, 
 const SKILLS = mapValues<SkillRow, Skill>(RAW.K, ([tags, types, weapons, allowed, excluded]) => ({ tags, types, weapons, allowed, excluded }));
 const NODE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 } as const;
 const NODES = mapValues<NodeRow, TreeNode>(RAW.T.nodes, ([x, y, type, name, stats, ascendancy, reminder, icon]) => ({ x, y, type, name, stats: stats ? stats.split("\n") : [], ascendancy, reminder: reminder ? reminder.split("\n") : [], icon }));
-const EDGES = RAW.T.edges, MASTERIES = RAW.T.masteries, CLASS_STARTS = RAW.T.starts, SHEETS = RAW.T.sheets;
+const EDGES = RAW.T.edges, MASTERIES = RAW.T.masteries, CLASS_STARTS = RAW.T.starts, SHEETS = RAW.T.sheets, UNIQUES = RAW.U;
 
 const isSupport = (id: string): boolean => (SKILLS[id]?.allowed.length ?? 0) > 0;
 const isActive = (id: string): boolean => !!SKILLS[id] && !isSupport(id);

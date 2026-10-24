@@ -6,6 +6,7 @@ import { CLASSES, readJson } from "./lib/common.mts";
 import { reduceGems, reduceSkills, type SourceGem, type RepoeGem } from "./lib/gems.mts";
 import { reduceQuests, reduceAreas, reduceStarts, readRoute, type SourceQuest, type SourceArea, type SourceCharacter } from "./lib/campaign.mts";
 import { reduceTree, type SourceTree } from "./lib/tree.mts";
+import { reduceUniques, type RepoeUnique } from "./lib/items.mts";
 import { bundle } from "./lib/bundle.mts";
 import { writeGameData } from "./lib/gamedata.mts";
 import { sitemap } from "./lib/site.mts";
@@ -19,6 +20,7 @@ const data: GameDataRaw = {
   Q: reduceQuests(read<Record<string, SourceQuest>>("quests.json")), A: reduceAreas(read<Record<string, SourceArea>>("areas.json")),
   START: reduceStarts(read<Record<string, SourceCharacter>>("characters.json")),
   ROUTE: readRoute(dataDir), T: reduceTree(read<SourceTree>("tree.json")),
+  U: reduceUniques(read<Record<string, RepoeUnique>>("repoe-uniques.json")),
 };
 const date = fs.readFileSync(path.join(dataDir, "downloaded.txt"), "utf8").trim();
 const dataFiles = writeGameData(root, data, date);

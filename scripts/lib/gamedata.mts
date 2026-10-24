@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // Qué claves de DATA van en cada archivo, y en este orden se cargan.
-const FILES: Record<string, (keyof GameDataRaw)[]> = { gems: ["G", "K"], campaign: ["CLASSES", "Q", "A", "START", "ROUTE"], tree: ["T"] };
+const FILES: Record<string, (keyof GameDataRaw)[]> = { gems: ["G", "K"], campaign: ["CLASSES", "Q", "A", "START", "ROUTE"], tree: ["T"], items: ["U"] };
 const DIR = "gamedata";
 
 /** Escribe gamedata/<archivo>.js y devuelve sus rutas relativas, en orden de carga. */
