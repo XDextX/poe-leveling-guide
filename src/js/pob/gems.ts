@@ -29,7 +29,11 @@ function classify(name: string, id: string | null): BuildGem {
   return { name, id, kind: id ? "normal" : "unknown" };
 }
 
-/** Las gemas de la build, sin repetir (por nombre). */
+/**
+ * Las gemas de la build, sin repetir (por nombre), de TODOS sus conjuntos de habilidades y no solo del activo: el autor
+ * puede tener uno para leveling y otro para el endgame, y la guía tiene que cubrir las dos. (La habilidad principal, en
+ * cambio, sale del conjunto activo: ver mainSkill.)
+ */
 export function parseGems(doc: Document): BuildGem[] {
   const gems: BuildGem[] = [], seen = new Set<string>();
   for (const el of doc.querySelectorAll("Skills Gem")) {

@@ -38,7 +38,7 @@ npm run dev
 | `npm run serve` | Sirve el `dist/` ya generado (`vite preview`), como lo sirve GitHub Pages. |
 | `npm run clean` | Borra `dist/`. |
 | `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto (app, scripts, pruebas y `vite.config.ts`) y que la lógica (`src/js/`) no importe la interfaz ni toque la página. |
-| `npm test` | Pruebas de la lógica con [Vitest](https://vitest.dev), en Node y con los datos reales de `public/gamedata/`. |
+| `npm test` | Pruebas de la lógica con [Vitest](https://vitest.dev), en Node y con los datos reales de `public/gamedata/`. Las que leen el XML de PoB piden un DOM simulado con `// @vitest-environment happy-dom`. |
 | `npm run data` | Descarga los datos del juego a `data/` (una petición por segundo). |
 | `npm run gamedata` | Reduce `data/` a `public/gamedata/`. |
 | `npm run update-data` | Liga nueva: `data`, `gamedata` y `build` seguidos. |
