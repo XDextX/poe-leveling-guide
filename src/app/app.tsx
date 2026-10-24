@@ -3,6 +3,7 @@
 import { CLASSES } from "../js/data";
 import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
+import type { GuideData } from "../js/guide";
 import { decode, parseBuild } from "../js/pob";
 import { doneStore, setSuggested } from "../components/gem/gem";
 import { Guide } from "../components/guide/guide";
@@ -21,6 +22,8 @@ const HOW_TO_COPY = "en Path of Building, Import/Export Build → Generate";
 export const App: Component<{}, HTMLElement> = () => {
   /** La última build leída sin errores; null si no hay ninguna (campo vacío o código inválido). */
   let build: Build | null = null;
+  /** La guía calculada de esa build y para qué clase y modo: si solo cambia "Actividades de zona", no se recalcula. */
+  let computed: { cls: string; leagueStart: boolean; data: GuideData } | null = null;
   /** Cuenta las lecturas: si se pulsa "Crear guía" otra vez antes de acabar, solo cuenta la última. */
   let reads = 0;
 
@@ -36,7 +39,9 @@ export const App: Component<{}, HTMLElement> = () => {
   /** Compone la guía de la build actual con las opciones del formulario. */
   function rerender(): void {
     if (!build) return;
-    const opts = options(), data = buildGuide(build, opts);
+    const opts = options();
+    if (computed?.cls !== opts.cls || computed.leagueStart !== opts.leagueStart) computed = { cls: opts.cls, leagueStart: opts.leagueStart, data: buildGuide(build, opts) };
+    const { data } = computed;
     // Estado que leen los componentes de las gemas y del mapa de calor (TreeSection engancha el mapa nuevo).
     setSuggested(data.suggested);
     doneStore.load(opts.cls, build);
@@ -58,7 +63,7 @@ export const App: Component<{}, HTMLElement> = () => {
     const id = ++reads;
     say("");
     // Sin código válido no queda ninguna build: si no, cambiar una opción volvería a mostrar la anterior.
-    build = null;
+    build = computed = null;
     if (!form.code.value.trim()) { hideGuide(); say(`Primero pega el código de tu build: ${HOW_TO_COPY}.`); return; }
     let read: Build;
     // Solo leer el código va en el try: un fallo al dibujar la guía es un error de la app, no un código mal copiado.
