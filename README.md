@@ -37,7 +37,7 @@ npm run dev
 | `npm run build` | Genera la web en `dist/`: un solo `index.html` con todo el JS y el CSS dentro, la página ya escrita (prerender), `sitemap.xml` y lo que hay en `public/` (iconos y datos del juego). |
 | `npm run serve` | Sirve el `dist/` ya generado (`vite preview`), como lo sirve GitHub Pages. |
 | `npm run clean` | Borra `dist/`. |
-| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto (app, scripts y `vite.config.ts`) y que la lógica (`src/js/`) no importe la interfaz. |
+| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto (app, scripts y `vite.config.ts`) y que la lógica (`src/js/`) no importe la interfaz ni toque la página. |
 | `npm run data` | Descarga los datos del juego a `data/` (una petición por segundo). |
 | `npm run gamedata` | Reduce `data/` a `public/gamedata/`. |
 | `npm run update-data` | Liga nueva: `data`, `gamedata` y `build` seguidos. |
@@ -73,16 +73,17 @@ src/
   styles.css          estilos base: tema, formulario, paneles
   icon.svg            el icono
   jsx/                el runtime del JSX: crea nodos DOM en el navegador y escribe HTML en el prerender
-  js/                 lógica sin interfaz, un módulo por responsabilidad (no puede importar la interfaz):
-    dom.ts            $ y esc
+  js/                 lógica sin interfaz, un módulo por responsabilidad (no puede importar la interfaz ni tocar la página):
     data.ts           los datos con nombre de campo y utilidades comunes
     pob.ts            leer el código de Path of Building
-    route.ts          la ruta de campaña y sus marcas
+    route.ts          la ruta de campaña y sus marcas (y esc, para su HTML)
     plan.ts           qué gema se consigue en cada paso
     stats.ts          clasificación de stats en daño y defensa
     suggest.ts        el leveling sugerido
   app/                arranque
     app.tsx           punto de entrada: monta <Page>, lee el formulario y compone la guía
+    guard.ts          si faltan los datos del juego, lo avisa y para (se importa el primero)
+    dom.ts            $ (elemento por id) y form (los controles del formulario)
     session.ts        conservar la build y la vista al recargar
     document.tsx      <Head> y el prerender que usa vite.config.ts
   components/         interfaz: una carpeta por componente, con su .tsx y, si tiene estilos, su .css (ver «Componentes»)
@@ -123,7 +124,7 @@ scripts/
   tsconfig.json       tipos de los scripts (Node) y de vite.config.ts
   download-data.mts   descarga los datos a data/
   gamedata.mts        reduce los datos de data/ a public/gamedata/
-  check-layers.mts    falla si src/js/ importa algo de la interfaz
+  check-layers.mts    falla si src/js/ importa algo de la interfaz o toca la página (document, window, localStorage)
   icons.ps1           genera los iconos y la imagen para redes de public/ (Windows)
   lib/                un reductor por fuente de datos, gamedata/ y los datos del sitio (site.mts: URL, descripción, JSON-LD, sitemap)
 ```
@@ -165,7 +166,7 @@ import { Badge } from "../badge/badge";
 - **Tipo de una expresión JSX:** es `Node`; si necesitas el elemento concreto, afínalo con `as` (`<canvas /> as HTMLCanvasElement`).
 - **Componentes y ayudantes:** `Component<Props, Devuelve>` devuelve un elemento o un `DocumentFragment` (`View`), o `| null` si a veces no hay nada que mostrar. Las demás funciones de `src/components/` (`placeTip`, `uniqueIcon`, `drawHeat`, `heatControls`…) son ayudantes, no componentes.
 - **Prerender:** los componentes de la página (`page/` y los que usa) se ejecutan también en Node, así que no pueden tocar `document` ni `window` al crearse ni al importarse; los eventos sí, porque solo se ejecutan en el navegador.
-- **Capas:** la lógica (`src/js/`) no importa componentes, ni `src/app/`, ni el runtime del JSX; `npm run typecheck` lo comprueba con `scripts/check-layers.mts`.
+- **Capas:** la lógica (`src/js/`) no importa componentes, ni `src/app/`, ni el runtime del JSX, ni toca la página (`document`, `localStorage`, `window` salvo `window.DATA`); `npm run typecheck` lo comprueba con `scripts/check-layers.mts`.
 
 ## Fuentes
 

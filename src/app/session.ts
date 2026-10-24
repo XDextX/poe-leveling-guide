@@ -1,8 +1,7 @@
 /* Sesión: guarda la build, las opciones y lo que se está viendo en este navegador, para que recargar la página no lo pierda. */
 
-import { form } from "../js/data";
-import { $ } from "../js/dom";
 import { rerender, run } from "./app";
+import { $, form } from "./dom";
 
 const SESSION_KEY = "poe-gemas:sesion";
 // La guía se compone después de cargar la página: si el navegador restaurase el desplazamiento por su cuenta,

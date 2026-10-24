@@ -1,7 +1,10 @@
 /* Ruta de campaña (formato de exile-leveling): parseo, traducción de los verbos y pintado de sus marcas {tipo|args}. */
 
 import { AREAS, QUESTS, ROUTE } from "./data";
-import { esc } from "./dom";
+
+const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+/** Texto escapado para meterlo en el HTML de la ruta (los pasos y sus marcas se generan como HTML). */
+export const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, c => ESCAPES[c]);
 
 /** Opciones de la ruta para una build: qué hacer con los bandidos y si es inicio de liga. */
 export function routeDefs(build: Build, leagueStart: boolean): Set<string> {

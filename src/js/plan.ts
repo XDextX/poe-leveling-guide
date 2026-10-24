@@ -1,8 +1,7 @@
 /* Qué gema se consigue en cada paso de la ruta: una recompensa por oferta de misión y compras en cuanto se venden. */
 
 import { CLASSES, START } from "./data";
-import { esc } from "./dom";
-import { parseRoute, questOffers, renderLine, routeDefs } from "./route";
+import { esc, parseRoute, questOffers, renderLine, routeDefs } from "./route";
 import type { RouteCtx } from "./route";
 
 /**

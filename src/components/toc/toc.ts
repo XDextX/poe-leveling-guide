@@ -1,8 +1,11 @@
 /* Índice de la guía: un enlace por sección marcada con data-toc, desplazamiento suave y la sección actual resaltada.
    En pantalla ancha va fijo al lado de la guía; en estrecha, un botón flotante lo abre como panel. */
 
-import { $ } from "../../js/dom";
 import "./toc.css";
+
+// Los dos elementos de TocNav.
+const tocNav = () => document.getElementById("toc")!;
+const tocButton = () => document.getElementById("toc-toggle")!;
 
 // Se consultan al usarlas, no al cargar el módulo: TocNav importa este archivo y el prerender lo ejecuta en Node, sin ventana.
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -14,8 +17,8 @@ let tocTargets: HTMLElement[] = [], tocLinks = new Map<HTMLElement, HTMLAnchorEl
 
 /** Abre o cierra el índice en pantalla estrecha (en ancha siempre está a la vista). */
 function setTocOpen(open: boolean): void {
-  $("toc").classList.toggle("open", open);
-  $("toc-toggle").setAttribute("aria-expanded", String(open));
+  tocNav().classList.toggle("open", open);
+  tocButton().setAttribute("aria-expanded", String(open));
 }
 
 /** Lleva a una sección: la despliega si estaba plegada y se desplaza hasta ella (sin animar si el sistema pide reducir movimiento). */
@@ -45,7 +48,7 @@ function updateTocCurrent(): void {
 
 /** Rellena el índice con los destinos de la página, en orden; las entradas con grupo (los actos) van juntas en una fila. */
 export function renderToc(): void {
-  const nav = $("toc");
+  const nav = tocNav();
   tocTargets = [...document.querySelectorAll<HTMLElement>("main [data-toc]")].filter(el => !el.closest("[hidden]"));
   tocLinks = new Map(); tocPinned = null;
   nav.innerHTML = `<b class="toc-title">Índice</b><ol></ol>`;
@@ -69,13 +72,13 @@ export function renderToc(): void {
     a.setAttribute("aria-label", `${group} ${el.dataset.toc}`);
     groups.get(group)!.append(a);
   }
-  nav.hidden = $("toc-toggle").hidden = tocTargets.length === 0;
+  nav.hidden = tocButton().hidden = tocTargets.length === 0;
   setTocOpen(false);
   updateTocCurrent();
 }
 
 /** Clic en el botón flotante del índice (TocNav): lo abre o lo cierra. */
-export function toggleToc(e: MouseEvent): void { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); }
+export function toggleToc(e: MouseEvent): void { e.stopPropagation(); setTocOpen(!tocNav().classList.contains("open")); }
 
 let tocFrame = 0;
 /** Engancha los oyentes de la ventana; lo llama el arranque una sola vez. */

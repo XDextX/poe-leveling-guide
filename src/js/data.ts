@@ -1,22 +1,6 @@
 /* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
 
-import { $ } from "./dom";
-
-/** Los controles del formulario (BuildForm), con su tipo exacto. Se buscan al usarlos: el arranque cambia la página prerenderizada por una nueva. */
-export const form = {
-  get code() { return $<HTMLTextAreaElement>("code"); }, get cls() { return $<HTMLSelectElement>("cls"); },
-  get league() { return $<HTMLInputElement>("league"); }, get zones() { return $<HTMLInputElement>("zones"); },
-};
-
-// Si alguien copia solo index.html, sin la carpeta gamedata/, se dice qué falta en vez de dejar la página rota en silencio.
-const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T", "U"].filter(k => !(window.DATA && k in window.DATA));
-if (MISSING.length) {
-  $("msg").className = "error";
-  $("msg").textContent = "Faltan los datos del juego: la carpeta gamedata/ tiene que estar junto a index.html. Copia la carpeta entera de la app.";
-  $<HTMLButtonElement>("go").disabled = true;
-  throw new Error("Faltan datos en window.DATA: " + MISSING.join(", "));
-}
-// Comprobado justo arriba: están todas las claves.
+// Que estén todas las claves lo comprueba el arranque antes de cargar este módulo (src/app/guard.ts).
 const RAW = window.DATA as GameDataRaw;
 
 const mapValues = <V, R>(obj: Record<string, V>, fn: (v: V, k: string) => R): Record<string, R> =>

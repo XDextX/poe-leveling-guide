@@ -2,8 +2,9 @@
 
 // Estilos base (tema, formulario, paneles); cada componente importa los suyos.
 import "../styles.css";
-import { CLASSES, SKILLS, form, isUserError, userError } from "../js/data";
-import { $ } from "../js/dom";
+// Lo primero: si faltan los datos del juego, avisa y para antes de que los use ningún módulo.
+import "./guard";
+import { CLASSES, SKILLS, isUserError, userError } from "../js/data";
 import { plan } from "../js/plan";
 import { decode, parseBuild } from "../js/pob";
 import { routeDefs } from "../js/route";
@@ -18,6 +19,7 @@ import { RouteSections } from "../components/route/route";
 import { Summary } from "../components/summary/summary";
 import { initToc, renderToc } from "../components/toc/toc";
 import { TreeSection } from "../components/tree/tree";
+import { $, form } from "./dom";
 import { restoreSession } from "./session";
 
 /** Compone toda la guía para una build con las opciones dadas. */
