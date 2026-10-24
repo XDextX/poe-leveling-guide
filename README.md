@@ -38,6 +38,9 @@ node scripts/build.js
 index.html            la app generada, sin dependencias
 gamedata/             los datos del juego, generados: gems.js, campaign.js y tree.js
 favicon.ico           el icono (16 a 256 px); dentro de la app va en SVG
+apple-touch-icon.png  el icono para la pantalla de inicio de iOS
+social-card.png       la imagen al compartir el enlace (Open Graph, 1200x630)
+sitemap.xml           para enviar la página a Google Search Console
 src/
   index.html          el marcado de la página
   styles.css          estilos base: tema, formulario, paneles
@@ -63,8 +66,9 @@ src/
     toc/              el índice
 scripts/
   download-data.js    descarga los datos a data/
+  icons.ps1           genera favicon.ico, apple-touch-icon.png y social-card.png (Windows)
   build.js            reduce los datos a gamedata/ y genera index.html
-  lib/                un reductor por fuente de datos y el empaquetado
+  lib/                un reductor por fuente de datos, el empaquetado y los datos del sitio (site.js: URL, descripción, JSON-LD)
 ```
 
 Todo comparte un único `<script>` y un único `<style>`, así que no hacen falta herramientas de compilación: `scripts/lib/bundle.js` concatena la lógica (`MODULES`), los componentes (`COMPONENTS`, que también fija el orden del CSS) y por último `app.js`.

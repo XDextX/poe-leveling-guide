@@ -1,5 +1,6 @@
 // Junta src/ en index.html: estilos, icono y código en línea; los datos del juego los carga de gamedata/ con <script src>.
 const fs = require("fs"), path = require("path");
+const { SITE, jsonLd, attr } = require("./site");
 
 // Lógica sin interfaz (src/js/), en orden de carga: cada módulo puede usar lo que definen los anteriores.
 const MODULES = ["data", "pob", "route", "plan", "stats", "suggest"];
@@ -20,6 +21,7 @@ function bundle(srcDir, { dataFiles, date, license }) {
   // Funciones en los reemplazos: un "$" en el código o los datos no debe leerse como patrón de String.replace.
   return read("index.html").replace("<!--__DATA__-->", () => scripts).replace("/*__CSS__*/", () => css).replace("/*__JS__*/", () => js)
     .replace("__ICON__", () => icon).replaceAll("__DATE__", date)
+    .replaceAll("__SITE__", () => SITE.url).replaceAll("__DESCRIPTION__", () => attr(SITE.description)).replace("__JSONLD__", () => jsonLd())
     .replace("__LICENSE__", () => license.replace(/[<&]/g, c => c === "<" ? "&lt;" : "&amp;"));
 }
 

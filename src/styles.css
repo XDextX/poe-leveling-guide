@@ -38,8 +38,10 @@ button.primary { font: inherit; font-weight: 600; color: var(--accent-ink); back
 button:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #msg { font-size: .85rem; color: var(--muted); min-height: 1.2em; }
 #msg.error { color: var(--str); }
-.sources h2 { font-family: var(--display); font-size: 1.1rem; color: var(--accent); margin: 0; letter-spacing: .04em; }
+.sources h2, .about h2 { font-family: var(--display); font-size: 1.1rem; color: var(--accent); margin: 0; letter-spacing: .04em; }
 .sources dl { margin: 0; display: grid; gap: 10px; font-size: .88rem; }
+.about p, .about ul { margin: 0; font-size: .9rem; line-height: 1.5; }
+.about ul { padding-left: 18px; display: grid; gap: 4px; }
 .sources dt { font-weight: 600; }
 .sources dd { margin: 2px 0 0; color: var(--muted); }
 .sources a, .note a { color: var(--accent); }
