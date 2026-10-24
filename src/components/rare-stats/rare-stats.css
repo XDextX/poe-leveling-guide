@@ -1,0 +1,6 @@
+/* Prioridad de stats en los raros: cuántas piezas llevan cada tipo de stat, en barras. */
+ol.stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; gap: 10px; align-items: center; font-size: .88rem; }
+ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
+ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }

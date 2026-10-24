@@ -1,0 +1,3 @@
+/* Stats sumadas del árbol, en columnas de daño, defensa y otros. */
+.tree-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px 20px; }
+.tree-cols ul { margin: 6px 0 0; padding-left: 16px; font-size: .84rem; display: grid; gap: 3px; }

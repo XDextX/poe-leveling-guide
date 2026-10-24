@@ -1,7 +1,5 @@
 /* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
 
-/** Elemento de la página por id. Todos los que se piden existen en index.html; T afina el tipo (textarea, input…). */
-const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 /** Los controles del formulario, con su tipo exacto. */
 const form = {
   code: $<HTMLTextAreaElement>("code"), cls: $<HTMLSelectElement>("cls"),
@@ -9,7 +7,7 @@ const form = {
 };
 
 // Si alguien copia solo index.html, sin la carpeta gamedata/, se dice qué falta en vez de dejar la página rota en silencio.
-const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T"].filter(k => !(window.DATA && k in window.DATA));
+const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T", "U"].filter(k => !(window.DATA && k in window.DATA));
 if (MISSING.length) {
   $("msg").className = "error";
   $("msg").textContent = "Faltan los datos del juego: la carpeta gamedata/ tiene que estar junto a index.html. Copia la carpeta entera de la app.";
@@ -46,8 +44,6 @@ for (const [id, g] of Object.entries(GEMS)) {
 /** Coste en el vendedor según el nivel requerido de la gema. */
 const cost = (level: number): string => level < 8 ? "Scroll of Wisdom" : level < 16 ? "Orb of Transmutation" : level < 28 ? "Orb of Alteration" : level < 38 ? "Orb of Chance" : "Orb of Alchemy";
 
-const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
-const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, c => ESCAPES[c]);
 /** Error con un mensaje pensado para el usuario (los del navegador no lo son). */
 type UserError = Error & { own: true };
 const userError = (msg: string): UserError => Object.assign(new Error(msg), { own: true as const });

@@ -1,0 +1,7 @@
+/* Ficha de un nodo del árbol: icono, nombre, tipo, si está cogido y qué hace. */
+.heat-tip { position: absolute; max-width: min(320px, 90%); padding: 8px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px #0004; font-size: 13px; pointer-events: none; }
+.heat-tip p { margin: 2px 0 0; }
+.heat-tip p.reminder { color: var(--muted); font-style: italic; font-size: 12px; }
+.heat-tip-head { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.heat-tip-head small { display: block; color: var(--muted); font-size: 11px; }
+.heat-tip-head small.taken { color: var(--accent); }

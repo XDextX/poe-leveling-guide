@@ -39,7 +39,7 @@ npm run typecheck
 
 ```
 index.html            la app generada, sin dependencias
-gamedata/             los datos del juego, generados: gems.js, campaign.js y tree.js
+gamedata/             los datos del juego, generados: gems.js, campaign.js, tree.js e items.js
 favicon.ico           el icono (16 a 256 px); dentro de la app va en SVG
 apple-touch-icon.png  el icono para la pantalla de inicio de iOS
 social-card.png       la imagen al compartir el enlace (Open Graph, 1200x630)
@@ -50,6 +50,7 @@ src/
   styles.css          estilos base: tema, formulario, paneles
   icon.svg            el icono
   js/                 lógica sin interfaz, un módulo por responsabilidad:
+    dom.ts            utilidades del DOM: $, esc y el (crear elementos con texto seguro)
     data.ts           los datos con nombre de campo y utilidades comunes
     pob.ts            leer el código de Path of Building
     route.ts          la ruta de campaña y sus marcas
@@ -58,16 +59,32 @@ src/
     suggest.ts        el leveling sugerido
     session.ts        conservar la build y la vista al recargar
     app.ts            arranque: compone la guía con los componentes
-  components/         interfaz: cada componente con su TS y su CSS
-    section/          sección desplegable (la base de las demás)
+  components/         interfaz: una carpeta por componente, con su TS y, si tiene estilos, su CSS
+    section/          sección desplegable y subtítulos (la base de las demás)
+    named-list/       lista de pares nombre/texto
+    toggle-group/     botonera de opciones excluyentes
+    float-tip/        colocar una ficha flotante sin salirse de la pantalla
     summary/          resumen de gemas, bandidos y moneda
-    gem/              gema con casilla, líneas de gemas y costes
+    gem/              una gema con su casilla y su coste
+    gem-line/         líneas y bloques de gemas
     route/            la ruta acto por acto
     other-ways/       gemas que no salen en la ruta
-    gear/             únicos y prioridad de stats del equipo
-    leveling/         tarjetas del leveling sugerido
-    heatmap/          el mapa de calor
-    tree/             stats del árbol, mapa por etapas e indispensables
+    leveling/         sección del leveling sugerido
+    stage-card/       tarjeta de un tramo del leveling
+    gear/             sección del equipo
+    unique-table/     tabla de únicos con icono
+    unique-tip/       ficha de un único al estilo del juego
+    item-icon/        icono de un único (CDN de GGG)
+    rare-stats/       prioridad de stats de los raros
+    tree/             sección del árbol de pasivas
+    tree-stats/       stats sumadas del árbol
+    heat-panel/       panel del mapa de calor con sus botoneras
+    heatmap/          dibujo del mapa de calor
+    heat-controls/    mover, zoom y ficha del nodo en el mapa
+    node-tip/         ficha de un nodo del árbol
+    node-icon/        icono de un nodo (CDN de GGG)
+    key-nodes/        puntos indispensables
+    tree-extras/      ascendencia y maestrías
     toc/              el índice
 tsconfig.json         tipos de la app (navegador)
 scripts/
@@ -78,7 +95,7 @@ scripts/
   lib/                un reductor por fuente de datos, el empaquetado y los datos del sitio (site.mts: URL, descripción, JSON-LD)
 ```
 
-Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`), los componentes (`COMPONENTS`, que también fija el orden del CSS) y por último `app.ts`. Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.
+Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`, en orden), todas las carpetas de `components/` (en orden alfabético: cada componente solo define funciones y solo da estilo a sus propias clases, así que el orden no importa) y por último `app.ts`. Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.
 
 ## Fuentes
 

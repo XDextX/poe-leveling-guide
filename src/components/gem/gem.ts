@@ -1,4 +1,4 @@
-/* Gemas: la casilla de "conseguida", las líneas de gemas y los costes. */
+/* Una gema: su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 
 // Gemas de leveling sugeridas que no están en la build: se marcan como "sugerida" allí donde aparezcan.
 let suggested = new Set<string>();
@@ -21,33 +21,15 @@ function costText(ids: string[]): string {
 /** Una gema con su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 function gemEl(id: string, withCost?: boolean): HTMLLabelElement {
   const { name, attr, level } = GEMS[id];
-  const l = document.createElement("label");
   const isDone = doneStore.ids.has(id);
-  l.className = "gem" + (isDone ? " done" : "");
-  l.innerHTML = `<input type="checkbox"><i class="${attr}"></i><span></span><small>nv ${level}${withCost ? " · " + shortCost(level) : ""}</small>`;
-  l.querySelector("span")!.textContent = name;
-  if (suggested.has(id)) l.insertAdjacentHTML("beforeend", `<em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>`);
-  const box = l.querySelector("input")!;
-  box.checked = isDone;
+  const box = Object.assign(el("input"), { type: "checkbox", checked: isDone });
+  const l = el("label", "gem" + (isDone ? " done" : ""), "", box, el("i", attr), el("span", "", name),
+    el("small", "", `nv ${level}${withCost ? " · " + shortCost(level) : ""}`));
+  if (suggested.has(id)) {
+    const sug = el("em", "sug", "sugerida");
+    sug.title = "Sugerencia automática de leveling: no está en tu build";
+    l.append(sug);
+  }
   box.onchange = () => { doneStore.set(id, box.checked); l.classList.toggle("done", box.checked); };
   return l;
-}
-
-/** Línea "cómo · gemas · nota": la usan los pasos de la ruta y las tarjetas de leveling. `note` es HTML. */
-function gemLine(how: string, ids: string[], { withCost = false, note = "" }: { withCost?: boolean; note?: string } = {}): HTMLDivElement {
-  const line = document.createElement("div");
-  line.className = "line";
-  line.innerHTML = `<span class="how"></span>`;
-  line.firstElementChild!.textContent = how;
-  ids.forEach(id => line.append(gemEl(id, withCost)));
-  if (note) line.insertAdjacentHTML("beforeend", `<span class="cost">${note}</span>`);
-  return line;
-}
-
-/** Bloque de gemas de un paso: una línea por recompensa o vendedor; las compras llevan su coste. */
-function gemsBlock(groups: GemGroup[]): HTMLDivElement {
-  const box = document.createElement("div");
-  box.className = "gems";
-  for (const g of groups) box.append(gemLine(g.how, g.ids, g.buy ? { withCost: true, note: `Coste: ${costText(g.ids)}` } : {}));
-  return box;
 }

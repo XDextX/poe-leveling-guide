@@ -1,12 +1,8 @@
-/* Gemas: la casilla de "conseguida", las líneas de gemas y los costes. */
-.gems { background: var(--soft); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
-.line { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-.how { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); min-width: 96px; }
+/* Una gema: su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 .gem { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .gem input { accent-color: var(--accent); margin: 0; }
 .gem i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
 .gem i.s { background: var(--str); } .gem i.d { background: var(--dex); } .gem i.i { background: var(--int); } .gem i.- { background: var(--none); }
 .gem.done span { text-decoration: line-through; color: var(--muted); }
 .gem small { color: var(--muted); font-family: var(--mono); font-size: .7rem; }
-.cost { font-size: .78rem; color: var(--muted); }
 em.sug { font-style: normal; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); border: 1px dashed var(--accent); border-radius: 4px; padding: 0 4px; }

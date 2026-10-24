@@ -7,10 +7,11 @@ import { stripTypeScriptTypes } from "node:module";
 import { SITE, jsonLd, attr } from "./site.mts";
 
 // Lógica sin interfaz (src/js/), en orden de carga: cada módulo puede usar lo que definen los anteriores.
-const MODULES = ["data", "pob", "route", "plan", "stats", "suggest", "session"];
-// Componentes de interfaz (src/components/<nombre>/<nombre>.{ts,css}). El orden también es el del CSS:
-// leveling va después de gear porque su sección lleva las dos clases y .stagecard h3 debe ganar a .gear h3.
-const COMPONENTS = ["section", "summary", "gem", "route", "other-ways", "gear", "leveling", "heatmap", "tree", "toc"];
+const MODULES = ["dom", "data", "pob", "route", "plan", "stats", "suggest", "session"];
+// Componentes de interfaz: cada carpeta de src/components/<nombre>/ con <nombre>.ts y, si tiene estilos, <nombre>.css.
+// Van en orden alfabético y el orden no importa: solo definen funciones (que se llaman cuando la página ya cargó entera)
+// y su CSS no depende del orden porque cada componente solo da estilo a sus propias clases.
+const componentNames = (srcDir: string) => fs.readdirSync(path.join(srcDir, "components"), { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name).sort();
 // El arranque va al final: usa todo lo anterior y engancha el formulario.
 const ENTRY = "js/app.ts";
 
@@ -21,6 +22,7 @@ export function bundle(srcDir: string, { dataFiles, date, license }: BundleInput
   const read = (f: string) => fs.readFileSync(path.join(srcDir, f), "utf8");
   const maybe = (f: string) => fs.existsSync(path.join(srcDir, f)) ? read(f) : "";
   const ts = (f: string) => stripTypeScriptTypes(read(f));
+  const COMPONENTS = componentNames(srcDir);
   const css = [read("styles.css"), ...COMPONENTS.map(c => maybe(`components/${c}/${c}.css`))].join("\n");
   const js = [...MODULES.map(m => ts(`js/${m}.ts`)), ...COMPONENTS.map(c => ts(`components/${c}/${c}.ts`)), ts(ENTRY)].join("\n");
   const scripts = dataFiles.map(f => `<script src="${f}"></script>`).join("\n");

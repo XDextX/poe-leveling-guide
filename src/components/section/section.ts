@@ -1,4 +1,4 @@
-/* Sección desplegable y lista nombre/texto, la base de las demás secciones. */
+/* Sección desplegable de la guía y sus subtítulos, la base de las demás secciones. */
 
 /**
  * Sección desplegable con su título (HTML) ya puesto.
@@ -21,13 +21,5 @@ function tocTarget<E extends HTMLElement>(el: E, { id, label, group }: TocTarget
   return el;
 }
 
-/** Lista de pares [nombre, texto] como <li><b>nombre</b><p>texto</p></li>, sin interpretar HTML. */
-function fillNamed(ul: Element, pairs: [name: string, text: string][]): void {
-  for (const [name, text] of pairs) {
-    const li = document.createElement("li");
-    li.innerHTML = "<b></b><p></p>";
-    li.querySelector("b")!.textContent = name;
-    li.querySelector("p")!.textContent = text;
-    ul.append(li);
-  }
-}
+/** Subtítulo de una sección ("Únicos", "Mapa de calor"…). */
+const subhead = (text: string): HTMLHeadingElement => el("h3", "sub", text);

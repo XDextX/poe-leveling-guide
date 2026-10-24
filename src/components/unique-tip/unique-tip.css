@@ -1,0 +1,9 @@
+/* Ficha de un único al estilo del juego: cabecera marrón dorada y mods en azul, también con el tema claro. */
+:root { --item-bg: #0c0a08; --item-head-bg: #2a1a0c; --item-unique: #af6025; --item-dim: #7f7f7f; --item-mod: #8888ff; --item-sep: #af602566; }
+.utip { display: none; pointer-events: none; position: absolute; left: 0; top: 100%; z-index: 5; width: min(360px, 85vw); background: var(--item-bg); border: 1px solid var(--item-unique); text-align: center; font-size: .85rem; box-shadow: 0 6px 18px #0008; }
+.utip p { margin: 0; padding: 1px 10px; }
+.utip > div + div { border-top: 1px solid var(--item-sep); padding: 6px 0; }
+.utip-head { background: var(--item-head-bg); color: var(--item-unique); font-weight: 600; padding: 6px 0; }
+.utip-req { color: var(--item-dim); }
+.utip-mods { color: var(--item-mod); }
+.utip-icon { display: block; margin: 8px auto 2px; max-height: 120px; }

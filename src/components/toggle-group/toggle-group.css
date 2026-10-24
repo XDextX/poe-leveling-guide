@@ -1,0 +1,5 @@
+/* Botonera de opciones excluyentes, como el modo y la etapa del mapa de calor. */
+.modes { display: flex; gap: 6px; }
+.modes + .modes { margin-top: 6px; }
+.modes button { font: inherit; font-size: .82rem; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }

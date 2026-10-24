@@ -1,8 +1,4 @@
-/* Leveling sugerido: una tarjeta por tramo con habilidad, soportes y árbol. */
+/* Leveling sugerido: un aviso de que es automático y una tarjeta por tramo. */
 .banner { margin: 4px 0 0; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: 8px; font-size: .84rem; color: var(--muted); }
 .banner b { color: var(--accent); }
 .stagecards { display: grid; gap: 10px; margin-top: 10px; }
-.stagecard { background: var(--soft); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
-.stagecard h3 { margin: 0; font-size: .9rem; color: var(--fg); text-transform: none; letter-spacing: 0; }
-.stagecard h3 span { color: var(--muted); font-weight: 400; }
-.stagecard .note { margin: 0; }

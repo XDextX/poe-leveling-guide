@@ -1,0 +1,5 @@
+/* Puntos indispensables: las keystones y los notables cogidos, numerados como en el mapa de calor. */
+ol.key { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ol.key li { display: grid; grid-template-columns: 1.8rem 28px 1fr; gap: 8px; align-items: start; font-size: .88rem; }
+ol.key .num { font-family: var(--mono); font-size: .75rem; border: 1.5px solid var(--accent); border-radius: 50%; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; }
+ol.key p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }

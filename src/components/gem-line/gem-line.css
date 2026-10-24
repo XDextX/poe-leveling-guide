@@ -1,0 +1,5 @@
+/* Líneas de gemas ("cómo · gemas · nota") y el bloque de gemas de un paso de la ruta. */
+.gems { background: var(--soft); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
+.line { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.how { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); min-width: 96px; }
+.cost { font-size: .78rem; color: var(--muted); }

@@ -76,26 +76,69 @@ button:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-
 .note { font-size: .8rem; color: var(--muted); }
 .note pre { white-space: pre-wrap; font-size: .72rem; }
 
-/* Sección desplegable y lista nombre/texto, la base de las demás secciones. */
-.act > summary { font-family: var(--display); font-size: 1.1rem; color: var(--accent); letter-spacing: .04em; cursor: pointer; padding: 6px 0; }
-.act > summary span { font-family: var(--body); font-size: .8rem; color: var(--muted); letter-spacing: 0; }
 
-/* Resumen de la guía: reparto de gemas, bandidos y moneda total. */
-.summary { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: .85rem; color: var(--muted); }
-.summary b { color: var(--fg); font-variant-numeric: tabular-nums; }
 
-/* Gemas: la casilla de "conseguida", las líneas de gemas y los costes. */
-.gems { background: var(--soft); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
-.line { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-.how { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); min-width: 96px; }
+/* Una gema: su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 .gem { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .gem input { accent-color: var(--accent); margin: 0; }
 .gem i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
 .gem i.s { background: var(--str); } .gem i.d { background: var(--dex); } .gem i.i { background: var(--int); } .gem i.- { background: var(--none); }
 .gem.done span { text-decoration: line-through; color: var(--muted); }
 .gem small { color: var(--muted); font-family: var(--mono); font-size: .7rem; }
-.cost { font-size: .78rem; color: var(--muted); }
 em.sug { font-style: normal; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); border: 1px dashed var(--accent); border-radius: 4px; padding: 0 4px; }
+
+/* Líneas de gemas ("cómo · gemas · nota") y el bloque de gemas de un paso de la ruta. */
+.gems { background: var(--soft); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
+.line { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.how { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); min-width: 96px; }
+.cost { font-size: .78rem; color: var(--muted); }
+
+/* Controles del mapa de calor: arrastrar, zoom y ficha del nodo. */
+canvas.heat { cursor: grab; }
+canvas.heat:active { cursor: grabbing; }
+.heat-zoom { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.heat-zoom button { width: 32px; height: 32px; padding: 0; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: 16px; cursor: pointer; }
+
+
+/* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
+.heat-wrap { position: relative; }
+canvas.heat { display: block; max-width: 100%; border-radius: 8px; background: var(--field); }
+
+
+/* Puntos indispensables: las keystones y los notables cogidos, numerados como en el mapa de calor. */
+ol.key { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ol.key li { display: grid; grid-template-columns: 1.8rem 28px 1fr; gap: 8px; align-items: start; font-size: .88rem; }
+ol.key .num { font-family: var(--mono); font-size: .75rem; border: 1.5px solid var(--accent); border-radius: 50%; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; }
+ol.key p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
+
+/* Leveling sugerido: un aviso de que es automático y una tarjeta por tramo. */
+.banner { margin: 4px 0 0; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: 8px; font-size: .84rem; color: var(--muted); }
+.banner b { color: var(--accent); }
+.stagecards { display: grid; gap: 10px; margin-top: 10px; }
+
+
+/* Icono de un nodo del árbol, recortado de la hoja de sprites del CDN de GGG. */
+.node-icon { flex: none; border-radius: 50%; }
+
+/* Ficha de un nodo del árbol: icono, nombre, tipo, si está cogido y qué hace. */
+.heat-tip { position: absolute; max-width: min(320px, 90%); padding: 8px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px #0004; font-size: 13px; pointer-events: none; }
+.heat-tip p { margin: 2px 0 0; }
+.heat-tip p.reminder { color: var(--muted); font-style: italic; font-size: 12px; }
+.heat-tip-head { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.heat-tip-head small { display: block; color: var(--muted); font-size: 11px; }
+.heat-tip-head small.taken { color: var(--accent); }
+
+/* Gemas que no salen en la ruta y cómo conseguirlas. */
+.other ul { margin: 0; padding-left: 18px; }
+.other li { padding: 6px 0; }
+.other p { margin: 0; color: var(--muted); font-size: .85rem; }
+
+/* Prioridad de stats en los raros: cuántas piezas llevan cada tipo de stat, en barras. */
+ol.stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; gap: 10px; align-items: center; font-size: .88rem; }
+ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
+ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
 
 /* La ruta de campaña: un desplegable por acto con sus pasos, notas y gemas. */
 ol.route { list-style: none; margin: 0; padding: 0; }
@@ -112,79 +155,20 @@ ol.route { list-style: none; margin: 0; padding: 0; }
 .tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; }
 .dir { font-family: var(--mono); color: var(--accent); }
 
-/* Gemas que no salen en la ruta y cómo conseguirlas. */
-.other ul { margin: 0; padding-left: 18px; }
-.other li { padding: 6px 0; }
-.other p { margin: 0; color: var(--muted); font-size: .85rem; }
+/* Sección desplegable de la guía y sus subtítulos, la base de las demás secciones. */
+.act > summary { font-family: var(--display); font-size: 1.1rem; color: var(--accent); letter-spacing: .04em; cursor: pointer; padding: 6px 0; }
+.act > summary span { font-family: var(--body); font-size: .8rem; color: var(--muted); letter-spacing: 0; }
+h3.sub { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 6px; }
 
-/* Equipo de la build: únicos por nivel y prioridad de stats de los raros. */
-.gear h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 6px; }
-.gear table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-.gear th { text-align: left; font-weight: 500; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 4px 8px 4px 0; }
-.gear td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); }
-.gear .n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.gear .unique { color: var(--accent); }
-.gear small { color: var(--muted); }
-ol.stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-ol.stats li { display: grid; grid-template-columns: minmax(0, 13rem) 1fr auto; gap: 10px; align-items: center; font-size: .88rem; }
-ol.stats .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-ol.stats .bar i { display: block; height: 100%; background: var(--accent); }
-ol.stats b { font-family: var(--mono); font-size: .8rem; font-weight: 500; }
-.gear .item { display: flex; align-items: center; gap: 8px; }
-/* Caja fija para el icono, haya o no: los nombres quedan alineados aunque el arte sea alto, ancho o falte. */
-.gear .ico { flex: none; width: 40px; height: 40px; }
-.gear .ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.gear td { vertical-align: middle; }
-/* Ficha del único, con los colores del juego: cabecera marrón dorada y mods en azul. */
-.gear td:first-child { position: relative; }
-.gear .item { cursor: help; }
-.gear .utip { display: none; pointer-events: none; position: absolute; left: 0; top: 100%; z-index: 5; width: min(360px, 85vw); background: #0c0a08; border: 1px solid #af6025; text-align: center; font-size: .85rem; box-shadow: 0 6px 18px #0008; }
-.gear tr:hover .utip, .gear .item:focus + .utip, .gear .item:focus-within + .utip { display: block; }
-.gear .utip p { margin: 0; padding: 1px 10px; }
-.gear .utip > div + div { border-top: 1px solid #af602566; padding: 6px 0; }
-.gear .utip-head { background: #2a1a0c; color: #af6025; font-weight: 600; padding: 6px 0; }
-.gear .utip-req { color: #7f7f7f; }
-.gear .utip-mods { color: #8888ff; }
-.gear .utip-icon { display: block; margin: 8px auto 2px; max-height: 120px; }
-
-/* Leveling sugerido: una tarjeta por tramo con habilidad, soportes y árbol. */
-.banner { margin: 4px 0 0; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: 8px; font-size: .84rem; color: var(--muted); }
-.banner b { color: var(--accent); }
-.stagecards { display: grid; gap: 10px; margin-top: 10px; }
+/* Tarjeta de un tramo del leveling sugerido: habilidad, soportes y cuánto del árbol final tendrías. */
 .stagecard { background: var(--soft); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
-.stagecard h3 { margin: 0; font-size: .9rem; color: var(--fg); text-transform: none; letter-spacing: 0; }
+.stagecard h3 { margin: 0; font-size: .9rem; color: var(--fg); }
 .stagecard h3 span { color: var(--muted); font-weight: 400; }
 .stagecard .note { margin: 0; }
 
-/* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
-canvas.heat { display: block; max-width: 100%; border-radius: 8px; background: var(--field); }
-.heat-wrap { position: relative; }
-canvas.heat { cursor: grab; }
-canvas.heat:active { cursor: grabbing; }
-.heat-tip { position: absolute; max-width: min(320px, 90%); padding: 8px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px #0004; font-size: 13px; pointer-events: none; }
-.heat-tip p { margin: 2px 0 0; }
-.heat-zoom { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
-.heat-zoom button { width: 32px; height: 32px; padding: 0; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: 16px; cursor: pointer; }
-.heat-tip-head { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
-.heat-tip-head small { display: block; color: var(--muted); font-size: 11px; }
-.heat-tip-head small.taken { color: var(--accent); }
-.node-icon { flex: none; border-radius: 50%; }
-.heat-tip p.reminder { color: var(--muted); font-style: italic; font-size: 12px; }
-
-/* Árbol de pasivas: stats sumadas, mapa de calor por etapas y puntos indispensables. */
-.modes + .modes { margin-top: 6px; }
-.tree .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px 20px; }
-.tree .cols ul { margin: 6px 0 0; padding-left: 16px; font-size: .84rem; display: grid; gap: 3px; }
-.kind { font-weight: 600; }
-.kind.dmg { color: var(--str); } .kind.def { color: var(--int); } .kind.other { color: var(--muted); } .kind.key { color: var(--accent); }
-.modes { display: flex; gap: 6px; }
-.modes button { font: inherit; font-size: .82rem; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
-.modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-ol.key { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-ol.key li { display: grid; grid-template-columns: 1.8rem 28px 1fr; gap: 8px; align-items: start; font-size: .88rem; }
-ol.key .num { font-family: var(--mono); font-size: .75rem; border: 1.5px solid var(--accent); border-radius: 50%; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; }
-ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
-.extras { margin: 0; padding-left: 16px; display: grid; gap: 6px; font-size: .88rem; }
+/* Resumen de la guía: reparto de gemas, bandidos y moneda total. */
+.summary { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: .85rem; color: var(--muted); }
+.summary b { color: var(--fg); font-variant-numeric: tabular-nums; }
 
 /* Índice de la guía: en pantalla estrecha, un botón flotante lo abre como panel; en ancha, fijo a la izquierda de la guía. */
 .toc { font-size: .85rem; gap: 8px; }
@@ -220,6 +204,47 @@ ol.key p, .extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
   .toc a.chip { padding: 1px 4px; font-size: .75rem; min-width: 1.6em; }
   .toc-toggle { display: none; }
 }
+
+/* Botonera de opciones excluyentes, como el modo y la etapa del mapa de calor. */
+.modes { display: flex; gap: 6px; }
+.modes + .modes { margin-top: 6px; }
+.modes button { font: inherit; font-size: .82rem; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* Árbol de pasivas: colores por tipo de stat, que usan las columnas, la leyenda del mapa y los puntos indispensables. */
+.kind { font-weight: 600; }
+.kind.dmg { color: var(--str); } .kind.def { color: var(--int); } .kind.other { color: var(--muted); } .kind.key { color: var(--accent); }
+
+/* Notables de ascendencia y maestrías elegidas, con su efecto. */
+.extras { margin: 0; padding-left: 16px; display: grid; gap: 6px; font-size: .88rem; }
+.extras p { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
+
+/* Stats sumadas del árbol, en columnas de daño, defensa y otros. */
+.tree-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px 20px; }
+.tree-cols ul { margin: 6px 0 0; padding-left: 16px; font-size: .84rem; display: grid; gap: 3px; }
+
+/* Tabla de los únicos de la build, por nivel requerido, con su icono y su ficha. */
+table.uniques { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.uniques th { text-align: left; font-weight: 500; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 4px 8px 4px 0; }
+.uniques td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+.uniques td:first-child { position: relative; }
+.uniques .n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.uniques .unique { color: var(--accent); }
+.uniques small { color: var(--muted); }
+.uniques .item { display: flex; align-items: center; gap: 8px; cursor: help; }
+.uniques .ico { flex: none; width: 40px; height: 40px; }
+.uniques .ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.uniques tr:hover .utip, .uniques .item:focus + .utip, .uniques .item:focus-within + .utip { display: block; }
+
+/* Ficha de un único al estilo del juego: cabecera marrón dorada y mods en azul, también con el tema claro. */
+:root { --item-bg: #0c0a08; --item-head-bg: #2a1a0c; --item-unique: #af6025; --item-dim: #7f7f7f; --item-mod: #8888ff; --item-sep: #af602566; }
+.utip { display: none; pointer-events: none; position: absolute; left: 0; top: 100%; z-index: 5; width: min(360px, 85vw); background: var(--item-bg); border: 1px solid var(--item-unique); text-align: center; font-size: .85rem; box-shadow: 0 6px 18px #0008; }
+.utip p { margin: 0; padding: 1px 10px; }
+.utip > div + div { border-top: 1px solid var(--item-sep); padding: 6px 0; }
+.utip-head { background: var(--item-head-bg); color: var(--item-unique); font-weight: 600; padding: 6px 0; }
+.utip-req { color: var(--item-dim); }
+.utip-mods { color: var(--item-mod); }
+.utip-icon { display: block; margin: 8px auto 2px; max-height: 120px; }
 </style>
 
 <main>
@@ -304,10 +329,26 @@ SOFTWARE.
 <script src="gamedata/tree.js"></script>
 <script src="gamedata/items.js"></script>
 <script>
-/* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
+/* Utilidades del DOM que usan todos los módulos y componentes. */
 
 /** Elemento de la página por id. Todos los que se piden existen en index.html; T afina el tipo (textarea, input…). */
 const $ =                                      (id        )    => document.getElementById(id)     ;
+
+const ESCAPES                         = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+/** Texto escapado para meterlo en un HTML hecho a mano. */
+const esc = (s         )         => String(s).replace(/[&<>"]/g, c => ESCAPES[c]);
+
+/** Elemento con su clase, su texto (siempre como texto, nunca como HTML) y sus hijos. */
+function el                                       (tag   , cls = "", text = "", ...children                   )                           {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  e.append(...children);
+  return e;
+}
+
+/* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
+
 /** Los controles del formulario, con su tipo exacto. */
 const form = {
   code: $                     ("code"), cls: $                   ("cls"),
@@ -315,7 +356,7 @@ const form = {
 };
 
 // Si alguien copia solo index.html, sin la carpeta gamedata/, se dice qué falta en vez de dejar la página rota en silencio.
-const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T"].filter(k => !(window.DATA && k in window.DATA));
+const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T", "U"].filter(k => !(window.DATA && k in window.DATA));
 if (MISSING.length) {
   $("msg").className = "error";
   $("msg").textContent = "Faltan los datos del juego: la carpeta gamedata/ tiene que estar junto a index.html. Copia la carpeta entera de la app.";
@@ -352,8 +393,6 @@ for (const [id, g] of Object.entries(GEMS)) {
 /** Coste en el vendedor según el nivel requerido de la gema. */
 const cost = (level        )         => level < 8 ? "Scroll of Wisdom" : level < 16 ? "Orb of Transmutation" : level < 28 ? "Orb of Alteration" : level < 38 ? "Orb of Chance" : "Orb of Alchemy";
 
-const ESCAPES                         = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
-const esc = (s         )         => String(s).replace(/[&<>"]/g, c => ESCAPES[c]);
 /** Error con un mensaje pensado para el usuario (los del navegador no lo son). */
                                        
 const userError = (msg        )            => Object.assign(new Error(msg), { own: true          });
@@ -863,57 +902,33 @@ async function restoreSession()                {
 addEventListener("pagehide", saveSession);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveSession(); });
 
-/* Sección desplegable y lista nombre/texto, la base de las demás secciones. */
+/* Colocación de las fichas flotantes (nodo del árbol, único) junto a un punto. */
 
 /**
- * Sección desplegable con su título (HTML) ya puesto.
- * `toc` la apunta en el índice: { id, label, group } (group agrupa entradas, como los actos bajo "Ruta").
+ * Pone la ficha junto al punto (x, y) sin salirse de una caja de w × h px: a la derecha y debajo si cabe; si no cabe debajo, encima.
+ * x, y, w y h van en el mismo sistema que left/top de la ficha (el de su contenedor, o la ventana si es position: fixed).
  */
-function section(summaryHtml        , className        , open = true, toc                   = null)                     {
-  const sec = document.createElement("details");
-  sec.className = className;
-  sec.open = open;
-  sec.innerHTML = `<summary>${summaryHtml}</summary>`;
-  if (toc) tocTarget(sec, toc);
+function placeTip(tip             , x        , y        , w        , h        , gap = 12)       {
+  tip.style.left = Math.max(0, Math.min(x + gap, w - tip.offsetWidth)) + "px";
+  tip.style.top = Math.max(0, y + gap + tip.offsetHeight > h ? y - gap - tip.offsetHeight : y + gap) + "px";
+}
+
+/* Equipo de la build: tabla de únicos y prioridad de stats de los raros. */
+
+/** Equipo de la build: los únicos por nivel requerido y qué stats se repiten en sus raros. */
+function gearSection(items        )                     {
+  const sec = section("Equipo de la build", "act gear", true, { id: "equipo", label: "Equipo" });
+  // Por nivel requerido; los que no piden nivel (joyas) van al final.
+  const uniques = items.filter(i => i.rarity === "UNIQUE").sort((a, b) => (a.req || 999) - (b.req || 999));
+  if (uniques.length) sec.append(subhead("Únicos"), uniqueTable(uniques));
+  // Las joyas del árbol no son equipo: contarían como "raros" con stats de pasivas.
+  const rares = items.filter(i => i.rarity === "RARE" && i.slot !== "Jewel" && !i.slot.includes("Abyssal"));
+  if (rares.length) sec.append(subhead("Prioridad de stats en los raros"), rareStats(rares));
+  sec.append(el("p", "note", "En la campaña, las resistencias bajan un 30 % al matar a Kitava en el acto 5 y otro 30 % en el acto 10: conviene ir subiéndolas antes de cada uno."));
   return sec;
 }
 
-/** Marca un elemento como destino del índice. */
-function tocTarget                       (el   , { id, label, group }           )    {
-  el.id = id;
-  el.dataset.toc = label;
-  if (group) el.dataset.tocGroup = group;
-  return el;
-}
-
-/** Lista de pares [nombre, texto] como <li><b>nombre</b><p>texto</p></li>, sin interpretar HTML. */
-function fillNamed(ul         , pairs                                )       {
-  for (const [name, text] of pairs) {
-    const li = document.createElement("li");
-    li.innerHTML = "<b></b><p></p>";
-    li.querySelector("b") .textContent = name;
-    li.querySelector("p") .textContent = text;
-    ul.append(li);
-  }
-}
-
-/* Resumen de la guía: reparto de gemas, bandidos y moneda total. */
-
-function summaryHtml(build       , plan      )         {
-  const { out: steps, missing } = plan;
-  const special = build.gems.filter(g => g.kind !== "normal");
-  const rewards = steps.reduce((n, s) => n + s.gems.filter(g => !g.buy).length, 0);
-  const boughtIds = steps.flatMap(s => s.gems.filter(g => g.buy).flatMap(g => g.ids));
-  return `<div class="summary" id="resumen" data-toc="Resumen">
-    <span><b id="who"></b></span><span><b>${build.gems.length}</b> gemas</span>
-    <span><b>${rewards}</b> como recompensa</span><span><b>${boughtIds.length}</b> compradas</span>
-    <span><b>${missing.length + special.length}</b> por otras vías</span>
-    ${suggested.size ? `<span>(recompensas y compras incluyen <b>${suggested.size}</b> sugeridas de leveling)</span>` : ""}
-    <span>Bandidos: <b>${build.bandit === "None" ? "matarlos a todos" : "ayudar a " + esc(build.bandit)}</b></span></div>
-    <div class="summary">Moneda para todas las compras: <b>${costText(boughtIds) || "nada"}</b></div>`;
-}
-
-/* Gemas: la casilla de "conseguida", las líneas de gemas y los costes. */
+/* Una gema: su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 
 // Gemas de leveling sugeridas que no están en la build: se marcan como "sugerida" allí donde aparezcan.
 let suggested = new Set        ();
@@ -936,204 +951,135 @@ function costText(ids          )         {
 /** Una gema con su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 function gemEl(id        , withCost          )                   {
   const { name, attr, level } = GEMS[id];
-  const l = document.createElement("label");
   const isDone = doneStore.ids.has(id);
-  l.className = "gem" + (isDone ? " done" : "");
-  l.innerHTML = `<input type="checkbox"><i class="${attr}"></i><span></span><small>nv ${level}${withCost ? " · " + shortCost(level) : ""}</small>`;
-  l.querySelector("span") .textContent = name;
-  if (suggested.has(id)) l.insertAdjacentHTML("beforeend", `<em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>`);
-  const box = l.querySelector("input") ;
-  box.checked = isDone;
+  const box = Object.assign(el("input"), { type: "checkbox", checked: isDone });
+  const l = el("label", "gem" + (isDone ? " done" : ""), "", box, el("i", attr), el("span", "", name),
+    el("small", "", `nv ${level}${withCost ? " · " + shortCost(level) : ""}`));
+  if (suggested.has(id)) {
+    const sug = el("em", "sug", "sugerida");
+    sug.title = "Sugerencia automática de leveling: no está en tu build";
+    l.append(sug);
+  }
   box.onchange = () => { doneStore.set(id, box.checked); l.classList.toggle("done", box.checked); };
   return l;
 }
 
+/* Líneas de gemas ("cómo · gemas · nota") y el bloque de gemas de un paso de la ruta. */
+
 /** Línea "cómo · gemas · nota": la usan los pasos de la ruta y las tarjetas de leveling. `note` es HTML. */
 function gemLine(how        , ids          , { withCost = false, note = "" }                                        = {})                 {
-  const line = document.createElement("div");
-  line.className = "line";
-  line.innerHTML = `<span class="how"></span>`;
-  line.firstElementChild .textContent = how;
-  ids.forEach(id => line.append(gemEl(id, withCost)));
+  const line = el("div", "line", "", el("span", "how", how), ...ids.map(id => gemEl(id, withCost)));
   if (note) line.insertAdjacentHTML("beforeend", `<span class="cost">${note}</span>`);
   return line;
 }
 
 /** Bloque de gemas de un paso: una línea por recompensa o vendedor; las compras llevan su coste. */
 function gemsBlock(groups            )                 {
-  const box = document.createElement("div");
-  box.className = "gems";
-  for (const g of groups) box.append(gemLine(g.how, g.ids, g.buy ? { withCost: true, note: `Coste: ${costText(g.ids)}` } : {}));
-  return box;
+  return el("div", "gems", "", ...groups.map(g => gemLine(g.how, g.ids, g.buy ? { withCost: true, note: `Coste: ${costText(g.ids)}` } : {})));
 }
 
-/* La ruta de campaña: un desplegable por acto con sus pasos, notas y gemas. */
+/* Controles del mapa de calor: arrastrar mueve, Ctrl+rueda, pellizco o botones hacen zoom, y pasar el ratón (o tocar) un nodo muestra su ficha. */
 
-/** La ruta, un desplegable por acto; sin "actividades de zona" solo quedan los pasos con gemas. */
-function routeSections(steps               , start          , showZones         )                       {
-  const sections                       = [];
-  let act = 0, list                          = null;
-  for (const s of steps) {
-    if (s.act !== act) {
-      act = s.act;
-      const n = steps.filter(x => x.act === act && x.gems.length).length;
-      const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1, { id: "acto-" + act, label: String(act), group: "Ruta" });
-      det.insertAdjacentHTML("beforeend", `<ol class="route"></ol>`);
-      sections.push(det);
-      list = det.querySelector("ol") ;
-      if (act === 1 && start.length) {
-        const li = document.createElement("li");
-        li.className = "has-gems";
-        li.innerHTML = `<div class="text">Al empezar</div>`;
-        li.append(gemsBlock([{ how: "Ya la tienes", ids: start }]));
-        list.append(li);
-      }
-    }
-    if (!showZones && !s.gems.length) continue;
-    const li = document.createElement("li");
-    if (s.gems.length) li.className = "has-gems";
-    li.innerHTML = `<div class="text">${s.text}</div>`;
-    if (s.notes.length) {
-      const ul = document.createElement("ul");
-      ul.className = "notes";
-      s.notes.forEach(n => { const it = document.createElement("li"); it.innerHTML = renderNote(n); ul.append(it); });
-      li.append(ul);
-    }
-    if (s.gems.length) li.append(gemsBlock(s.gems));
-    list .append(li);
-  }
-  return sections;
-}
-
-/* Gemas que no salen en la ruta y cómo conseguirlas. */
-
-/** Gemas que no salen en la ruta para esta clase y cómo conseguirlas. */
-function otherWaysSection(build       , plan      )                            {
-  const { got, missing } = plan;
-  const where = (id        )         => { const at = got.get(id); return at ? ` (acto ${at.act}, ${at.quest})` : ""; };
-  const notes = build.gems.filter(g => g.kind !== "normal").map((g)                   => {
-    if (g.kind === "vaal") return [g.name, g.base ? `Consigue ${GEMS[g.base].name}${where(g.base)} y corrómpela con un Orbe Vaal (puede salir otra cosa), o búscala en drop o en el mercado.` : "Búscala en drop o en el mercado."];
-    if (g.kind === "transfigured") return [g.name, g.base ? `Es una gema transfigurada: consigue ${GEMS[g.base].name}${where(g.base)} y transfigúrala en la Fuente Divina del Laberinto, o búscala en drop o en el mercado.` : "Es una gema transfigurada: búscala en drop o en el mercado."];
-    if (g.kind === "awakened") return [g.name, "Gema despertada: solo cae en el endgame. Lo práctico es comprarla en el mercado."];
-    return [g.name, "No la reconozco en los datos; puede ser una gema nueva o un nombre que no coincide."];
-  });
-  for (const id of missing) notes.push([GEMS[id].name, "No sale en ninguna misión ni vendedor de la ruta para esta clase: drop o mercado."]);
-  if (!notes.length) return null;
-  const sec = section("Por otras vías", "act other", true, { id: "otras-vias", label: "Por otras vías" });
-  sec.insertAdjacentHTML("beforeend", "<ul></ul>");
-  fillNamed(sec.querySelector("ul") , notes);
-  return sec;
-}
-
-/* Equipo de la build: únicos por nivel y prioridad de stats de los raros. */
-
-/** Ficha del único al estilo del juego: nombre, base, nivel, implícitos y mods tal como los trae la build. Se ve al pasar el ratón o al tocar. */
-function uniqueTip(u      , icon        )                 {
-  const tip = document.createElement("div"), add = (cls        , lines          ) => {
-    if (!lines.length) return;
-    const div = document.createElement("div"); div.className = cls;
-    for (const t of lines) div.append(Object.assign(document.createElement("p"), { textContent: t }));
-    tip.append(div);
+/** Añade la ficha y los botones de zoom junto al canvas, dentro de su contenedor, y engancha los gestos. `masteries` son las maestrías elegidas. */
+function heatControls(canvas                   , redraw            , masteries                                  )       {
+  const chosen = new Map(masteries);
+  const v           = { z: 1, x: 0, y: 0 }; heatViews.set(canvas, v);
+  canvas.insertAdjacentHTML("afterend", `<div class="heat-tip" hidden></div><div class="heat-zoom"><button data-z="1.5" aria-label="Acercar">+</button><button data-z="0.667" aria-label="Alejar">−</button><button data-z="0" aria-label="Ver entero">⟲</button></div>`);
+  const tip = canvas.parentElement .querySelector             (".heat-tip") ;
+  const zoom = (f        , cx        , cy        ) => {
+    const z = Math.min(10, Math.max(1, v.z * f)); f = z / v.z;
+    v.x = cx - (cx - v.x) * f; v.y = cy - (cy - v.y) * f; v.z = z;
+    if (z === 1) v.x = v.y = 0;
+    // Con zoom, un dedo mueve el mapa; sin zoom, desplaza la página.
+    canvas.style.touchAction = z > 1 ? "none" : "";
+    tip.hidden = true; redraw();
   };
-  tip.className = "utip";
-  add("utip-head", [u.name, u.base]);
-  if (icon) tip.append(Object.assign(document.createElement("img"), { className: "utip-icon", src: icon, alt: "" }));
-  add("utip-req", u.req ? [`Nivel requerido ${u.req}`] : []);
-  add("utip-mods", u.mods.slice(0, u.implicits));
-  add("utip-mods", u.mods.slice(u.implicits));
-  return tip;
-}
-
-/** Equipo de la build: los únicos por nivel requerido y qué stats se repiten en sus raros. */
-function gearSection(items        )                     {
-  const sec = section("Equipo de la build", "act gear", true, { id: "equipo", label: "Equipo" });
-  // Por nivel requerido; los que no piden nivel (joyas) van al final.
-  const uniques = items.filter(i => i.rarity === "UNIQUE").sort((a, b) => (a.req || 999) - (b.req || 999));
-  if (uniques.length) {
-    sec.insertAdjacentHTML("beforeend", `<h3>Únicos</h3><table><thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th></tr></thead><tbody></tbody></table>`);
-    const tb = sec.querySelector("tbody") ;
-    // Con ratón la ficha sigue al cursor, sin salirse de la ventana; al tocar o con el teclado se queda bajo el objeto.
-    tb.addEventListener("mousemove", e => {
-      const tip = (e.target           ).closest("tr")?.querySelector             (".utip"); if (!tip) return;
-      const x = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 8), below = e.clientY + 16 + tip.offsetHeight <= innerHeight;
-      tip.style.cssText = `position:fixed;left:${Math.max(8, x)}px;top:${below ? e.clientY + 16 : Math.max(8, e.clientY - 16 - tip.offsetHeight)}px`;
-    });
-    tb.addEventListener("mouseleave", () => tb.querySelectorAll             (".utip").forEach(t => t.style.cssText = ""));
-    for (const u of uniques) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td><span class="item" tabindex="0"><span class="ico"></span><span><b class="unique"></b><small></small></span></span></td><td></td><td class="n"></td>`;
-      tr.querySelector("b") .textContent = u.name;
-      // Icono del CDN de GGG; PoB antepone "Foulborn " a los únicos mutados: se usa el arte del normal.
-      const art = UNIQUES[u.name.replace(/^Foulborn /, "")];
-      const icon = art ? `https://web.poecdn.com/image/Art/${art[0]}.png?scale=1&w=${art[1]}&h=${art[2]}` : "";
-      if (icon) tr.querySelector(".ico") .append(Object.assign(document.createElement("img"), { src: icon, alt: "", loading: "lazy" }));
-      tr.querySelector("small") .textContent = " " + u.base;
-      tr.children[1].textContent = slotEs(u.slot);
-      tr.children[2].textContent = u.req ? String(u.req) : "—";
-      tr.children[0].append(uniqueTip(u, icon));
-      tb.append(tr);
-    }
-  }
-  // Las joyas del árbol no son equipo: contarían como "raros" con stats de pasivas.
-  const rares = items.filter(i => i.rarity === "RARE" && i.slot !== "Jewel" && !i.slot.includes("Abyssal"));
-  if (rares.length) {
-    sec.insertAdjacentHTML("beforeend", `<h3>Prioridad de stats en los raros</h3><p class="note">Cuántas de sus ${rares.length} piezas raras (${[...new Set(rares.map(r => slotEs(r.slot)))].join(", ").toLowerCase()}) llevan cada tipo de stat.</p><ol class="stats"></ol>`);
-    const ol = sec.querySelector("ol.stats") ;
-    for (const [label, n] of gearStatCounts(rares)) {
-      const li = document.createElement("li");
-      li.innerHTML = `<span></span><span class="bar"><i style="width:${n / rares.length * 100}%"></i></span><b>${n}/${rares.length}</b>`;
-      li.firstElementChild .textContent = label;
-      ol.append(li);
-    }
-  }
-  sec.insertAdjacentHTML("beforeend", `<p class="note">En la campaña, las resistencias bajan un 30 % al matar a Kitava en el acto 5 y otro 30 % en el acto 10: conviene ir subiéndolas antes de cada uno.</p>`);
-  return sec;
-}
-
-/* Leveling sugerido: una tarjeta por tramo con habilidad, soportes y árbol. */
-
-/** Leveling sugerido: por tramo, la habilidad y sus soportes y cuánto del árbol final tendrías. */
-function levelingSection(skills              , trees             , treesSuggested         , mainId        )                     {
-  const sec = section("Leveling sugerido", "act gear leveling", true, { id: "leveling", label: "Leveling sugerido" });
-  sec.insertAdjacentHTML("beforeend", `
-    <p class="banner"><b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
-    que tu clase puede conseguir a ese nivel (mismo tipo y misma arma), soportes que de verdad se pueden enlazar a ella (primero los de tu build) y
-    ${treesSuggested ? "un orden para coger los nodos de tu árbol final." : "los árboles que trae tu build."} No es la guía del autor de la build ni lo que suele usar la comunidad.</p>
-    <div class="stagecards"></div>`);
-  const box = sec.querySelector(".stagecards") ;
-  skills.forEach((s, i) => {
-    const card = document.createElement("div");
-    card.className = "stagecard";
-    card.innerHTML = `<h3>Actos ${s.acts[0]}-${s.acts[1]} <span>· nv ${s.from}–${s.to}</span></h3>`;
-    if (s.skill) card.append(gemLine(s.own ? "Tu habilidad" : "Habilidad", [s.skill], { note: s.mainAt ? `Cambia a ${esc(GEMS[mainId].name)} desde nv ${s.mainAt}` : "" }));
-    if (s.supports.length) card.append(gemLine("Soportes", s.supports, { note: "por orden: con pocos enlaces, usa los primeros" }));
-    const t = trees[i];
-    if (t) {
-      const prev = new Set(i ? trees[i - 1].nodes : []);
-      const fresh = t.nodes.filter(id => !prev.has(id) && (NODES[id].type === NODE.NOTABLE || NODES[id].type === NODE.KEYSTONE)).map(id => NODES[id].name);
-      card.insertAdjacentHTML("beforeend", `<p class="note">Árbol: ${treesSuggested ? "≈" + t.points + " puntos, " : ""}${t.nodes.length} nodos${fresh.length ? ". Nuevos notables: " + esc(fresh.join(", ")) : ""}. Míralo en el mapa de calor, más abajo.</p>`);
-    }
-    box.append(card);
+  canvas.parentElement .querySelector(".heat-zoom") .addEventListener("click", e => {
+    const f = +((e.target           ).closest("button")?.dataset.z ?? NaN); if (isNaN(f)) return;
+    if (f) zoom(f, canvas.clientWidth / 2, canvas.clientHeight / 2); else zoom(1 / v.z, 0, 0);
   });
-  return sec;
+  const at = (e                                      )                   => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  // Ctrl+rueda (y el pellizco del trackpad, que llega así): la rueda sola sigue desplazando la página.
+  canvas.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.004), ...at(e)); }, { passive: false });
+
+  // Ficha del nodo más cercano al punto, a menos de 12 px.
+  const showTip = (cx        , cy        ) => {
+    let best                  = null, bestId = "", bd = 12 ** 2;
+    for (const [id, n] of Object.entries(NODES)) {
+      if (n.ascendancy || !v.pos) continue;
+      const [x, y] = v.pos(n), d = (x - cx) ** 2 + (y - cy) ** 2;
+      if (d < bd) { bd = d; best = n; bestId = id; }
+    }
+    tip.hidden = !best; if (!best) return;
+    const taken = !!v.taken?.has(bestId);
+    const effect = best.type === NODE.MASTERY && taken ? MASTERIES[bestId]?.[chosen.get(bestId) ?? ""] ?? "" : "";
+    tip.replaceChildren(...nodeTip(best, taken, v.num?.get(bestId), effect));
+    placeTip(tip, ...v.pos (best), canvas.clientWidth, canvas.clientHeight);
+  };
+
+  const down = new Map                          (); let moved = 0;
+  canvas.addEventListener("pointerdown", e => { down.set(e.pointerId, at(e)); moved = 0; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", e => {
+    const p = at(e), prev = down.get(e.pointerId);
+    if (!prev) { if (e.pointerType === "mouse") showTip(...p); return; }
+    if (down.size === 2) {
+      const [a, b] = [...down.values()], other = a === prev ? b : a;
+      const d0 = Math.hypot(prev[0] - other[0], prev[1] - other[1]), d1 = Math.hypot(p[0] - other[0], p[1] - other[1]);
+      down.set(e.pointerId, p); moved += 99;
+      if (d0) zoom(d1 / d0, (p[0] + other[0]) / 2, (p[1] + other[1]) / 2);
+      return;
+    }
+    down.set(e.pointerId, p); moved += Math.abs(p[0] - prev[0]) + Math.abs(p[1] - prev[1]);
+    if (v.z > 1) { v.x += p[0] - prev[0]; v.y += p[1] - prev[1]; tip.hidden = true; redraw(); }
+  });
+  const up = (e              ) => { if (down.delete(e.pointerId) && moved < 6 && e.type === "pointerup") showTip(...at(e)); };
+  canvas.addEventListener("pointerup", up);
+  canvas.addEventListener("pointercancel", up);
+  canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !down.size) tip.hidden = true; });
+}
+
+/* Panel del mapa de calor: botoneras de etapa y de daño/defensa, el mapa interactivo y su leyenda. */
+
+/**
+ * Mapa de calor del árbol final o de una etapa. `main` son los nodos del árbol final (fijan el encuadre),
+ * `key` los puntos indispensables en el orden de su lista y `masteries` las maestrías elegidas.
+ */
+function heatPanel(main          , key          , stages             , stagesSuggested         , masteries                                  )                   {
+  const canvas = el("canvas", "heat");
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", "Árbol de pasivas con las zonas de daño en rojo y las de defensa en azul");
+  const stageNote = el("p", "note stage-note");
+  let mode = "both", stage = -1;
+  const draw = () => {
+    const nodes = stage < 0 ? main : stages[stage].nodes.filter(id => !NODES[id].ascendancy), set = new Set(nodes);
+    drawHeat(canvas, nodes, key.map((id, i)                   => [id, i + 1]).filter(([id]) => set.has(id)), mode, main);
+    const st = stages[stage];
+    stageNote.textContent = !st ? "" : (stagesSuggested ? `Sugerencia automática: ≈${st.points} puntos hasta nv ≈${st.level}, solo con nodos de tu árbol final. ` : `Árbol "${st.title}" de la build. `) + `${nodes.length} nodos cogidos.`;
+  };
+
+  const frag = document.createDocumentFragment();
+  if (stages.length) frag.append(toggleGroup("Etapa del árbol", [["-1", "Final"], ...stages.map((s, i)                   => [String(i), s.title])], v => { stage = +v; draw(); }));
+  frag.append(toggleGroup("Qué mostrar", [["both", "Ambos"], ["dmg", "Daño"], ["def", "Defensa"]], v => { mode = v; draw(); }));
+  const legend = el("p", "note");
+  legend.innerHTML = `<span class="kind dmg">rojo</span>: zonas que aportan daño · <span class="kind def">azul</span>: defensa · los números marcan los puntos indispensables de la lista. Arrastra para mover, Ctrl+rueda o pellizca para hacer zoom, y pasa el ratón o toca un nodo para ver qué hace.`;
+  frag.append(el("div", "heat-wrap", "", canvas), stageNote, legend);
+  heatControls(canvas, draw, masteries);
+  redrawHeat = draw;
+  // Se dibuja cuando el canvas ya está en la página y tiene ancho.
+  requestAnimationFrame(draw);
+  return frag;
 }
 
 /* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
 
-/** Zoom y desplazamiento (px CSS) de cada mapa; pos da la posición en pantalla de un nodo, para el tooltip. */
+/**
+ * Estado de cada mapa: zoom y desplazamiento (px CSS), que fijan los controles, y lo que deja el último dibujo para la ficha
+ * del nodo: pos (posición en pantalla de un nodo), taken (nodos cogidos) y num (número en la lista de indispensables).
+ */
                                                                                                                                                
 const heatViews = new WeakMap                             ();
 
-/** Icono del nodo recortado de la hoja de sprites del CDN de GGG y escalado a size px; sin conexión simplemente no aparece. */
-function nodeIcon(n          , size        )                         {
-  if (!n.icon) return null;
-  const [sheet, x, y, w] = n.icon, [url, sw, sh] = SHEETS[sheet], k = size / w, img = document.createElement("span");
-  img.className = "node-icon";
-  img.style.cssText = `width:${size}px;height:${size}px;background:url("${url}") ${-x * k}px ${-y * k}px / ${sw * k}px ${sh * k}px`;
-  return img;
-}
-
-const hexAlpha =(a        )         => Math.round(a * 255).toString(16).padStart(2, "0");
+const hexAlpha = (a        )         => Math.round(a * 255).toString(16).padStart(2, "0");
 
 /**
  * Pinta el árbol: aristas y nodos tenues, el calor de los nodos cogidos y los puntos indispensables numerados.
@@ -1215,142 +1161,201 @@ let redrawHeat                      = null;
 addEventListener("resize", () => redrawHeat?.());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => redrawHeat?.());
 
-/**
- * Mapa interactivo: arrastrar mueve, Ctrl+rueda o pellizco hacen zoom, y pasar el ratón (o tocar) un nodo muestra su nombre y efecto.
- * Añade el tooltip y los botones de zoom junto al canvas, dentro de su contenedor.
- */
-function heatControls(canvas                   , redraw            , masteries                                  )       {
-  const chosen = new Map(masteries);
-  const v           = { z: 1, x: 0, y: 0 }; heatViews.set(canvas, v);
-  canvas.insertAdjacentHTML("afterend", `<div class="heat-tip" hidden></div><div class="heat-zoom"><button data-z="1.5" aria-label="Acercar">+</button><button data-z="0.667" aria-label="Alejar">−</button><button data-z="0" aria-label="Ver entero">⟲</button></div>`);
-  const tip = canvas.parentElement .querySelector             (".heat-tip") ;
-  const zoom = (f        , cx        , cy        ) => {
-    const z = Math.min(10, Math.max(1, v.z * f)); f = z / v.z;
-    v.x = cx - (cx - v.x) * f; v.y = cy - (cy - v.y) * f; v.z = z;
-    if (z === 1) v.x = v.y = 0;
-    // Con zoom, un dedo mueve el mapa; sin zoom, desplaza la página.
-    canvas.style.touchAction = z > 1 ? "none" : "";
-    tip.hidden = true; redraw();
-  };
-  canvas.parentElement .querySelector(".heat-zoom") .addEventListener("click", e => {
-    const f = +((e.target           ).closest("button")?.dataset.z ?? NaN); if (isNaN(f)) return;
-    if (f) zoom(f, canvas.clientWidth / 2, canvas.clientHeight / 2); else zoom(1 / v.z, 0, 0);
-  });
-  const at = (e                                      )                   => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  // Ctrl+rueda (y el pellizco del trackpad, que llega así): la rueda sola sigue desplazando la página.
-  canvas.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.004), ...at(e)); }, { passive: false });
+/* Icono de un único, servido por el CDN de GGG a partir de la ruta de su arte (RePoE). */
 
-  const showTip = (cx        , cy        ) => {
-    let best                  = null, bestId = "", bd = 12 ** 2;
-    for (const [id, n] of Object.entries(NODES)) {
-      if (n.ascendancy || !v.pos) continue;
-      const [x, y] = v.pos(n), d = (x - cx) ** 2 + (y - cy) ** 2;
-      if (d < bd) { bd = d; best = n; bestId = id; }
-    }
-    tip.hidden = !best; if (!best) return;
-    const el = (tag        , cls        , text        ) => Object.assign(document.createElement(tag), { className: cls, textContent: text });
-    const head = el("div", "heat-tip-head", "");
-    const img = nodeIcon(best, 36); if (img) head.append(img);
-    const taken = v.taken?.has(bestId), num = v.num?.get(bestId);
-    const kind = ["", "Notable", "Keystone", "Maestría", "Joya", "Inicio"][best.type];
-    head.append(el("div", "", ""));
-    head.lastElementChild .append(el("b", "", best.name), el("small", taken ? "taken" : "", [kind, taken ? "Cogido" : "No cogido", num ? `nº ${num} de la lista` : ""].filter(Boolean).join(" · ")));
-    const effect = best.type === NODE.MASTERY && taken ? MASTERIES[bestId]?.[chosen.get(bestId) ?? ""] : "";
-    tip.replaceChildren(head, ...(effect ? effect.split("\n") : best.stats).map(t => el("p", "", t)), ...best.reminder.map(t => el("p", "reminder", t)));
-    const [x, y] = v.pos (best);
-    tip.style.left = Math.min(x + 12, canvas.clientWidth - tip.offsetWidth) + "px";
-    tip.style.top = (y + 12 + tip.offsetHeight > canvas.clientHeight ? y - 12 - tip.offsetHeight : y + 12) + "px";
-  };
-
-  const down = new Map                          (); let moved = 0;
-  canvas.addEventListener("pointerdown", e => { down.set(e.pointerId, at(e)); moved = 0; canvas.setPointerCapture(e.pointerId); });
-  canvas.addEventListener("pointermove", e => {
-    const p = at(e), prev = down.get(e.pointerId);
-    if (!prev) { if (e.pointerType === "mouse") showTip(...p); return; }
-    if (down.size === 2) {
-      const [a, b] = [...down.values()], other = a === prev ? b : a;
-      const d0 = Math.hypot(prev[0] - other[0], prev[1] - other[1]), d1 = Math.hypot(p[0] - other[0], p[1] - other[1]);
-      down.set(e.pointerId, p); moved += 99;
-      if (d0) zoom(d1 / d0, (p[0] + other[0]) / 2, (p[1] + other[1]) / 2);
-      return;
-    }
-    down.set(e.pointerId, p); moved += Math.abs(p[0] - prev[0]) + Math.abs(p[1] - prev[1]);
-    if (v.z > 1) { v.x += p[0] - prev[0]; v.y += p[1] - prev[1]; tip.hidden = true; redraw(); }
-  });
-  const up = (e              ) => { if (down.delete(e.pointerId) && moved < 6 && e.type === "pointerup") showTip(...at(e)); };
-  canvas.addEventListener("pointerup", up);
-  canvas.addEventListener("pointercancel", up);
-  canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !down.size) tip.hidden = true; });
+/** Dirección del icono del único, o "" si RePoE no lo conoce. PoB antepone "Foulborn " a los mutados: se usa el arte del normal. */
+function uniqueIcon(name        )         {
+  const art = UNIQUES[name.replace(/^Foulborn /, "")];
+  return art ? `https://web.poecdn.com/image/Art/${art[0]}.png?scale=1&w=${art[1]}&h=${art[2]}` : "";
 }
 
-/* Árbol de pasivas: stats sumadas, mapa de calor por etapas y puntos indispensables. */
+/* Puntos indispensables: las keystones y los notables cogidos, numerados como en el mapa de calor. */
 
-/** Botonera de opciones excluyentes: marca la pulsada y avisa con su valor. */
-function toggleGroup(root         , selector        , attr        , onPick                         )       {
-  root.querySelector(selector)?.addEventListener("click", e => {
-    const b = (e.target           ).closest("button"); if (!b) return;
-    root.querySelectorAll(selector + " button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-    onPick(b.dataset[attr] ?? "");
-  });
-}
-
-/** Árbol: stats sumadas, mapa de calor de daño/defensa (por etapas si las hay) y los puntos indispensables. */
-function treeSection(tree           , stages             , stagesSuggested         )                     {
-  const sec = section("Árbol de pasivas", "act gear tree", true, { id: "arbol", label: "Árbol de pasivas" });
-  const main = tree.nodes.filter(id => !NODES[id].ascendancy);
-  const asc = tree.nodes.filter(id => NODES[id].ascendancy && NODES[id].type === NODE.NOTABLE);
-  const key = main.filter(id => NODES[id].type === NODE.KEYSTONE || NODES[id].type === NODE.NOTABLE)
-    .sort((a, b) => NODES[b].type - NODES[a].type || NODES[a].name.localeCompare(NODES[b].name));
-
-  const stats = treeStats(tree);
-  sec.insertAdjacentHTML("beforeend", `<h3>Stats del árbol</h3><p class="note">${main.length} puntos en el árbol, ${asc.length} notables de ascendencia y ${tree.masteries.length} maestrías. Clasificación aproximada por palabras clave.</p><div class="cols"></div>`);
-  for (const k of ["dmg", "def", "other"]         ) {
-    if (!stats[k].length) continue;
-    const col = document.createElement("div");
-    col.innerHTML = `<b class="kind ${k}">${KIND_ES[k]}</b><ul></ul>`;
-    for (const s of stats[k].slice(0, 14)) { const li = document.createElement("li"); li.textContent = s.text; if (s.n > 1) li.title = `${s.n} nodos`; col.querySelector("ul") .append(li); }
-    if (stats[k].length > 14) col.insertAdjacentHTML("beforeend", `<p class="note">y ${stats[k].length - 14} más</p>`);
-    sec.querySelector(".cols") .append(col);
-  }
-
-  sec.insertAdjacentHTML("beforeend", `<h3>Mapa de calor</h3>
-    ${stages.length ? `<div class="modes stages" role="group" aria-label="Etapa del árbol"><button data-s="-1" aria-pressed="true">Final</button>${stages.map((s, i) => `<button data-s="${i}" aria-pressed="false">${esc(s.title)}</button>`).join("")}</div>` : ""}
-    <div class="modes kinds" role="group" aria-label="Qué mostrar"><button data-m="both" aria-pressed="true">Ambos</button><button data-m="dmg" aria-pressed="false">Daño</button><button data-m="def" aria-pressed="false">Defensa</button></div>
-    <div class="heat-wrap"><canvas class="heat" role="img" aria-label="Árbol de pasivas con las zonas de daño en rojo y las de defensa en azul"></canvas></div>
-    <p class="note stage-note"></p>
-    <p class="note"><span class="kind dmg">rojo</span>: zonas que aportan daño · <span class="kind def">azul</span>: defensa · los números marcan los puntos indispensables de la lista. Arrastra para mover, Ctrl+rueda o pellizca para hacer zoom, y pasa el ratón o toca un nodo para ver qué hace.</p>`);
-  const canvas = sec.querySelector("canvas") ;
-  let mode = "both", stage = -1;
-  const draw = () => {
-    const nodes = stage < 0 ? main : stages[stage].nodes.filter(id => !NODES[id].ascendancy), set = new Set(nodes);
-    drawHeat(canvas, nodes, key.map((id, i)                   => [id, i + 1]).filter(([id]) => set.has(id)), mode, main);
-    const st = stages[stage];
-    sec.querySelector(".stage-note") .textContent = !st ? "" : (stagesSuggested ? `Sugerencia automática: ≈${st.points} puntos hasta nv ≈${st.level}, solo con nodos de tu árbol final. ` : `Árbol "${st.title}" de la build. `) + `${nodes.length} nodos cogidos.`;
-  };
-  toggleGroup(sec, ".kinds", "m", v => { mode = v; draw(); });
-  toggleGroup(sec, ".stages", "s", v => { stage = +v; draw(); });
-  redrawHeat = draw;
-  heatControls(canvas, draw, tree.masteries);
-  requestAnimationFrame(draw);
-
-  sec.insertAdjacentHTML("beforeend", `<h3>Puntos indispensables</h3><p class="note">Las keystones y los notables que tiene cogidos la build; el resto son nodos pequeños o de paso.</p><ol class="key"></ol>`);
-  const ol = sec.querySelector("ol.key") ;
-  key.forEach((id, i) => {
+/** Lista numerada de los puntos indispensables, en el orden de `key`. */
+function keyNodes(key          )                   {
+  return el("ol", "key", "", ...key.map((id, i) => {
     const n = NODES[id], kind = nodeKind(id);
-    const li = document.createElement("li");
-    li.innerHTML = `<span class="num">${i + 1}</span><span></span><div><b></b> <span class="kind ${kind === "keystone" ? "key" : kind}">${kind === "keystone" ? "Keystone" : KIND_ES[kind]}</span><p></p></div>`;
-    li.children[1].replaceWith(nodeIcon(n, 28) ?? document.createElement("span"));
-    li.querySelector("b") .textContent = n.name;
-    li.querySelector("p") .textContent = n.stats.join(" · ");
-    ol.append(li);
-  });
-  const extras = [...asc.map((id)                   => [NODES[id].name + " (ascendencia)", NODES[id].stats.join(" · ")]),
-    ...tree.masteries.map(([node, eff])                   => [NODES[node]?.name || "Maestría", (MASTERIES[node]?.[eff] || "").replace(/\n/g, " · ")])].filter(([, s]) => s);
-  if (extras.length) {
-    sec.insertAdjacentHTML("beforeend", `<h3>Ascendencia y maestrías</h3><ul class="extras"></ul>`);
-    fillNamed(sec.querySelector(".extras") , extras);
-  }
+    const label = el("span", `kind ${kind === "keystone" ? "key" : kind}`, kind === "keystone" ? "Keystone" : KIND_ES[kind]);
+    return el("li", "", "", el("span", "num", String(i + 1)), nodeIcon(n, 28) ?? el("span"),
+      el("div", "", "", el("b", "", n.name), " ", label, el("p", "", n.stats.join(" · "))));
+  }));
+}
+
+/* Leveling sugerido: un aviso de que es automático y una tarjeta por tramo. */
+
+/** Leveling sugerido: por tramo, la habilidad y sus soportes y cuánto del árbol final tendrías. */
+function levelingSection(skills              , trees             , treesSuggested         , mainId        )                     {
+  const sec = section("Leveling sugerido", "act leveling", true, { id: "leveling", label: "Leveling sugerido" });
+  sec.insertAdjacentHTML("beforeend", `
+    <p class="banner"><b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
+    que tu clase puede conseguir a ese nivel (mismo tipo y misma arma), soportes que de verdad se pueden enlazar a ella (primero los de tu build) y
+    ${treesSuggested ? "un orden para coger los nodos de tu árbol final." : "los árboles que trae tu build."} No es la guía del autor de la build ni lo que suele usar la comunidad.</p>`);
+  sec.append(el("div", "stagecards", "", ...skills.map((s, i) => stageCard(s, mainId, trees[i], trees[i - 1], treesSuggested))));
   return sec;
+}
+
+/* Lista de pares nombre/texto, como las notas de "Por otras vías" o las maestrías. */
+
+/** Lista de pares [nombre, texto] como <li><b>nombre</b><p>texto</p></li>. */
+function fillNamed(ul         , pairs                                )       {
+  for (const [name, text] of pairs) ul.append(el("li", "", "", el("b", "", name), el("p", "", text)));
+}
+
+/* Icono de un nodo del árbol, recortado de la hoja de sprites del CDN de GGG. */
+
+/** Icono del nodo escalado a size px, o null si no tiene; sin conexión simplemente no aparece. */
+function nodeIcon(n          , size        )                         {
+  if (!n.icon) return null;
+  const [sheet, x, y, w] = n.icon, [url, sw, sh] = SHEETS[sheet], k = size / w, img = el("span", "node-icon");
+  img.style.cssText = `width:${size}px;height:${size}px;background:url("${url}") ${-x * k}px ${-y * k}px / ${sw * k}px ${sh * k}px`;
+  return img;
+}
+
+/* Ficha de un nodo del árbol: icono, nombre, tipo, si está cogido y qué hace. */
+
+const NODE_KIND_ES = ["", "Notable", "Keystone", "Maestría", "Joya", "Inicio"];
+
+/**
+ * Contenido de la ficha del nodo. `taken` y `num` vienen del último dibujo del mapa (cogido, número en la lista);
+ * `effect` es el efecto elegido si es una maestría cogida, y sustituye a sus stats.
+ */
+function nodeTip(n          , taken         , num                    , effect        )         {
+  const info = el("small", taken ? "taken" : "", [NODE_KIND_ES[n.type], taken ? "Cogido" : "No cogido", num ? `nº ${num} de la lista` : ""].filter(Boolean).join(" · "));
+  const icon = nodeIcon(n, 36);
+  const head = el("div", "heat-tip-head", "", ...(icon ? [icon] : []), el("div", "", "", el("b", "", n.name), info));
+  return [head, ...(effect ? effect.split("\n") : n.stats).map(t => el("p", "", t)), ...n.reminder.map(t => el("p", "reminder", t))];
+}
+
+/* Gemas que no salen en la ruta y cómo conseguirlas. */
+
+/** Gemas que no salen en la ruta para esta clase y cómo conseguirlas. */
+function otherWaysSection(build       , plan      )                            {
+  const { got, missing } = plan;
+  const where = (id        )         => { const at = got.get(id); return at ? ` (acto ${at.act}, ${at.quest})` : ""; };
+  const notes = build.gems.filter(g => g.kind !== "normal").map((g)                   => {
+    if (g.kind === "vaal") return [g.name, g.base ? `Consigue ${GEMS[g.base].name}${where(g.base)} y corrómpela con un Orbe Vaal (puede salir otra cosa), o búscala en drop o en el mercado.` : "Búscala en drop o en el mercado."];
+    if (g.kind === "transfigured") return [g.name, g.base ? `Es una gema transfigurada: consigue ${GEMS[g.base].name}${where(g.base)} y transfigúrala en la Fuente Divina del Laberinto, o búscala en drop o en el mercado.` : "Es una gema transfigurada: búscala en drop o en el mercado."];
+    if (g.kind === "awakened") return [g.name, "Gema despertada: solo cae en el endgame. Lo práctico es comprarla en el mercado."];
+    return [g.name, "No la reconozco en los datos; puede ser una gema nueva o un nombre que no coincide."];
+  });
+  for (const id of missing) notes.push([GEMS[id].name, "No sale en ninguna misión ni vendedor de la ruta para esta clase: drop o mercado."]);
+  if (!notes.length) return null;
+  const sec = section("Por otras vías", "act other", true, { id: "otras-vias", label: "Por otras vías" });
+  sec.insertAdjacentHTML("beforeend", "<ul></ul>");
+  fillNamed(sec.querySelector("ul") , notes);
+  return sec;
+}
+
+/* Prioridad de stats en los raros: cuántas piezas llevan cada tipo de stat, en barras. */
+
+/** Barras de stats de los raros, con la nota de qué piezas cuentan. */
+function rareStats(rares        )                   {
+  const slots = [...new Set(rares.map(r => slotEs(r.slot)))].join(", ").toLowerCase();
+  const ol = el("ol", "stats");
+  for (const [label, n] of gearStatCounts(rares)) {
+    const bar = el("span", "bar", "", el("i"));
+    (bar.firstChild               ).style.width = `${n / rares.length * 100}%`;
+    ol.append(el("li", "", "", el("span", "", label), bar, el("b", "", `${n}/${rares.length}`)));
+  }
+  const frag = document.createDocumentFragment();
+  frag.append(el("p", "note", `Cuántas de sus ${rares.length} piezas raras (${slots}) llevan cada tipo de stat.`), ol);
+  return frag;
+}
+
+/* La ruta de campaña: un desplegable por acto con sus pasos, notas y gemas. */
+
+/** La ruta, un desplegable por acto; sin "actividades de zona" solo quedan los pasos con gemas. */
+function routeSections(steps               , start          , showZones         )                       {
+  const sections                       = [];
+  let act = 0, list                          = null;
+  for (const s of steps) {
+    if (s.act !== act) {
+      act = s.act;
+      const n = steps.filter(x => x.act === act && x.gems.length).length;
+      const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1, { id: "acto-" + act, label: String(act), group: "Ruta" });
+      det.insertAdjacentHTML("beforeend", `<ol class="route"></ol>`);
+      sections.push(det);
+      list = det.querySelector("ol") ;
+      if (act === 1 && start.length) {
+        const li = document.createElement("li");
+        li.className = "has-gems";
+        li.innerHTML = `<div class="text">Al empezar</div>`;
+        li.append(gemsBlock([{ how: "Ya la tienes", ids: start }]));
+        list.append(li);
+      }
+    }
+    if (!showZones && !s.gems.length) continue;
+    const li = document.createElement("li");
+    if (s.gems.length) li.className = "has-gems";
+    li.innerHTML = `<div class="text">${s.text}</div>`;
+    if (s.notes.length) {
+      const ul = document.createElement("ul");
+      ul.className = "notes";
+      s.notes.forEach(n => { const it = document.createElement("li"); it.innerHTML = renderNote(n); ul.append(it); });
+      li.append(ul);
+    }
+    if (s.gems.length) li.append(gemsBlock(s.gems));
+    list .append(li);
+  }
+  return sections;
+}
+
+/* Sección desplegable de la guía y sus subtítulos, la base de las demás secciones. */
+
+/**
+ * Sección desplegable con su título (HTML) ya puesto.
+ * `toc` la apunta en el índice: { id, label, group } (group agrupa entradas, como los actos bajo "Ruta").
+ */
+function section(summaryHtml        , className        , open = true, toc                   = null)                     {
+  const sec = document.createElement("details");
+  sec.className = className;
+  sec.open = open;
+  sec.innerHTML = `<summary>${summaryHtml}</summary>`;
+  if (toc) tocTarget(sec, toc);
+  return sec;
+}
+
+/** Marca un elemento como destino del índice. */
+function tocTarget                       (el   , { id, label, group }           )    {
+  el.id = id;
+  el.dataset.toc = label;
+  if (group) el.dataset.tocGroup = group;
+  return el;
+}
+
+/** Subtítulo de una sección ("Únicos", "Mapa de calor"…). */
+const subhead = (text        )                     => el("h3", "sub", text);
+
+/* Tarjeta de un tramo del leveling sugerido: habilidad, soportes y cuánto del árbol final tendrías. */
+
+/** Tarjeta del tramo: `tree` es el árbol de ese tramo y `prev` el del anterior, para listar los notables nuevos. */
+function stageCard(s            , mainId        , tree                       , prev                       , treesSuggested         )                 {
+  const card = el("div", "stagecard");
+  card.innerHTML = `<h3>Actos ${s.acts[0]}-${s.acts[1]} <span>· nv ${s.from}–${s.to}</span></h3>`;
+  if (s.skill) card.append(gemLine(s.own ? "Tu habilidad" : "Habilidad", [s.skill], { note: s.mainAt ? `Cambia a ${esc(GEMS[mainId].name)} desde nv ${s.mainAt}` : "" }));
+  if (s.supports.length) card.append(gemLine("Soportes", s.supports, { note: "por orden: con pocos enlaces, usa los primeros" }));
+  if (tree) {
+    const had = new Set(prev?.nodes ?? []);
+    const fresh = tree.nodes.filter(id => !had.has(id) && (NODES[id].type === NODE.NOTABLE || NODES[id].type === NODE.KEYSTONE)).map(id => NODES[id].name);
+    card.append(el("p", "note", `Árbol: ${treesSuggested ? "≈" + tree.points + " puntos, " : ""}${tree.nodes.length} nodos${fresh.length ? ". Nuevos notables: " + fresh.join(", ") : ""}. Míralo en el mapa de calor, más abajo.`));
+  }
+  return card;
+}
+
+/* Resumen de la guía: reparto de gemas, bandidos y moneda total. */
+
+function summaryHtml(build       , plan      )         {
+  const { out: steps, missing } = plan;
+  const special = build.gems.filter(g => g.kind !== "normal");
+  const rewards = steps.reduce((n, s) => n + s.gems.filter(g => !g.buy).length, 0);
+  const boughtIds = steps.flatMap(s => s.gems.filter(g => g.buy).flatMap(g => g.ids));
+  return `<div class="summary" id="resumen" data-toc="Resumen">
+    <span><b id="who"></b></span><span><b>${build.gems.length}</b> gemas</span>
+    <span><b>${rewards}</b> como recompensa</span><span><b>${boughtIds.length}</b> compradas</span>
+    <span><b>${missing.length + special.length}</b> por otras vías</span>
+    ${suggested.size ? `<span>(recompensas y compras incluyen <b>${suggested.size}</b> sugeridas de leveling)</span>` : ""}
+    <span>Bandidos: <b>${build.bandit === "None" ? "matarlos a todos" : "ayudar a " + esc(build.bandit)}</b></span></div>
+    <div class="summary">Moneda para todas las compras: <b>${costText(boughtIds) || "nada"}</b></div>`;
 }
 
 /* Índice de la guía: un enlace por sección marcada con data-toc, desplazamiento suave y la sección actual resaltada.
@@ -1434,6 +1439,115 @@ for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => {
 $("toc-toggle").onclick = e => { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); };
 addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
 addEventListener("click", e => { if (!tocBeside.matches && !(e.target           ).closest("#toc")) setTocOpen(false); });
+
+/* Botonera de opciones excluyentes, como el modo y la etapa del mapa de calor. */
+
+/** Botonera con un botón por opción [valor, etiqueta]; marca la pulsada y avisa con su valor. La primera empieza marcada. */
+function toggleGroup(label        , options                                 , onPick                         )                 {
+  const box = el("div", "modes");
+  box.setAttribute("role", "group");
+  box.setAttribute("aria-label", label);
+  for (const [value, text] of options) {
+    const b = el("button", "", text);
+    b.dataset.value = value;
+    b.setAttribute("aria-pressed", String(!box.children.length));
+    box.append(b);
+  }
+  box.addEventListener("click", e => {
+    const b = (e.target           ).closest("button"); if (!b) return;
+    box.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    onPick(b.dataset.value ?? "");
+  });
+  return box;
+}
+
+/* Árbol de pasivas: stats sumadas, mapa de calor por etapas, puntos indispensables y ascendencia/maestrías. */
+
+/** Sección del árbol. `stages` son las etapas (de la build o sugeridas) que se pueden ver en el mapa de calor. */
+function treeSection(tree           , stages             , stagesSuggested         )                     {
+  const sec = section("Árbol de pasivas", "act tree", true, { id: "arbol", label: "Árbol de pasivas" });
+  const main = tree.nodes.filter(id => !NODES[id].ascendancy);
+  const asc = tree.nodes.filter(id => NODES[id].ascendancy && NODES[id].type === NODE.NOTABLE);
+  // Keystones primero y luego notables, por nombre: este orden da los números del mapa y de la lista.
+  const key = main.filter(id => NODES[id].type === NODE.KEYSTONE || NODES[id].type === NODE.NOTABLE)
+    .sort((a, b) => NODES[b].type - NODES[a].type || NODES[a].name.localeCompare(NODES[b].name));
+
+  sec.append(subhead("Stats del árbol"), treeStatsBlock(tree, main.length, asc.length));
+  sec.append(subhead("Mapa de calor"), heatPanel(main, key, stages, stagesSuggested, tree.masteries));
+  sec.append(subhead("Puntos indispensables"), el("p", "note", "Las keystones y los notables que tiene cogidos la build; el resto son nodos pequeños o de paso."), keyNodes(key));
+  const extras = treeExtras(asc, tree.masteries);
+  if (extras) sec.append(subhead("Ascendencia y maestrías"), extras);
+  return sec;
+}
+
+/* Notables de ascendencia y maestrías elegidas, con su efecto. */
+
+/** Lista de ascendencia y maestrías, o null si no hay ninguna con efecto. */
+function treeExtras(asc          , masteries                                  )                          {
+  const extras = [...asc.map((id)                   => [NODES[id].name + " (ascendencia)", NODES[id].stats.join(" · ")]),
+    ...masteries.map(([node, eff])                   => [NODES[node]?.name || "Maestría", (MASTERIES[node]?.[eff] || "").replace(/\n/g, " · ")])].filter(([, s]) => s);
+  if (!extras.length) return null;
+  const ul = el("ul", "extras");
+  fillNamed(ul, extras);
+  return ul;
+}
+
+/* Stats sumadas del árbol, en columnas de daño, defensa y otros. */
+
+/** Resumen de puntos y una columna por tipo de stat, con las 14 primeras de cada una. */
+function treeStatsBlock(tree           , mainCount        , ascCount        )                   {
+  const stats = treeStats(tree), cols = el("div", "tree-cols");
+  for (const k of ["dmg", "def", "other"]         ) {
+    if (!stats[k].length) continue;
+    const ul = el("ul", "", "", ...stats[k].slice(0, 14).map(s => {
+      const li = el("li", "", s.text);
+      if (s.n > 1) li.title = `${s.n} nodos`;
+      return li;
+    }));
+    cols.append(el("div", "", "", el("b", `kind ${k}`, KIND_ES[k]), ul, ...(stats[k].length > 14 ? [el("p", "note", `y ${stats[k].length - 14} más`)] : [])));
+  }
+  const frag = document.createDocumentFragment();
+  frag.append(el("p", "note", `${mainCount} puntos en el árbol, ${ascCount} notables de ascendencia y ${tree.masteries.length} maestrías. Clasificación aproximada por palabras clave.`), cols);
+  return frag;
+}
+
+/* Tabla de los únicos de la build, por nivel requerido, con su icono y su ficha. */
+
+/** Tabla de únicos. Con ratón la ficha sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
+function uniqueTable(uniques        )                   {
+  const table = el("table", "uniques");
+  table.innerHTML = `<thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th></tr></thead>`;
+  const tb = el("tbody");
+  for (const u of uniques) {
+    const icon = uniqueIcon(u.name);
+    // Caja fija para el icono, haya o no: así los nombres quedan alineados.
+    const ico = el("span", "ico", "", ...(icon ? [Object.assign(el("img"), { src: icon, alt: "", loading: "lazy" })] : []));
+    const item = el("span", "item", "", ico, el("span", "", "", el("b", "unique", u.name), el("small", "", " " + u.base)));
+    item.tabIndex = 0;
+    tb.append(el("tr", "", "", el("td", "", "", item, uniqueTip(u, icon)), el("td", "", slotEs(u.slot)), el("td", "n", u.req ? String(u.req) : "—")));
+  }
+  tb.addEventListener("mousemove", e => {
+    const tip = (e.target           ).closest("tr")?.querySelector             (".utip"); if (!tip) return;
+    tip.style.position = "fixed";
+    placeTip(tip, e.clientX, e.clientY, innerWidth, innerHeight, 16);
+  });
+  tb.addEventListener("mouseleave", () => tb.querySelectorAll             (".utip").forEach(t => t.style.cssText = ""));
+  table.append(tb);
+  return table;
+}
+
+/* Ficha de un único al estilo del juego, con los mods tal como los trae la build. */
+
+/** Ficha: nombre, base, icono, nivel, implícitos y mods. `icon` es la dirección del icono, o "" si no hay. */
+function uniqueTip(u      , icon        )                 {
+  const block = (cls        , lines          ) => lines.length ? [el("div", cls, "", ...lines.map(t => el("p", "", t)))] : [];
+  return el("div", "utip", "",
+    ...block("utip-head", [u.name, u.base]),
+    ...(icon ? [Object.assign(el("img", "utip-icon"), { src: icon, alt: "" })] : []),
+    ...block("utip-req", u.req ? [`Nivel requerido ${u.req}`] : []),
+    ...block("utip-mods", u.mods.slice(0, u.implicits)),
+    ...block("utip-mods", u.mods.slice(u.implicits)));
+}
 
 /* Arranque: lee el formulario, compone la guía y la vuelve a componer cuando cambia una opción. */
 
