@@ -50,9 +50,8 @@ export function plan(build: Build, cls: string, leagueStart: boolean, extra: str
   for (const id of extra) if (!want.includes(id)) want.push(id);
   const start = (START[cls] || []).filter(id => want.includes(id));
   const rest = want.filter(id => !start.includes(id));
-  const defs = routeDefs(build, leagueStart);
-  let result = walk(parseRoute(new Set([...defs, "LIBRARY"])), cls, rest);
-  if (![...result.got.values()].some(v => v.quest === "A Fixture of Fate")) result = walk(parseRoute(defs), cls, rest);
+  let result = walk(parseRoute(routeDefs(build, leagueStart, { library: true })), cls, rest);
+  if (![...result.got.values()].some(v => v.quest === "A Fixture of Fate")) result = walk(parseRoute(routeDefs(build, leagueStart)), cls, rest);
   start.forEach(id => result.got.set(id, { act: 1, quest: "Inicio" }));
   return { ...result, start, missing: rest.filter(id => !result.got.has(id)) };
 }

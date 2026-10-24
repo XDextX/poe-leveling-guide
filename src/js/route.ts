@@ -6,10 +6,14 @@ const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;"
 /** Texto escapado para meterlo en el HTML de la ruta (los pasos y sus marcas se generan como HTML). */
 export const esc = (s: unknown): string => String(s).replace(/[&<>"]/g, c => ESCAPES[c]);
 
-/** Opciones de la ruta para una build: qué hacer con los bandidos y si es inicio de liga. */
-export function routeDefs(build: Build, leagueStart: boolean): Set<string> {
+/**
+ * Opciones de la ruta para una build: qué hacer con los bandidos, si es inicio de liga y si pasa por la Biblioteca de
+ * Siosa (misión opcional del acto 3: solo merece la pena si da alguna gema).
+ */
+export function routeDefs(build: Build, leagueStart: boolean, { library = false } = {}): Set<string> {
   const defs = new Set<string>(["BANDIT_" + (build.bandit === "None" ? "KILL" : build.bandit.toUpperCase())]);
   if (leagueStart) defs.add("LEAGUE_START");
+  if (library) defs.add("LIBRARY");
   return defs;
 }
 
