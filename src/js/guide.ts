@@ -14,9 +14,12 @@ export interface GuideData {
   skills: StageSkill[];
   /** Gemas de leveling sugeridas que no están en la build. */
   suggested: Set<string>;
-  /** Árboles por etapas: los de la build si los trae (authorTrees) o sugeridos. */
-  trees: TreeStage[];
-  authorTrees: boolean;
+  /** Árboles por etapas para el mapa de calor: los de la build si los trae o, si no, sugeridos. */
+  treeStages: TreeStage[];
+  /** Si treeStages son sugeridos por la app (y no los de la build). */
+  treesSuggested: boolean;
+  /** Un árbol por tramo del leveling sugerido; vacío si la build trae sus propios árboles (no encajan con los tramos). */
+  levelingTrees: TreeStage[];
   plan: Plan;
 }
 
@@ -26,10 +29,11 @@ export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions
   // Las de la build y, de sus Vaal y transfiguradas, la gema base: también hay que conseguirla, así que no es "sugerida".
   const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
   const suggested = new Set(skills.flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id && !own.has(id)));
-  const authorTrees = build.tree.stages.length > 0;
-  const trees = authorTrees ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
+  const treesSuggested = build.tree.stages.length === 0;
+  const treeStages = !treesSuggested ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
   return {
-    build, skills, suggested, trees, authorTrees,
+    build, skills, suggested, treeStages, treesSuggested,
+    levelingTrees: treesSuggested ? treeStages : [],
     who: cls + (cls === build.cls && build.ascend && build.ascend !== "None" ? " · " + build.ascend : ""),
     plan: plan(build, cls, leagueStart, [...suggested]),
   };
