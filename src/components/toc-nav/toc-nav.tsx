@@ -17,7 +17,7 @@ const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").match
 const tocBeside = () => matchMedia("(min-width: 1260px)").matches;
 // Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
 const SPY_LINE = 100;
-let tocTargets: HTMLElement[] = [], tocLinks = new Map<HTMLElement, HTMLAnchorElement>(), tocPinned: HTMLElement | null = null;
+let tocTargets: HTMLElement[] = [], tocPinned: HTMLElement | null = null;
 
 /** Índice y botón para abrirlo en pantalla estrecha. */
 export const TocNav: Component<{}, DocumentFragment> = () => (
@@ -55,36 +55,49 @@ function updateTocCurrent(): void {
   const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
   const pinnedInView = tocPinned && tocPinned.getBoundingClientRect().top < innerHeight;
   const current = atBottom && pinnedInView ? tocPinned : tocTargets.findLast(t => t.getBoundingClientRect().top <= SPY_LINE);
-  tocLinks.forEach((a, t) => a.toggleAttribute("aria-current", t === current));
+  tocNav().querySelectorAll("a").forEach(a => a.toggleAttribute("aria-current", !!current && a.getAttribute("href") === "#" + current.id));
 }
 
-/** Rellena el índice con los destinos de la página, en orden; las entradas con grupo (los actos) van juntas en una fila. */
-export function renderToc(): void {
-  const nav = tocNav();
-  tocTargets = [...document.querySelectorAll<HTMLElement>("main [data-toc]")].filter(el => !el.closest("[hidden]"));
-  tocLinks = new Map(); tocPinned = null;
-  nav.innerHTML = `<b class="toc-title">Índice</b><ol></ol>`;
-  const ol = nav.querySelector("ol")!, groups = new Map<string, Element>();
-  for (const el of tocTargets) {
-    const a = document.createElement("a");
-    a.href = "#" + el.id;
-    a.textContent = el.dataset.toc ?? "";
-    a.onclick = e => { e.preventDefault(); goTo(el); };
-    tocLinks.set(el, a);
-    const group = el.dataset.tocGroup;
-    if (!group) { const li = document.createElement("li"); li.append(a); ol.append(li); continue; }
-    if (!groups.has(group)) {
-      const li = document.createElement("li");
-      li.innerHTML = `<span class="toc-group"></span><span class="toc-chips"></span>`;
-      li.firstElementChild!.textContent = group;
-      ol.append(li);
-      groups.set(group, li.lastElementChild!);
-    }
-    a.className = "chip";
-    a.setAttribute("aria-label", `${group} ${el.dataset.toc}`);
-    groups.get(group)!.append(a);
+interface TocLinksProps {
+  /** Los destinos de la página, en orden; cada uno con su id y su data-toc (el texto del enlace). */
+  targets: HTMLElement[];
+  /** Al pulsar un enlace. */
+  onGo: (target: HTMLElement) => void;
+}
+
+/** El contenido del índice: un enlace por destino; los que tienen grupo (los actos) van juntos, como chips, en una fila. */
+const TocLinks: Component<TocLinksProps, DocumentFragment> = ({ targets, onGo }) => {
+  // Una fila por destino suelto y una por grupo, en el sitio de su primer miembro.
+  const rows: { group: string | null; items: HTMLElement[] }[] = [];
+  for (const el of targets) {
+    const group = el.dataset.tocGroup ?? null, row = group ? rows.find(r => r.group === group) : undefined;
+    if (row) row.items.push(el); else rows.push({ group, items: [el] });
   }
-  nav.hidden = tocButton().hidden = tocTargets.length === 0;
+  const link = (el: HTMLElement, group?: string) => (
+    <a href={"#" + el.id} class={group ? "chip" : undefined} aria-label={group ? `${group} ${el.dataset.toc}` : undefined}
+      onClick={(e: MouseEvent) => { e.preventDefault(); onGo(el); }}>{el.dataset.toc}</a>
+  );
+  return (
+    <>
+      <b class="toc-title">Índice</b>
+      <ol>
+        {rows.map(({ group, items }) => (
+          <li>
+            {group && <span class="toc-group">{group}</span>}
+            {group ? <span class="toc-chips">{items.map(el => link(el, group))}</span> : link(items[0])}
+          </li>
+        ))}
+      </ol>
+    </>
+  ) as DocumentFragment;
+};
+
+/** Rellena el índice con los destinos de la página, en orden. */
+export function renderToc(): void {
+  tocTargets = [...document.querySelectorAll<HTMLElement>("main [data-toc]")].filter(el => !el.closest("[hidden]"));
+  tocPinned = null;
+  tocNav().replaceChildren(<TocLinks targets={tocTargets} onGo={goTo} />);
+  tocNav().hidden = tocButton().hidden = tocTargets.length === 0;
   setTocOpen(false);
   updateTocCurrent();
 }
