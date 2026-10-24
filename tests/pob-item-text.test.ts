@@ -15,6 +15,15 @@ describe("parseItemText", () => {
     });
   });
 
+  it("separa los implícitos de los demás mods según el número de «Implicits»", () => {
+    const text = (n: string) => item("Rarity: RARE", "X", "Y", n, "+1 a", "+2 b", "+3 c");
+    expect(parseItemText("Amulet", text("Implicits: 2"))).toMatchObject({ mods: ["+1 a", "+2 b", "+3 c"], implicits: 2 });
+    expect(parseItemText("Amulet", text("Implicits:1"))).toMatchObject({ implicits: 1 });
+    expect(parseItemText("Amulet", text("Implicits: 0"))).toMatchObject({ implicits: 0, mods: ["+1 a", "+2 b", "+3 c"] });
+    // Si el número no se entiende, no hay implícitos en vez de partir mal las líneas.
+    expect(parseItemText("Amulet", text("Implicits: muchos"))).toMatchObject({ implicits: 0, mods: ["+1 a", "+2 b", "+3 c"] });
+  });
+
   it("en un objeto mágico o normal, la base es su única línea de nombre", () => {
     expect(parseItemText("Flask 1", item("Rarity: MAGIC", "Seething Divine Life Flask of Staunching", "Implicits: 0")))
       .toMatchObject({ rarity: "MAGIC", name: "Seething Divine Life Flask of Staunching", base: "Seething Divine Life Flask of Staunching" });

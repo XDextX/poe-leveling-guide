@@ -25,9 +25,11 @@ export function parseItemText(slot: string, raw: string): Item {
   const L = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
   const rarity = (L[0] || "").replace("Rarity: ", "");
   const named = rarity === "RARE" || rarity === "UNIQUE";
-  const imp = L.findIndex(l => l.startsWith("Implicits:")), variant = (raw.match(/Selected Variant: (\d+)/) || [])[1] ?? "";
+  const variant = (raw.match(/Selected Variant: (\d+)/) || [])[1] ?? "";
   const clean = (lines: string[]) => lines.map(l => modText(l, variant)).filter((t): t is string => !!t);
-  const implicits = imp < 0 ? [] : clean(L.slice(imp + 1, imp + 1 + (+L[imp].slice(10) || 0)));
-  const mods = imp < 0 ? [] : [...implicits, ...clean(L.slice(imp + 1 + (+L[imp].slice(10) || 0)))];
+  // "Implicits: N" dice cuántas de las líneas siguientes son implícitos; el resto, hasta el final, son los mods.
+  const imp = L.findIndex(l => /^Implicits:/.test(l)), count = imp < 0 ? 0 : +(/^Implicits:\s*(\d+)/.exec(L[imp])?.[1] ?? 0);
+  const implicits = imp < 0 ? [] : clean(L.slice(imp + 1, imp + 1 + count));
+  const mods = imp < 0 ? [] : [...implicits, ...clean(L.slice(imp + 1 + count))];
   return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods, implicits: implicits.length };
 }
