@@ -1,6 +1,7 @@
 /* Controles del mapa de calor: arrastrar mueve, Ctrl+rueda, pellizco o botones hacen zoom, y pasar el ratón (o tocar) un nodo muestra su ficha. */
 
-import { MASTERIES, NODE, NODES } from "../../js/data";
+import { MASTERIES, NODES } from "../../js/data";
+import { NODE } from "../../js/node-types";
 import { placeTip } from "../float-tip/float-tip";
 import { heatViews } from "../heatmap/heatmap";
 import type { HeatView } from "../heatmap/heatmap";

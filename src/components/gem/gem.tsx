@@ -1,6 +1,7 @@
 /* Una gema: su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
 
-import { GEMS, cost } from "../../js/data";
+import { cost, shortCurrency } from "../../js/cost";
+import { GEMS } from "../../js/data";
 import "./gem.css";
 
 // Gemas de leveling sugeridas que no están en la build: se marcan como "sugerida" allí donde aparezcan.
@@ -15,7 +16,7 @@ export const doneStore = {
   set(id: string, on: boolean) { on ? this.ids.add(id) : this.ids.delete(id); try { localStorage.setItem(this.key, JSON.stringify([...this.ids])); } catch {} },
 };
 
-const shortCost = (level: number): string => cost(level).replace(/^(Orb of|Scroll of) /, "");
+const shortCost = (level: number): string => shortCurrency(cost(level));
 /** Totales de moneda de unas compras, como texto: "2× Orb of Alteration, 1× Scroll of Wisdom". */
 export function costText(ids: string[]): string {
   const total: Record<string, number> = {};

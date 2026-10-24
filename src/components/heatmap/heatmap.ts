@@ -1,6 +1,7 @@
 /* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
 
-import { EDGES, NODE, NODES } from "../../js/data";
+import { EDGES, NODES } from "../../js/data";
+import { NODE } from "../../js/node-types";
 import { nodeScore } from "../../js/stats";
 import "./heatmap.css";
 

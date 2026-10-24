@@ -1,11 +1,10 @@
 // Árbol de pasivas oficial (GGG skilltree-export) reducido a posiciones, stats, conexiones, maestrías e inicios de clase.
+// Los tipos de nodo son los mismos que usa la app.
+import { NODE as TYPE } from "../../src/js/node-types.ts";
 
 // Las órbitas de 16 y 40 nodos no son equidistantes; estos ángulos son los mismos que usa Path of Building.
 const ANGLES: Record<number, number[]> = { 16: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330],
   40: [0, 10, 20, 30, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 135, 140, 150, 160, 170, 180, 190, 200, 210, 220, 225, 230, 240, 250, 260, 270, 280, 290, 300, 310, 315, 320, 330, 340, 350] };
-// Mismos valores que NODE en src/js/data.ts.
-const TYPE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 } as const;
-
 /** Lo que leemos de data.json de skilltree-export. */
 export interface SourceNode {
   name?: string; stats?: string[]; group?: number; orbit: number; orbitIndex: number; out?: string[];

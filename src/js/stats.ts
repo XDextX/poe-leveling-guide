@@ -1,6 +1,7 @@
 /* Clasificación de stats en daño, defensa u otros (aproximada, por palabras clave) y los cálculos que dependen de ella. */
 
-import { MASTERIES, NODE, NODES } from "./data";
+import { MASTERIES, NODES } from "./data";
+import { NODE } from "./node-types";
 
 // Lo defensivo se mira primero porque "damage taken" también dice "damage".
 const DEF_RE = /maximum Life|Life Regenerat|Life Recovery|Leech|Energy Shield|Armour|Evasion|Resist|Block|Suppress|damage taken|less Damage|Avoid|Recover|Regenerat|Flask|Fortify|Stun|Endurance Charge|Damage Reduction/i;

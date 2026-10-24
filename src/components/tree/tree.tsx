@@ -1,6 +1,7 @@
 /* Árbol de pasivas: stats sumadas, mapa de calor por etapas, puntos indispensables y ascendencia/maestrías. */
 
-import { NODE, NODES } from "../../js/data";
+import { NODES } from "../../js/data";
+import { NODE } from "../../js/node-types";
 import { HeatPanel } from "../heat-panel/heat-panel";
 import { KeyNodes } from "../key-nodes/key-nodes";
 import { Section, Subhead } from "../section/section";

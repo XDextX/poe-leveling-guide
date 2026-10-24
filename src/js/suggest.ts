@@ -1,7 +1,8 @@
 /* Sugerencias de leveling: heurísticas que la interfaz muestra siempre como "sugerencia automática". */
 
-import { AREAS, CLASSES, CLASS_STARTS, EDGES, GEMS, NODE, NODES, SKILLS, START } from "./data";
+import { AREAS, CLASSES, CLASS_STARTS, EDGES, GEMS, NODES, SKILLS, START } from "./data";
 import { isSupport } from "./gems";
+import { NODE } from "./node-types";
 import { parseRoute, questOffers } from "./route";
 import { statKind } from "./stats";
 

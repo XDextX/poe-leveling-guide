@@ -1,6 +1,7 @@
 /* Tarjeta de un tramo del leveling sugerido: habilidad, soportes y cuánto del árbol final tendrías. */
 
-import { GEMS, NODE, NODES } from "../../js/data";
+import { GEMS, NODES } from "../../js/data";
+import { NODE } from "../../js/node-types";
 import { GemLine } from "../gem-line/gem-line";
 import "./stage-card.css";
 

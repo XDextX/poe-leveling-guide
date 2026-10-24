@@ -76,7 +76,9 @@ src/
   js/                 lógica sin interfaz, un módulo por responsabilidad (no puede importar la interfaz ni tocar la página):
     data.ts           los datos del juego de la página (window.DATA), ya con nombre
     decode.ts         decodeGameData: los datos crudos a objetos con nombre (función pura, sirve también en Node)
+    node-types.ts     tipos de nodo del árbol, compartidos con scripts/lib/tree.mts
     gems.ts           reglas sobre gemas (soporte o habilidad)
+    cost.ts           coste de las gemas en el vendedor: la tabla, el precio y el texto de «Fuentes»
     errors.ts         errores con mensaje para el usuario
     pob.ts            leer el código de Path of Building
     route.ts          la ruta de campaña y sus marcas (y esc, para su HTML)

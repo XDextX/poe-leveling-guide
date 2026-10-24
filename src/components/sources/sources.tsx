@@ -1,5 +1,7 @@
 /* Fuentes de los datos, con la fecha de descarga y la licencia de exile-leveling. */
 
+import { costTableText } from "../../js/cost";
+
 interface SourcesProps {
   /** Fecha en que se descargaron los datos (AAAA-MM-DD). */
   date: string;
@@ -20,7 +22,7 @@ export const Sources: Component<SourcesProps, HTMLElement> = ({ date, license })
       <dt>Etiquetas, tipos y compatibilidad de soportes de las gemas</dt>
       <dd><a href="https://github.com/repoe-fork/repoe-fork">RePoE</a> (licencia MIT), un volcado de los datos del juego; los datos en sí son de Grinding Gear Games. Se usan para las sugerencias de leveling.</dd>
       <dt>Coste de las gemas en el vendedor</dt>
-      <dd>Tabla por nivel requerido tomada de <a href="https://github.com/Blemming/PoE-newleague">PoE-newleague</a>, de Blemming (menos de 8: Wisdom; 8-15: Transmutation; 16-27: Alteration; 28-37: Chance; 38 o más: Alchemy).</dd>
+      <dd>Tabla por nivel requerido tomada de <a href="https://github.com/Blemming/PoE-newleague">PoE-newleague</a>, de Blemming ({costTableText()}).</dd>
       <dt>Tu build</dt>
       <dd>El código de exportación de <a href="https://pathofbuilding.community/">Path of Building</a>, que se descomprime en tu navegador: clase, gemas, equipo y árbol salen de ahí.</dd>
       <dt>Criterios propios de esta app</dt>
