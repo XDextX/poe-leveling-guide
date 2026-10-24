@@ -1,4 +1,4 @@
-// Descarga a data/ los datos que usa scripts/build.mts. Una petición por archivo, con 1 s de pausa, y se para ante el primer error.
+// Descarga a data/ los datos que reduce scripts/gamedata.mts. Una petición por archivo, con 1 s de pausa, y se para ante el primer error.
 // Uso: npm run data
 import fs from "node:fs";
 import path from "node:path";
@@ -24,7 +24,7 @@ try {
     console.log(`(${i + 1}/${FILES.length}) ${file}`);
   }
   fs.writeFileSync(path.join(dataDir, "downloaded.txt"), new Date().toISOString().slice(0, 10) + "\n");
-  console.log("Listo. Ahora: npm run build");
+  console.log("Listo. Ahora: npm run gamedata");
 } catch (e) {
   console.error("Error: " + (e instanceof Error ? e.message : String(e)));
   process.exitCode = 1;

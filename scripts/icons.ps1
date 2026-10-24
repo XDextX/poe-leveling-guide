@@ -56,11 +56,11 @@ for ($i = 0; $i -lt $sizes.Count; $i++) {
   $bw.Write([UInt32]$pngs[$i].Length); $bw.Write([UInt32]$offset); $offset += $pngs[$i].Length
 }
 foreach ($png in $pngs) { $bw.Write([byte[]]$png) }
-[IO.File]::WriteAllBytes((Join-Path $root 'favicon.ico'), $ico.ToArray())
+[IO.File]::WriteAllBytes((Join-Path $root 'public/favicon.ico'), $ico.ToArray())
 
 # apple-touch-icon.png: iOS recorta las esquinas él mismo, así que va a sangre (sin fondo redondeado transparente).
 $bmp, $g = New-Canvas 180 180; $g.Clear((Col $paper)); Draw-Icon $g (180 / 256) 0 0; $g.Dispose()
-$bmp.Save((Join-Path $root 'apple-touch-icon.png'), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
+$bmp.Save((Join-Path $root 'public/apple-touch-icon.png'), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
 
 # social-card.png: 1200x630, lo que muestran Discord, WhatsApp, Reddit o X al compartir el enlace.
 $bmp, $g = New-Canvas 1200 630; $g.Clear((Col $night))
@@ -72,5 +72,5 @@ $small = New-Object System.Drawing.Font 'Segoe UI', 24, ([System.Drawing.FontSty
 $g.DrawString('Gemas de la Build', $title, (Brush $gold), 450, 190)
 $g.DrawString('Guía de leveling para Path of Exile', $sub, (Brush $light), 452, 278)
 $g.DrawString("Pega tu build de Path of Building y sigue la campaña`nzona por zona: gemas, compras, equipo y árbol.", $small, (Brush $muted), 452, 340)
-$g.Dispose(); $bmp.Save((Join-Path $root 'social-card.png'), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
-"favicon.ico, apple-touch-icon.png y social-card.png generados en $root"
+$g.Dispose(); $bmp.Save((Join-Path $root 'public/social-card.png'), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
+"favicon.ico, apple-touch-icon.png y social-card.png generados en $rootpublic"

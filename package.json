@@ -10,6 +10,7 @@
   "scripts": {
     "build": "node --disable-warning=ExperimentalWarning scripts/build.mts",
     "data": "node scripts/download-data.mts",
+    "gamedata": "node --disable-warning=ExperimentalWarning scripts/gamedata.mts",
     "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json"
   },
   "devDependencies": {

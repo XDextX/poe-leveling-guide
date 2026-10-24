@@ -6,7 +6,7 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 
 ## Cómo usarla
 
-1. Abre `index.html` en el navegador. Si la copias a otro sitio, copia la carpeta entera: `index.html` necesita `gamedata/` a su lado.
+1. Usa la web publicada o, en local, genera la app con `npm run build` y abre `dist/index.html` en el navegador. Si la copias a otro sitio, copia la carpeta `dist/` entera: `index.html` necesita `gamedata/` a su lado.
 2. En Path of Building: **Import/Export Build → Generate** y copia el código.
 3. Pégalo en la app y pulsa **Crear guía**.
 
@@ -22,28 +22,42 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 - **Recargar no pierde nada:** la build, las opciones, lo que tienes desplegado, el mapa de calor y la posición de lectura se guardan en tu navegador y vuelven al recargar. Vaciar el campo y pulsar Crear guía lo borra.
 - Opciones: inicio de liga, mostrar u ocultar las actividades de zona (oculto, la ruta queda solo con los pasos con gemas), cambio de clase y casillas para marcar las gemas conseguidas (se guardan en tu navegador).
 
-## Regenerar los datos
+## Generar la app
 
-Los datos van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva hace falta [Node.js](https://nodejs.org) 22.18 o superior, que ejecuta TypeScript directamente:
+Hace falta [Node.js](https://nodejs.org) 22.18 o superior, que ejecuta TypeScript directamente:
 
 ```bash
 npm install
-npm run data
 npm run build
 npm run typecheck
 ```
 
-`npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run build` los reduce a `gamedata/` y junta `src/` en `index.html`. `npm run typecheck` comprueba los tipos con `tsc` en modo estricto, sin generar nada. Las carpetas `data/` y `node_modules/` no se suben al repositorio.
+`npm run build` genera la web en `dist/`: junta `src/` en `index.html` y copia los datos de `gamedata/` y los archivos de `public/`. `npm run typecheck` comprueba los tipos con `tsc` en modo estricto, sin generar nada. Las carpetas `dist/`, `data/` y `node_modules/` no se suben al repositorio.
+
+**Publicación:** en cada push a `main`, el workflow `.github/workflows/pages.yml` comprueba los tipos, ejecuta `npm run build` y publica `dist/` en GitHub Pages (en Settings → Pages, la fuente es "GitHub Actions"). No descarga nada: usa `gamedata/`, que va en el repositorio.
+
+## Regenerar los datos
+
+Los datos del juego van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva:
+
+```bash
+npm run data
+npm run gamedata
+npm run build
+```
+
+`npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run gamedata` los reduce a `gamedata/`, junto con la fecha de descarga y la licencia de exile-leveling. Después hay que subir `gamedata/` al repositorio.
 
 ## Estructura
 
 ```
-index.html            la app generada, sin dependencias
-gamedata/             los datos del juego, generados: gems.js, campaign.js, tree.js e items.js
-favicon.ico           el icono (16 a 256 px); dentro de la app va en SVG
-apple-touch-icon.png  el icono para la pantalla de inicio de iOS
-social-card.png       la imagen al compartir el enlace (Open Graph, 1200x630)
-sitemap.xml           para enviar la página a Google Search Console
+dist/                 la web generada por npm run build (no va en el repositorio): index.html, gamedata/, public/ y sitemap.xml
+gamedata/             los datos del juego reducidos (gems.js, campaign.js, tree.js, items.js), su fecha y la licencia de exile-leveling
+public/               archivos que se copian tal cual a dist/
+  favicon.ico         el icono (16 a 256 px); dentro de la app va en SVG
+  apple-touch-icon.png  el icono para la pantalla de inicio de iOS
+  social-card.png     la imagen al compartir el enlace (Open Graph, 1200x630)
+.github/workflows/    pages.yml: genera dist/ y la publica en GitHub Pages en cada push a main
 src/
   index.html          el marcado de la página
   types.d.ts          los tipos compartidos por la app y los scripts
@@ -90,8 +104,9 @@ tsconfig.json         tipos de la app (navegador)
 scripts/
   tsconfig.json       tipos de los scripts (Node)
   download-data.mts   descarga los datos a data/
-  icons.ps1           genera favicon.ico, apple-touch-icon.png y social-card.png (Windows)
-  build.mts           reduce los datos a gamedata/ y genera index.html
+  gamedata.mts        reduce los datos de data/ a gamedata/
+  icons.ps1           genera los iconos y la imagen para redes de public/ (Windows)
+  build.mts           genera dist/: index.html, sitemap.xml y la copia de gamedata/ y public/
   lib/                un reductor por fuente de datos, el empaquetado y los datos del sitio (site.mts: URL, descripción, JSON-LD)
 ```
 
