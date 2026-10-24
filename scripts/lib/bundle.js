@@ -1,4 +1,4 @@
-// Junta src/ en un único index.html: estilos, datos y código en línea, para que la app funcione sin conexión y con doble clic.
+// Junta src/ en un único index.html: estilos, icono, datos y código en línea, para que la app funcione sin conexión y con doble clic.
 const fs = require("fs"), path = require("path");
 
 // Lógica sin interfaz (src/js/), en orden de carga: cada módulo puede usar lo que definen los anteriores.
@@ -16,8 +16,10 @@ function bundle(srcDir, { data, date, license }) {
   const css = [read("styles.css"), ...COMPONENTS.map(c => maybe(`components/${c}/${c}.css`))].join("\n");
   const js = [`const DATA = ${JSON.stringify(data)};`, ...MODULES.map(m => read(`js/${m}.js`)),
     ...COMPONENTS.map(c => maybe(`components/${c}/${c}.js`)), read(ENTRY)].join("\n");
+  const icon = "data:image/svg+xml," + encodeURIComponent(read("icon.svg").replace(/<!--[\s\S]*?-->/g, "").replace(/\s+/g, " ").trim());
   // Funciones en los reemplazos: un "$" en el código o los datos no debe leerse como patrón de String.replace.
-  return read("index.html").replace("/*__CSS__*/", () => css).replace("/*__JS__*/", () => js).replaceAll("__DATE__", date)
+  return read("index.html").replace("/*__CSS__*/", () => css).replace("/*__JS__*/", () => js)
+    .replace("__ICON__", () => icon).replaceAll("__DATE__", date)
     .replace("__LICENSE__", () => license.replace(/[<&]/g, c => c === "<" ? "&lt;" : "&amp;"));
 }
 

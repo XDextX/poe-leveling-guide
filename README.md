@@ -35,9 +35,11 @@ node scripts/build.js
 
 ```
 index.html            la app generada: un solo archivo, sin dependencias
+favicon.ico           el icono (16 a 256 px); dentro de la app va en SVG
 src/
   index.html          el marcado de la página
   styles.css          estilos base: tema, formulario, paneles
+  icon.svg            el icono
   js/                 lógica sin interfaz, un módulo por responsabilidad:
     data.js           los datos con nombre de campo y utilidades comunes
     pob.js            leer el código de Path of Building
