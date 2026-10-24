@@ -1,17 +1,19 @@
-// Descarga a data/ los datos que usa scripts/build.js. Una petición por archivo, con 1 s de pausa, y se para ante el primer error.
-// Uso: node scripts/download-data.js
-const fs = require("fs"), path = require("path");
-const dataDir = path.join(__dirname, "..", "data");
+// Descarga a data/ los datos que usa scripts/build.mts. Una petición por archivo, con 1 s de pausa, y se para ante el primer error.
+// Uso: npm run data
+import fs from "node:fs";
+import path from "node:path";
+
+const dataDir = path.join(import.meta.dirname, "..", "data");
 const LEVELING = "https://raw.githubusercontent.com/HeartofPhos/exile-leveling/main";
-const FILES = [
-  ...["quests", "gems", "characters", "areas"].map(f => [`${LEVELING}/common/data/json/${f}.json`, `${f}.json`]),
-  ...Array.from({ length: 10 }, (_, i) => [`${LEVELING}/common/data/routes/act-${i + 1}.txt`, `routes/act-${i + 1}.txt`]),
+const FILES: [url: string, file: string][] = [
+  ...["quests", "gems", "characters", "areas"].map((f): [string, string] => [`${LEVELING}/common/data/json/${f}.json`, `${f}.json`]),
+  ...Array.from({ length: 10 }, (_, i): [string, string] => [`${LEVELING}/common/data/routes/act-${i + 1}.txt`, `routes/act-${i + 1}.txt`]),
   [`${LEVELING}/LICENSE`, "exile-leveling-LICENSE"],
   ["https://raw.githubusercontent.com/grindinggear/skilltree-export/master/data.json", "tree.json"],
   ["https://repoe-fork.github.io/gems.min.json", "repoe-gems.json"],
 ];
 
-(async () => {
+try {
   fs.mkdirSync(path.join(dataDir, "routes"), { recursive: true });
   for (const [i, [url, file]] of FILES.entries()) {
     if (i) await new Promise(r => setTimeout(r, 1000));
@@ -21,5 +23,8 @@ const FILES = [
     console.log(`(${i + 1}/${FILES.length}) ${file}`);
   }
   fs.writeFileSync(path.join(dataDir, "downloaded.txt"), new Date().toISOString().slice(0, 10) + "\n");
-  console.log("Listo. Ahora: node scripts/build.js");
-})().catch(e => { console.error("Error: " + e.message); process.exitCode = 1; });
+  console.log("Listo. Ahora: npm run build");
+} catch (e) {
+  console.error("Error: " + (e instanceof Error ? e.message : String(e)));
+  process.exitCode = 1;
+}

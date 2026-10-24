@@ -4,7 +4,7 @@
  * Sección desplegable con su título (HTML) ya puesto.
  * `toc` la apunta en el índice: { id, label, group } (group agrupa entradas, como los actos bajo "Ruta").
  */
-function section(summaryHtml, className, open = true, toc = null) {
+function section(summaryHtml: string, className: string, open = true, toc: TocTarget | null = null): HTMLDetailsElement {
   const sec = document.createElement("details");
   sec.className = className;
   sec.open = open;
@@ -14,7 +14,7 @@ function section(summaryHtml, className, open = true, toc = null) {
 }
 
 /** Marca un elemento como destino del índice. */
-function tocTarget(el, { id, label, group }) {
+function tocTarget<E extends HTMLElement>(el: E, { id, label, group }: TocTarget): E {
   el.id = id;
   el.dataset.toc = label;
   if (group) el.dataset.tocGroup = group;
@@ -22,12 +22,12 @@ function tocTarget(el, { id, label, group }) {
 }
 
 /** Lista de pares [nombre, texto] como <li><b>nombre</b><p>texto</p></li>, sin interpretar HTML. */
-function fillNamed(ul, pairs) {
+function fillNamed(ul: Element, pairs: [name: string, text: string][]): void {
   for (const [name, text] of pairs) {
     const li = document.createElement("li");
     li.innerHTML = "<b></b><p></p>";
-    li.querySelector("b").textContent = name;
-    li.querySelector("p").textContent = text;
+    li.querySelector("b")!.textContent = name;
+    li.querySelector("p")!.textContent = text;
     ul.append(li);
   }
 }

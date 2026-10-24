@@ -1,0 +1,20 @@
+{
+  // Comprobación de tipos de los scripts de Node. Node los ejecuta directamente (quita los tipos al vuelo), así que no se
+  // emite nada. Incluye src/types.d.ts para que el generador y la app compartan la forma de gamedata/.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true
+  },
+  "include": ["./**/*.mts", "../src/types.d.ts"]
+}

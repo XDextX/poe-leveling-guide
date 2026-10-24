@@ -1,6 +1,6 @@
 /* Resumen de la guía: reparto de gemas, bandidos y moneda total. */
 
-function summaryHtml(build, plan) {
+function summaryHtml(build: Build, plan: Plan): string {
   const { out: steps, missing } = plan;
   const special = build.gems.filter(g => g.kind !== "normal");
   const rewards = steps.reduce((n, s) => n + s.gems.filter(g => !g.buy).length, 0);

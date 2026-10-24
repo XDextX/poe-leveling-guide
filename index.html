@@ -277,32 +277,43 @@ SOFTWARE.
 <script>
 /* Datos del juego (gamedata/*.js los dejan en window.DATA, con campos por posición para que ocupen poco) y utilidades comunes. */
 
+/** Elemento de la página por id. Todos los que se piden existen en index.html; T afina el tipo (textarea, input…). */
+const $ =                                      (id        )    => document.getElementById(id)     ;
+/** Los controles del formulario, con su tipo exacto. */
+const form = {
+  code: $                     ("code"), cls: $                   ("cls"),
+  league: $                  ("league"), zones: $                  ("zones"),
+};
+
 // Si alguien copia solo index.html, sin la carpeta gamedata/, se dice qué falta en vez de dejar la página rota en silencio.
 const MISSING = ["CLASSES", "G", "K", "Q", "A", "START", "ROUTE", "T"].filter(k => !(window.DATA && k in window.DATA));
 if (MISSING.length) {
-  document.getElementById("msg").className = "error";
-  document.getElementById("msg").textContent = "Faltan los datos del juego: la carpeta gamedata/ tiene que estar junto a index.html. Copia la carpeta entera de la app.";
-  document.getElementById("go").disabled = true;
+  $("msg").className = "error";
+  $("msg").textContent = "Faltan los datos del juego: la carpeta gamedata/ tiene que estar junto a index.html. Copia la carpeta entera de la app.";
+  $                   ("go").disabled = true;
   throw new Error("Faltan datos en window.DATA: " + MISSING.join(", "));
 }
+// Comprobado justo arriba: están todas las claves.
+const RAW = window.DATA               ;
 
-const mapValues = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v, k)]));
+const mapValues =       (obj                   , fn                        )                    =>
+  Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v, k)]));
 
-const { CLASSES, ROUTE, START } = DATA;
-const GEMS = mapValues(DATA.G, ([name, attr, level]) => ({ name, attr, level }));
-const QUESTS = mapValues(DATA.Q, ({ n, o }) => ({ name: n, offers: mapValues(o, ([npc, rewards, vendor]) => ({ npc, rewards, vendor })) }));
-const AREAS = mapValues(DATA.A, ([name, act, level, town, townId, recipes]) => ({ name, act, level, town: !!town, townId, recipes }));
+const { CLASSES, ROUTE, START } = RAW;
+const GEMS = mapValues             (RAW.G, ([name, attr, level]) => ({ name, attr, level }));
+const QUESTS = mapValues                 (RAW.Q, ({ n, o }) => ({ name: n, offers: mapValues                 (o, ([npc, rewards, vendor]) => ({ npc, rewards, vendor })) }));
+const AREAS = mapValues               (RAW.A, ([name, act, level, town, townId, recipes]) => ({ name, act, level, town: !!town, townId, recipes }));
 // Etiquetas de RePoE; `allowed`/`excluded` solo existen en los soportes y van en notación polaca inversa.
-const SKILLS = mapValues(DATA.K, ([tags, types, weapons, allowed, excluded]) => ({ tags, types, weapons, allowed, excluded }));
-const NODE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 };
-const NODES = mapValues(DATA.T.nodes, ([x, y, type, name, stats, ascendancy]) => ({ x, y, type, name, stats: stats ? stats.split("\n") : [], ascendancy }));
-const EDGES = DATA.T.edges, MASTERIES = DATA.T.masteries, CLASS_STARTS = DATA.T.starts;
+const SKILLS = mapValues                 (RAW.K, ([tags, types, weapons, allowed, excluded]) => ({ tags, types, weapons, allowed, excluded }));
+const NODE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 }         ;
+const NODES = mapValues                   (RAW.T.nodes, ([x, y, type, name, stats, ascendancy]) => ({ x, y, type, name, stats: stats ? stats.split("\n") : [], ascendancy }));
+const EDGES = RAW.T.edges, MASTERIES = RAW.T.masteries, CLASS_STARTS = RAW.T.starts;
 
-const isSupport = id => SKILLS[id]?.allowed.length > 0;
-const isActive = id => SKILLS[id] && !isSupport(id);
+const isSupport = (id        )          => (SKILLS[id]?.allowed.length ?? 0) > 0;
+const isActive = (id        )          => !!SKILLS[id] && !isSupport(id);
 
 // Nombre en minúsculas → id; PoB omite " Support" en las gemas de soporte, así que se registran ambas formas.
-const byName = new Map();
+const byName = new Map                ();
 for (const [id, g] of Object.entries(GEMS)) {
   const n = g.name.toLowerCase();
   if (!byName.has(n)) byName.set(n, id);
@@ -310,17 +321,19 @@ for (const [id, g] of Object.entries(GEMS)) {
 }
 
 /** Coste en el vendedor según el nivel requerido de la gema. */
-const cost = level => level < 8 ? "Scroll of Wisdom" : level < 16 ? "Orb of Transmutation" : level < 28 ? "Orb of Alteration" : level < 38 ? "Orb of Chance" : "Orb of Alchemy";
+const cost = (level        )         => level < 8 ? "Scroll of Wisdom" : level < 16 ? "Orb of Transmutation" : level < 28 ? "Orb of Alteration" : level < 38 ? "Orb of Chance" : "Orb of Alchemy";
 
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const ESCAPES                         = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+const esc = (s         )         => String(s).replace(/[&<>"]/g, c => ESCAPES[c]);
 /** Error con un mensaje pensado para el usuario (los del navegador no lo son). */
-const userError = msg => Object.assign(new Error(msg), { own: true });
+                                       
+const userError = (msg        )            => Object.assign(new Error(msg), { own: true          });
+const isUserError = (e         )                 => e instanceof Error && (e                      ).own === true;
 
 /* Lectura del código de exportación de Path of Building: clase, gemas, habilidad principal, equipo y árbol. */
 
 /** Código de PoB → XML: base64 "url-safe" comprimido con zlib. */
-async function decode(code) {
+async function decode(code        )                  {
   let b64 = code.trim().replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
   b64 += "=".repeat((4 - b64.length % 4) % 4);
   const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -329,11 +342,11 @@ async function decode(code) {
 }
 
 /** XML de PoB → la build: clase, ascendencia, bandidos, gemas sin repetir, equipo, árbol y habilidad principal. */
-function parseBuild(xml) {
+function parseBuild(xml        )        {
   const doc = new DOMParser().parseFromString(xml, "application/xml");
   if (doc.querySelector("parsererror") || !doc.querySelector("PathOfBuilding")) throw userError("no es un código de Path of Building");
   const b = doc.querySelector("Build");
-  const gems = [], seen = new Set();
+  const gems             = [], seen = new Set        ();
   for (const el of doc.querySelectorAll("Skills Gem")) {
     const spec = (el.getAttribute("nameSpec") || "").trim();
     const id = gemIdOf(el);
@@ -342,18 +355,18 @@ function parseBuild(xml) {
     seen.add(name.toLowerCase());
     gems.push(classify(name, id));
   }
-  return { cls: b?.getAttribute("className"), ascend: b?.getAttribute("ascendClassName"), bandit: b?.getAttribute("bandit") || "None",
+  return { cls: b?.getAttribute("className") ?? null, ascend: b?.getAttribute("ascendClassName") ?? null, bandit: b?.getAttribute("bandit") || "None",
     gems, items: parseItems(doc), tree: parseTree(doc), main: mainSkill(doc) };
 }
 
 /** Id de la gema de un <Gem>: su gemId si lo conocemos y, si no, su nombre. */
-function gemIdOf(el) {
+function gemIdOf(el         )                {
   const id = (el.getAttribute("gemId") || "").replace("Metadata/Items/Gems/", "");
   return GEMS[id] ? id : byName.get((el.getAttribute("nameSpec") || "").trim().toLowerCase()) || null;
 }
 
 /** Tipo de gema: normal (se busca en la ruta), vaal, transfigurada, despertada u otra (sin datos). */
-function classify(name, id) {
+function classify(name        , id               )           {
   const lower = name.toLowerCase();
   if (lower.startsWith("awakened ")) return { name, id, kind: "awakened" };
   if (lower.startsWith("vaal ")) return { name, id, kind: "vaal", base: byName.get(lower.slice(5)) };
@@ -364,9 +377,9 @@ function classify(name, id) {
 }
 
 /** El <Spec> (árbol) que la build tiene activo y todos los demás. */
-function treeSpecs(doc) {
+function treeSpecs(doc          )                                                  {
   const specs = [...doc.querySelectorAll("Tree > Spec")];
-  const active = specs[(+doc.querySelector("Tree")?.getAttribute("activeSpec") || 1) - 1] || specs[0];
+  const active = specs[(Number(doc.querySelector("Tree")?.getAttribute("activeSpec")) || 1) - 1] || specs[0];
   return { active, all: specs };
 }
 
@@ -374,56 +387,56 @@ function treeSpecs(doc) {
  * Árbol activo → { nodes, masteries, classId, stages }; los nodos de joyas cluster no están en el árbol base y se ignoran.
  * stages son los demás árboles de la build, si el autor los incluyó (suelen ser los de leveling): [{ title, nodes }].
  */
-function parseTree(doc) {
+function parseTree(doc          )            {
   const { active: spec, all } = treeSpecs(doc);
   if (!spec) return { nodes: [], masteries: [], classId: null, stages: [] };
-  const nodesOf = s => (s.getAttribute("nodes") || "").split(",").filter(id => NODES[id]);
-  const masteries = [...(spec.getAttribute("masteryEffects") || "").matchAll(/\{(\d+),(\d+)\}/g)].map(m => [m[1], m[2]]);
+  const nodesOf = (s         ) => (s.getAttribute("nodes") || "").split(",").filter(id => NODES[id]);
+  const masteries = [...(spec.getAttribute("masteryEffects") || "").matchAll(/\{(\d+),(\d+)\}/g)].map((m)                   => [m[1], m[2]]);
   const stages = all.length > 1 ? all.filter(s => s !== spec).map((s, i) => ({ title: s.getAttribute("title") || `Árbol ${i + 1}`, nodes: nodesOf(s) })) : [];
   return { nodes: nodesOf(spec), masteries, classId: spec.getAttribute("classId"), stages };
 }
 
 /** Habilidad principal: la primera gema activa del grupo que Path of Building marca como principal, con sus soportes. */
-function mainSkill(doc) {
+function mainSkill(doc          )                   {
   const set = doc.querySelector(`Skills > SkillSet[id="${doc.querySelector("Skills")?.getAttribute("activeSkillSet")}"]`) || doc.querySelector("Skills > SkillSet") || doc.querySelector("Skills");
   const groups = [...(set?.querySelectorAll(":scope > Skill") || [])];
-  const group = groups[(+doc.querySelector("Build")?.getAttribute("mainSocketGroup") || 1) - 1] || groups[0];
-  const ids = [...(group?.querySelectorAll("Gem") || [])].map(gemIdOf).filter(Boolean);
+  const group = groups[(Number(doc.querySelector("Build")?.getAttribute("mainSocketGroup")) || 1) - 1] || groups[0];
+  const ids = [...(group?.querySelectorAll("Gem") || [])].map(gemIdOf).filter((id)               => !!id);
   const active = ids.find(isActive);
   return active ? { id: active, supports: ids.filter(id => id !== active && isSupport(id)) } : null;
 }
 
 /** Objetos equipados (conjunto activo) y joyas del árbol activo → [{ slot, rarity, name, base, req, mods }]. */
-function parseItems(doc) {
-  const text = new Map([...doc.querySelectorAll("Items > Item")].map(el => [el.getAttribute("id"), el.textContent]));
+function parseItems(doc          )         {
+  const text = new Map([...doc.querySelectorAll("Items > Item")].map(el => [el.getAttribute("id") ?? "", el.textContent ?? ""]));
   const itemsEl = doc.querySelector("Items");
   const set = doc.querySelector(`ItemSet[id="${itemsEl?.getAttribute("activeItemSet")}"]`) || doc.querySelector("ItemSet") || itemsEl;
-  const used = [];
-  const take = (slot, id) => { if (id && id !== "0") used.push([slot, id]); };
+  const used                               = [];
+  const take = (slot               , id               ) => { if (slot && id && id !== "0") used.push([slot, id]); };
   set?.querySelectorAll(":scope > Slot").forEach(s => take(s.getAttribute("name"), s.getAttribute("itemId")));
   treeSpecs(doc).active?.querySelectorAll("Socket").forEach(s => take("Jewel", s.getAttribute("itemId")));
   return used.filter(([, id]) => text.has(id)).map(([slot, id]) => {
-    const L = text.get(id).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const raw = text.get(id) ?? "", L = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
     const rarity = (L[0] || "").replace("Rarity: ", "");
     const named = rarity === "RARE" || rarity === "UNIQUE";
     const imp = L.findIndex(l => l.startsWith("Implicits:"));
     const mods = imp < 0 ? [] : L.slice(imp + 1).map(l => l.replace(/\{[^}]*\}/g, "").trim()).filter(Boolean);
-    return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(text.get(id).match(/LevelReq: (\d+)/) || [])[1] || 0, mods };
+    return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods };
   });
 }
 
 /* Ruta de campaña (formato de exile-leveling): parseo, traducción de los verbos y pintado de sus marcas {tipo|args}. */
 
 /** Opciones de la ruta para una build: qué hacer con los bandidos y si es inicio de liga. */
-function routeDefs(build, leagueStart) {
-  const defs = new Set(["BANDIT_" + (build.bandit === "None" ? "KILL" : build.bandit.toUpperCase())]);
+function routeDefs(build       , leagueStart         )              {
+  const defs = new Set        (["BANDIT_" + (build.bandit === "None" ? "KILL" : build.bandit.toUpperCase())]);
   if (leagueStart) defs.add("LEAGUE_START");
   return defs;
 }
 
 /** Texto de la ruta → pasos [{ act, line, notes }], aplicando #ifdef/#ifndef con las opciones dadas. */
-function parseRoute(defs) {
-  const steps = [], stack = [];
+function parseRoute(defs             )              {
+  const steps              = [], stack            = [];
   let act = 0;
   for (const raw of ROUTE.split(/\r?\n/)) {
     const line = raw.trim();
@@ -441,33 +454,36 @@ function parseRoute(defs) {
 }
 
 /** Argumentos de una marca {quest|id|oferta…} → la misión y sus ofertas (todas si la marca no las nombra). */
-function questOffers([qid, ...named]) {
+function questOffers([qid, ...named]          )                                           {
   const quest = QUESTS[qid];
   if (!quest) return null;
-  return { quest, offers: (named.length ? named : Object.keys(quest.offers)).map(oid => quest.offers[oid]).filter(Boolean) };
+  return { quest, offers: (named.length ? named : Object.keys(quest.offers)).map(oid => quest.offers[oid]).filter((o)             => !!o) };
 }
 
 // Los verbos con que empiezan los pasos; el resto del texto de la ruta queda en inglés, como en el original.
-const VERBS = [["Find and kill ", "Busca y mata a "], ["Find and Kill ", "Busca y mata a "], ["Find and take ", "Busca y coge "],
+const VERBS                             = [["Find and kill ", "Busca y mata a "], ["Find and Kill ", "Busca y mata a "], ["Find and take ", "Busca y coge "],
   ["Find and help ", "Busca y ayuda a "], ["Help and talk ", "Ayuda y habla "], ["Hand in ", "Entrega "], ["Talk to ", "Habla con "],
   ["Complete ", "Completa "], ["Get ", "Consigue "], ["Kill ", "Mata a "], ["Find ", "Busca "], ["Take the ", "Coge el "], ["Take ", "Coge "],
   ["Poison the ", "Envenena el "], ["Activate ", "Activa "], ["Help ", "Ayuda a "], ["Select ", "Elige "], ["Place ", "Coloca "],
   ["Open ", "Abre "], ["Light the ", "Enciende el "], ["Free ", "Libera a "], ["Burn the ", "Quema el "], ["Break ", "Rompe "], ["Before ", "Antes de "]];
-const translate = s => { for (const [en, es] of VERBS) if (s.startsWith(en)) return es + s.slice(en.length).replace(/, take /g, ", coge ").replace(/, kill /g, ", mata a "); return s; };
+const translate = (s        )         => { for (const [en, es] of VERBS) if (s.startsWith(en)) return es + s.slice(en.length).replace(/, take /g, ", coge ").replace(/, kill /g, ", mata a "); return s; };
 
-const minLevel = level => Math.max(1, level - (3 + Math.floor(level / 16)));
+const minLevel = (level        )         => Math.max(1, level - (3 + Math.floor(level / 16)));
 const ARROWS = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
-const arrow = degrees => ARROWS[Math.round(+degrees / 45) % 8];
-const LAB = { normal: "1_Labyrinth_boss_3", cruel: "2_Labyrinth_boss_3", merciless: "3_Labyrinth_boss_3", eternal: "EndGame_Labyrinth_boss_3" };
-const LAB_ES = { normal: "normal", cruel: "cruel", merciless: "despiadado", eternal: "eterno" };
-const lvlTag = level => `<span class="lvl">nv ${minLevel(level)}+</span>`;
-const areaHtml = id => { const a = AREAS[id]; if (!a) return esc(id); return `<span class="area">${esc(a.name)}</span>${a.town ? "" : lvlTag(a.level)}`; };
+const arrow = (degrees        )         => ARROWS[Math.round(+degrees / 45) % 8];
+const LAB                         = { normal: "1_Labyrinth_boss_3", cruel: "2_Labyrinth_boss_3", merciless: "3_Labyrinth_boss_3", eternal: "EndGame_Labyrinth_boss_3" };
+const LAB_ES                         = { normal: "normal", cruel: "cruel", merciless: "despiadado", eternal: "eterno" };
+const lvlTag = (level        )         => `<span class="lvl">nv ${minLevel(level)}+</span>`;
+const areaHtml = (id        )         => { const a = AREAS[id]; if (!a) return esc(id); return `<span class="area">${esc(a.name)}</span>${a.town ? "" : lvlTag(a.level)}`; };
+
+/** Estado del recorrido de la ruta: la zona actual, dónde se puso el portal y qué hacer en cada entrega de misión. */
+                                                                                                   
 
 /**
  * Cómo se pinta cada marca de la ruta. `ctx` lleva la zona actual (para Logout, Portal y recetas) y `onQuest`, que decide
  * las gemas de cada entrega. Una marca nueva se añade aquí sin tocar el recorrido.
  */
-const TOKENS = {
+const TOKENS                                                            = {
   enter: ([id], ctx) => { ctx.here = id; return areaHtml(id); },
   area: ([id]) => areaHtml(id),
   arena: ([name]) => `<span class="area">${esc(name)}</span>`,
@@ -484,7 +500,7 @@ const TOKENS = {
     const extra = from && to && from.act !== to.act ? ` <span class="lvl">acto ${to.act}</span>` : "";
     return `<span class="wp">Waypoint</span> ➞ ${areaHtml(id)}${extra}`;
   },
-  logout: (_, ctx) => { const a = AREAS[ctx.here]; if (a && !a.town) ctx.here = a.townId; return `<b>Logout</b> ➞ ${areaHtml(ctx.here)}`; },
+  logout: (_, ctx) => { const a = AREAS[ctx.here]; if (a && !a.town) ctx.here = a.townId ?? ctx.here; return `<b>Logout</b> ➞ ${areaHtml(ctx.here)}`; },
   portal: ([how], ctx) => {
     if (how === "set") { ctx.portalFrom = ctx.here; return `<b>Portal</b>`; }
     const a = AREAS[ctx.here];
@@ -500,11 +516,11 @@ const TOKENS = {
 };
 
 /** Pinta una línea de la ruta: traduce el verbo y sustituye cada marca por su HTML. */
-const renderLine = (line, ctx) => translate(line).replace(/\{([a-z_]+)(?:\|([^}]*))?\}/g, (_, type, arg = "") =>
+const renderLine = (line        , ctx          )         => translate(line).replace(/\{([a-z_]+)(?:\|([^}]*))?\}/g, (_, type        , arg         = "") =>
   TOKENS[type] ? TOKENS[type](arg.split("|"), ctx) : esc(arg || type));
 
 /** Las notas (#sub) son texto: se traducen los verbos, se dibujan las flechas y del resto de marcas queda su texto. */
-const renderNote = note => translate(note).replace(/\{dir\|(\d+)\}/g, (_, d) => `<span class="dir">${arrow(d)}</span>`).replace(/\{[a-z_]+\|([^}]*)\}/g, "$1");
+const renderNote = (note        )         => translate(note).replace(/\{dir\|(\d+)\}/g, (_, d        ) => `<span class="dir">${arrow(d)}</span>`).replace(/\{[a-z_]+\|([^}]*)\}/g, "$1");
 
 /* Qué gema se consigue en cada paso de la ruta: una recompensa por oferta de misión y compras en cuanto se venden. */
 
@@ -512,25 +528,25 @@ const renderNote = note => translate(note).replace(/\{dir\|(\d+)\}/g, (_, d) => 
  * Recorre la ruta: pinta cada paso y, en cada entrega de misión, elige una recompensa y compra lo que ya esté a la venta.
  * Devuelve el HTML por paso y qué gemas se consiguieron dónde.
  */
-function walk(steps, cls, want) {
-  const bit = 1 << CLASSES.indexOf(cls), got = new Map();
-  const ctx = { here: "1_1_1", portalFrom: null, onQuest: null };
+function walk(steps             , cls        , want          )                                                  {
+  const bit = 1 << CLASSES.indexOf(cls), got = new Map               ();
+  const ctx           = { here: "1_1_1", portalFrom: null, onQuest: () => "" };
   const out = steps.map(step => {
-    const gems = [];
-    ctx.onQuest = args => {
+    const gems             = [];
+    ctx.onQuest = (args          ) => {
       const found = questOffers(args);
       if (!found) return esc(args[0]);
       const npcs = new Set();
       for (const { npc, rewards, vendor } of found.offers) {
         if (npc) npcs.add(npc);
         const open = want.filter(id => !got.has(id));
-        const sold = id => vendor[id] && vendor[id][0] & bit;
-        const canReward = open.filter(id => rewards[id] & bit);
+        const sold = (id        )          => !!vendor[id] && (vendor[id][0] & bit) !== 0;
+        const canReward = open.filter(id => (rewards[id] & bit) !== 0);
         // Mejor gastar la recompensa gratuita en una gema que este mismo vendedor no venda.
         const reward = canReward.find(id => !sold(id)) || canReward[0] || null;
-        const buys = {};
+        const buys                           = {};
         for (const id of open) if (id !== reward && sold(id)) (buys[vendor[id][1]] ??= []).push(id);
-        const at = { act: step.act, quest: found.quest.name };
+        const at        = { act: step.act, quest: found.quest.name };
         if (reward) { got.set(reward, at); gems.push({ how: "Recompensa", npc, ids: [reward] }); }
         for (const [who, ids] of Object.entries(buys)) { ids.forEach(id => got.set(id, at)); gems.push({ how: "Comprar a " + who, ids, buy: true }); }
       }
@@ -545,10 +561,10 @@ function walk(steps, cls, want) {
  * Ruta y gemas para una build; la Biblioteca (Siosa) solo se incluye si aporta alguna gema.
  * `extra` son las gemas de leveling sugeridas: van detrás, así que si una recompensa sirve para ambas gana la de la build.
  */
-function plan(build, cls, leagueStart, extra = []) {
-  const want = [];
+function plan(build       , cls        , leagueStart         , extra           = [])       {
+  const want           = [];
   for (const g of build.gems) {
-    if (g.kind === "normal") want.push(g.id);
+    if (g.kind === "normal" && g.id) want.push(g.id);
     if ((g.kind === "vaal" || g.kind === "transfigured") && g.base && !want.includes(g.base)) want.push(g.base);
   }
   for (const id of extra) if (!want.includes(id)) want.push(id);
@@ -566,71 +582,71 @@ function plan(build, cls, leagueStart, extra = []) {
 // Lo defensivo se mira primero porque "damage taken" también dice "damage".
 const DEF_RE = /maximum Life|Life Regenerat|Life Recovery|Leech|Energy Shield|Armour|Evasion|Resist|Block|Suppress|damage taken|less Damage|Avoid|Recover|Regenerat|Flask|Fortify|Stun|Endurance Charge|Damage Reduction/i;
 const DMG_RE = /Damage|Critical|Attack Speed|Cast Speed|Accuracy|Penetrat|Projectile|Area of Effect|Multiplier|Impale|Bleed|Poison|Ignite|Shock|Freeze|Chill|Onslaught|Frenzy Charge|Power Charge|Wither/i;
-const statKind = line => DEF_RE.test(line) ? "def" : DMG_RE.test(line) ? "dmg" : "other";
-const KIND_ES = { dmg: "Daño", def: "Defensa", other: "Otros" };
+const statKind = (line        )           => DEF_RE.test(line) ? "def" : DMG_RE.test(line) ? "dmg" : "other";
+const KIND_ES                           = { dmg: "Daño", def: "Defensa", other: "Otros" };
 
 /** Stats de los nodos cogidos (más maestrías), sumando las líneas iguales: "+10 to Dexterity" ×3 → "+30 to Dexterity". */
-function treeStats(tree) {
-  const lines = [];
+function treeStats(tree           )                                                  {
+  const lines           = [];
   for (const id of tree.nodes) { const n = NODES[id]; if (n.type !== NODE.MASTERY) lines.push(...n.stats); }
   for (const [node, effect] of tree.masteries) { const s = MASTERIES[node]?.[effect]; if (s) lines.push(...s.split("\n")); }
-  const sums = new Map();
+  const sums = new Map                                       ();
   for (const line of lines) {
     const key = line.replace(/\d+(\.\d+)?/g, "#");
     const nums = (line.match(/\d+(\.\d+)?/g) || []).map(Number);
     const prev = sums.get(key);
     if (prev) { prev.n++; prev.nums = prev.nums.map((v, i) => v + (nums[i] || 0)); } else sums.set(key, { n: 1, nums });
   }
-  const out = { dmg: [], def: [], other: [] };
+  const out                                                  = { dmg: [], def: [], other: [] };
   for (const [key, { n, nums }] of sums) {
     let i = 0;
-    const text = key.replace(/#/g, () => { const v = nums[i++]; return Number.isInteger(v) ? v : v.toFixed(1); });
+    const text = key.replace(/#/g, () => { const v = nums[i++]; return Number.isInteger(v) ? String(v) : v.toFixed(1); });
     out[statKind(key)].push({ text, n });
   }
-  for (const k in out) out[k].sort((a, b) => b.n - a.n);
+  for (const k of ["dmg", "def", "other"]         ) out[k].sort((a, b) => b.n - a.n);
   return out;
 }
 
 /** Puntuación de daño y defensa de un nodo (nº de líneas de cada tipo; los notables y keystones pesan más). */
-function nodeScore(id) {
+function nodeScore(id        )                               {
   const n = NODES[id], w = n.type === NODE.KEYSTONE ? 3 : n.type === NODE.NOTABLE ? 2 : 1, s = { dmg: 0, def: 0 };
   for (const line of n.stats) { const k = statKind(line); if (k !== "other") s[k] += w; }
   return s;
 }
 
 /** Tipo dominante de un nodo para la lista de indispensables. */
-function nodeKind(id) {
+function nodeKind(id        )                        {
   if (NODES[id].type === NODE.KEYSTONE) return "keystone";
   const s = nodeScore(id);
   return s.def > s.dmg ? "def" : s.dmg > s.def ? "dmg" : "other";
 }
 
 // Grupos de stats para la prioridad del equipo; una pieza cuenta una vez por grupo aunque tenga varias líneas de él.
-const GEAR_STATS = [["Vida máxima", /to maximum Life|increased maximum Life/i], ["Resistencias elementales", /(Fire|Cold|Lightning|all Elemental) Resistance/i],
+const GEAR_STATS                                = [["Vida máxima", /to maximum Life|increased maximum Life/i], ["Resistencias elementales", /(Fire|Cold|Lightning|all Elemental) Resistance/i],
   ["Resistencia al caos", /Chaos Resistance/i], ["Supresión de hechizos", /Suppress Spell Damage/i], ["Evasión / Escudo de energía", /Evasion|Energy Shield/i],
   ["Armadura", /\bArmour\b/i], ["Atributos", /to (Strength|Dexterity|Intelligence|all Attributes)/i], ["Crítico", /Critical Strike/i],
   ["Velocidad de ataque", /Attack Speed/i], ["Daño añadido", /^Adds \d+ to \d+/i], ["Velocidad de movimiento", /Movement Speed/i],
   ["Maná y reserva", /Mana|Reservation/i], ["Vida por golpe / robo de vida", /Life (per Enemy Hit|Leech)|Leeches/i]];
 
 /** Cuántas piezas llevan cada grupo de stats, de más a menos; sin los grupos que no lleva ninguna. */
-const gearStatCounts = pieces => GEAR_STATS.map(([label, re]) => [label, pieces.filter(p => p.mods.some(m => re.test(m))).length])
+const gearStatCounts = (pieces        )                               => GEAR_STATS.map(([label, re])                   => [label, pieces.filter(p => p.mods.some(m => re.test(m))).length])
   .filter(([, n]) => n).sort((a, b) => b[1] - a[1]);
 
-const SLOT_ES = { "Weapon 1": "Arma", "Weapon 2": "Mano secundaria", "Weapon 1 Swap": "Arma (cambio)", "Weapon 2 Swap": "Mano sec. (cambio)",
+const SLOT_ES                         = { "Weapon 1": "Arma", "Weapon 2": "Mano secundaria", "Weapon 1 Swap": "Arma (cambio)", "Weapon 2 Swap": "Mano sec. (cambio)",
   "Body Armour": "Armadura", Helmet: "Casco", Gloves: "Guantes", Boots: "Botas", Belt: "Cinturón", "Ring 1": "Anillo", "Ring 2": "Anillo",
   Amulet: "Amuleto", Jewel: "Joya del árbol" };
-const slotEs = s => SLOT_ES[s] || (s.startsWith("Flask") ? "Frasco" : s.includes("Abyssal") ? "Joya abisal" : s);
+const slotEs = (s        )         => SLOT_ES[s] || (s.startsWith("Flask") ? "Frasco" : s.includes("Abyssal") ? "Joya abisal" : s);
 
 /* Sugerencias de leveling: heurísticas que la interfaz muestra siempre como "sugerencia automática". */
 
-const STAGES = [[1, 2], [3, 4], [5, 6], [7, 10]];
+const STAGES                                  = [[1, 2], [3, 4], [5, 6], [7, 10]];
 // Nivel aproximado al acabar un acto: el de la zona de más nivel de ese acto.
-const actLevel = act => Math.max(...Object.values(AREAS).filter(a => a.act === act && !a.town).map(a => a.level));
+const actLevel = (act        )         => Math.max(...Object.values(AREAS).filter(a => a.act === act && !a.town).map(a => a.level));
 
 /** Primer acto de la ruta en que la clase puede conseguir cada gema (como recompensa o comprándola). */
-function availability(cls, defs) {
-  const bit = 1 << CLASSES.indexOf(cls), avail = {};
-  const mark = (id, act) => { if (!(id in avail)) avail[id] = act; };
+function availability(cls        , defs             )                         {
+  const bit = 1 << CLASSES.indexOf(cls), avail                         = {};
+  const mark = (id        , act        ) => { if (!(id in avail)) avail[id] = act; };
   (START[cls] || []).forEach(id => mark(id, 1));
   for (const step of parseRoute(defs))
     for (const m of step.line.matchAll(/\{quest\|([^}]*)\}/g))
@@ -642,45 +658,45 @@ function availability(cls, defs) {
 }
 
 /** Evalúa una lista de tipos en notación polaca inversa (["Spell", "Totemable", "AND"]) contra los tipos de una habilidad. */
-function rpn(expr, types) {
-  const st = [];
+function rpn(expr          , types          )          {
+  const st            = [];
   for (const t of expr) {
-    if (t === "AND" || t === "OR") { const b = st.pop(), a = st.pop(); st.push(t === "AND" ? a && b : a || b); }
+    if (t === "AND" || t === "OR") { const b = st.pop() ?? false, a = st.pop() ?? false; st.push(t === "AND" ? a && b : a || b); }
     else st.push(types.includes(t));
   }
   return st.some(Boolean);
 }
-const canSupport = (sup, skill) => {
+const canSupport = (sup        , skill        )          => {
   const { allowed, excluded } = SKILLS[sup], types = SKILLS[skill].types;
   return allowed.length > 0 && rpn(allowed, types) && !(excluded.length && rpn(excluded, types));
 };
-const similarity = (a, b) => { const x = new Set(SKILLS[a].tags), y = SKILLS[b].tags; const inter = y.filter(t => x.has(t)).length; return inter / (new Set([...x, ...y]).size || 1); };
+const similarity = (a        , b        )         => { const x = new Set(SKILLS[a].tags), y = SKILLS[b].tags; const inter = y.filter(t => x.has(t)).length; return inter / (new Set([...x, ...y]).size || 1); };
 /** Ordena por parecido con la habilidad principal y, a igualdad, por nivel (la más avanzada primero). */
-const byLikeness = mainId => (a, b) => similarity(mainId, b) - similarity(mainId, a) || GEMS[b].level - GEMS[a].level;
+const byLikeness = (mainId        ) => (a        , b        )         => similarity(mainId, b) - similarity(mainId, a) || GEMS[b].level - GEMS[a].level;
 // Habilidades que no sirven para matar mientras subes, salvo que la build principal también sea de ese tipo.
 const UTILITY_TAGS = ["aura", "herald", "movement", "travel", "blink", "guard", "warcry", "curse", "mark", "link", "banner", "golem", "stance", "vaal", "minion", "totem", "trap", "mine", "brand", "trigger"];
 
 /** Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden. */
-function suggestSkills(main, cls, defs) {
+function suggestSkills(main           , cls        , defs             )               {
   const avail = availability(cls, defs), mainSkill = SKILLS[main.id], mainTags = new Set(mainSkill.tags);
   const isAttack = mainSkill.types.includes("Attack"), isSpell = mainSkill.types.includes("Spell");
-  const skillOk = id => {
+  const skillOk = (id        )          => {
     const { tags, types, weapons } = SKILLS[id];
     if (isSupport(id) || !(id in avail)) return false;
     if (types.includes("Attack") !== isAttack || types.includes("Spell") !== isSpell) return false;
     if (tags.some(t => UTILITY_TAGS.includes(t) && !mainTags.has(t))) return false;
     return !(mainSkill.weapons.length && weapons.length && !weapons.some(w => mainSkill.weapons.includes(w)));
   };
-  const out = [];
-  let from = 1, prev = null;
+  const out               = [];
+  let from = 1, prev                = null;
   for (const [first, last] of STAGES) {
     const to = actLevel(last), usable = from + 4;
-    let skill = null, own = false;
+    let skill                = null, own = false;
     if (avail[main.id] <= first && GEMS[main.id].level <= usable) { skill = main.id; own = true; }
     else skill = Object.keys(SKILLS).filter(id => skillOk(id) && avail[id] <= first && GEMS[id].level <= usable).sort(byLikeness(main.id))[0] || prev;
-    let supports = [];
+    let supports           = [];
     if (skill) {
-      const ok = id => SKILLS[id] && id in avail && avail[id] <= last && GEMS[id].level <= to && canSupport(id, skill);
+      const ok = (id        )          => SKILLS[id] && id in avail && avail[id] <= last && GEMS[id].level <= to && canSupport(id, skill);
       const fromBuild = main.supports.filter(ok);
       const others = Object.keys(SKILLS).filter(id => isSupport(id) && ok(id) && !fromBuild.includes(id) && !SKILLS[id].tags.includes("vaal")).sort(byLikeness(main.id));
       supports = [...fromBuild, ...others].slice(0, 4);
@@ -692,15 +708,15 @@ function suggestSkills(main, cls, defs) {
 }
 
 // Vecinos de cada nodo del árbol, en los dos sentidos.
-const ADJ = new Map();
+const ADJ = new Map                  ();
 for (let i = 0; i < EDGES.length; i += 2) {
   const a = String(EDGES[i]), b = String(EDGES[i + 1]);
   ADJ.has(a) || ADJ.set(a, []); ADJ.has(b) || ADJ.set(b, []);
-  ADJ.get(a).push(b); ADJ.get(b).push(a);
+  ADJ.get(a) .push(b); ADJ.get(b) .push(a);
 }
 
 /** Valor de un nodo para el árbol de leveling en el tramo `si`: la defensa pesa más al principio. */
-function levelingValue(id, si) {
+function levelingValue(id        , si        )         {
   const n = NODES[id], defW = [1.5, 1.3, 1.1, 1][si];
   // Las keystones definen la build final pero suelen tener un coste (Perfect Agony quita el daño extra de los críticos):
   // casi no cuentan hasta el último tramo.
@@ -712,10 +728,10 @@ function levelingValue(id, si) {
 }
 
 /** Camino más corto (por nodos del árbol final aún no cogidos) desde lo ya cogido hasta cada nodo alcanzable: nodo → nodo anterior. */
-function reachable(taken, final) {
-  const parent = new Map(), queue = [...taken], seen = new Set(taken);
+function reachable(taken             , final             )                      {
+  const parent = new Map                (), queue = [...taken], seen = new Set(taken);
   while (queue.length) {
-    const cur = queue.shift();
+    const cur = queue.shift() ;
     for (const nb of ADJ.get(cur) || []) if (final.has(nb) && !seen.has(nb)) { seen.add(nb); parent.set(nb, cur); queue.push(nb); }
   }
   return parent;
@@ -725,20 +741,20 @@ function reachable(taken, final) {
  * Árbol de leveling sugerido: crece desde el inicio de la clase solo por nodos del árbol final y, en cada paso,
  * coge el camino que más aporta por punto gastado. Puntos por tramo ≈ nivel − 1 + puntos de misión (≈22 en la campaña, +2 si se matan los bandidos).
  */
-function suggestTrees(tree, killBandits) {
-  const start = CLASS_STARTS[tree.classId];
+function suggestTrees(tree           , killBandits         )              {
+  const start = tree.classId ? CLASS_STARTS[tree.classId] : undefined;
   if (!start) return [];
   const final = new Set(tree.nodes.filter(id => NODES[id].type !== NODE.MASTERY && !NODES[id].ascendancy && id !== start));
-  const taken = new Set([start]), out = [];
+  const taken = new Set([start]), out              = [];
   for (const [si, [, last]] of STAGES.entries()) {
     const level = actLevel(last), points = level - 1 + Math.round(22 * last / 10) + (killBandits && last >= 2 ? 2 : 0);
     let budget = points - (taken.size - 1);
     while (budget > 0) {
       const parent = reachable(taken, final);
-      let best = null;
+      let best                                           = null;
       for (const t of parent.keys()) {
-        const path = [];
-        for (let c = t; !taken.has(c); c = parent.get(c)) path.push(c);
+        const path           = [];
+        for (let c = t; !taken.has(c); c = parent.get(c) ) path.push(c);
         if (path.length > budget) continue;
         const score = path.reduce((s, id) => s + levelingValue(id, si), 0) / path.length;
         if (!best || score > best.score) best = { score, path };
@@ -760,15 +776,15 @@ const SESSION_KEY = "poe-gemas:sesion";
 history.scrollRestoration = "manual";
 
 /** Valor del botón pulsado en una botonera del mapa de calor (data-s de las etapas, data-m de los modos). */
-const pressedValue = (selector, key) => document.querySelector(`${selector} [aria-pressed="true"]`)?.dataset[key];
+const pressedValue = (selector        , key        )                     => document.querySelector             (`${selector} [aria-pressed="true"]`)?.dataset[key];
 
 /** Guarda el estado actual; sin guía a la vista (campo vacío o código inválido) no hay nada que conservar. */
-function saveSession() {
+function saveSession()       {
   try {
-    if (!$("code").value.trim() || $("out").hidden) { localStorage.removeItem(SESSION_KEY); return; }
+    if (!form.code.value.trim() || $("out").hidden) { localStorage.removeItem(SESSION_KEY); return; }
     localStorage.setItem(SESSION_KEY, JSON.stringify({
-      code: $("code").value, cls: $("cls").value, league: $("league").checked, zones: $("zones").checked,
-      open: [...$("out").querySelectorAll("details[id]")].filter(d => d.open).map(d => d.id),
+      code: form.code.value, cls: form.cls.value, league: form.league.checked, zones: form.zones.checked,
+      open: [...$("out").querySelectorAll                    ("details[id]")].filter(d => d.open).map(d => d.id),
       stage: pressedValue(".stages", "s") ?? "-1", mode: pressedValue(".kinds", "m") ?? "both",
       scroll: scrollY,
     }));
@@ -776,20 +792,21 @@ function saveSession() {
 }
 
 /** Si había una guía guardada, la vuelve a componer y deja la vista como estaba. */
-async function restoreSession() {
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch {}
+async function restoreSession()                {
+  /** Lo que se guarda: la build, las opciones y la vista. */
+  let saved                                                                                                                                     = null;
+  try { saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null"); } catch {}
   if (!saved?.code) return;
-  $("code").value = saved.code;
-  $("league").checked = saved.league;
-  $("zones").checked = saved.zones;
+  form.code.value = saved.code;
+  form.league.checked = saved.league;
+  form.zones.checked = saved.zones;
   await run();
   if ($("out").hidden) return;
   // run() pone la clase de la build; si se estaba viendo otra, se recompone con ella.
-  if (saved.cls && $("cls").value !== saved.cls) { $("cls").value = saved.cls; rerender(); }
-  for (const d of $("out").querySelectorAll("details[id]")) d.open = saved.open.includes(d.id);
-  document.querySelector(`.stages [data-s="${saved.stage}"]`)?.click();
-  document.querySelector(`.kinds [data-m="${saved.mode}"]`)?.click();
+  if (saved.cls && form.cls.value !== saved.cls) { form.cls.value = saved.cls; rerender(); }
+  for (const d of $("out").querySelectorAll                    ("details[id]")) d.open = saved.open.includes(d.id);
+  document.querySelector             (`.stages [data-s="${saved.stage}"]`)?.click();
+  document.querySelector             (`.kinds [data-m="${saved.mode}"]`)?.click();
   // Dos fotogramas: el primero pinta el mapa de calor (que fija su alto), el segundo ya puede desplazarse.
   requestAnimationFrame(() => requestAnimationFrame(() => scrollTo({ top: saved.scroll, behavior: "instant" })));
 }
@@ -804,7 +821,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
  * Sección desplegable con su título (HTML) ya puesto.
  * `toc` la apunta en el índice: { id, label, group } (group agrupa entradas, como los actos bajo "Ruta").
  */
-function section(summaryHtml, className, open = true, toc = null) {
+function section(summaryHtml        , className        , open = true, toc                   = null)                     {
   const sec = document.createElement("details");
   sec.className = className;
   sec.open = open;
@@ -814,7 +831,7 @@ function section(summaryHtml, className, open = true, toc = null) {
 }
 
 /** Marca un elemento como destino del índice. */
-function tocTarget(el, { id, label, group }) {
+function tocTarget                       (el   , { id, label, group }           )    {
   el.id = id;
   el.dataset.toc = label;
   if (group) el.dataset.tocGroup = group;
@@ -822,19 +839,19 @@ function tocTarget(el, { id, label, group }) {
 }
 
 /** Lista de pares [nombre, texto] como <li><b>nombre</b><p>texto</p></li>, sin interpretar HTML. */
-function fillNamed(ul, pairs) {
+function fillNamed(ul         , pairs                                )       {
   for (const [name, text] of pairs) {
     const li = document.createElement("li");
     li.innerHTML = "<b></b><p></p>";
-    li.querySelector("b").textContent = name;
-    li.querySelector("p").textContent = text;
+    li.querySelector("b") .textContent = name;
+    li.querySelector("p") .textContent = text;
     ul.append(li);
   }
 }
 
 /* Resumen de la guía: reparto de gemas, bandidos y moneda total. */
 
-function summaryHtml(build, plan) {
+function summaryHtml(build       , plan      )         {
   const { out: steps, missing } = plan;
   const special = build.gems.filter(g => g.kind !== "normal");
   const rewards = steps.reduce((n, s) => n + s.gems.filter(g => !g.buy).length, 0);
@@ -851,51 +868,51 @@ function summaryHtml(build, plan) {
 /* Gemas: la casilla de "conseguida", las líneas de gemas y los costes. */
 
 // Gemas de leveling sugeridas que no están en la build: se marcan como "sugerida" allí donde aparezcan.
-let suggested = new Set();
+let suggested = new Set        ();
 
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 const doneStore = {
-  key: "", ids: new Set(),
-  load(key) { this.key = key; try { this.ids = new Set(JSON.parse(localStorage.getItem(key)) || []); } catch { this.ids = new Set(); } },
-  set(id, on) { on ? this.ids.add(id) : this.ids.delete(id); try { localStorage.setItem(this.key, JSON.stringify([...this.ids])); } catch {} },
+  key: "", ids: new Set        (),
+  load(key        ) { this.key = key; try { this.ids = new Set        (JSON.parse(localStorage.getItem(key) ?? "null") || []); } catch { this.ids = new Set        (); } },
+  set(id        , on         ) { on ? this.ids.add(id) : this.ids.delete(id); try { localStorage.setItem(this.key, JSON.stringify([...this.ids])); } catch {} },
 };
 
-const shortCost = level => cost(level).replace(/^(Orb of|Scroll of) /, "");
+const shortCost = (level        )         => cost(level).replace(/^(Orb of|Scroll of) /, "");
 /** Totales de moneda de unas compras, como texto: "2× Orb of Alteration, 1× Scroll of Wisdom". */
-function costText(ids) {
-  const total = {};
+function costText(ids          )         {
+  const total                         = {};
   ids.forEach(id => { const c = cost(GEMS[id].level); total[c] = (total[c] || 0) + 1; });
   return Object.entries(total).map(([c, n]) => `${n}× ${esc(c)}`).join(", ");
 }
 
 /** Una gema con su casilla de "conseguida", su color de atributo, su nivel y, si se compra, su coste. */
-function gemEl(id, withCost) {
+function gemEl(id        , withCost          )                   {
   const { name, attr, level } = GEMS[id];
   const l = document.createElement("label");
   const isDone = doneStore.ids.has(id);
   l.className = "gem" + (isDone ? " done" : "");
   l.innerHTML = `<input type="checkbox"><i class="${attr}"></i><span></span><small>nv ${level}${withCost ? " · " + shortCost(level) : ""}</small>`;
-  l.querySelector("span").textContent = name;
+  l.querySelector("span") .textContent = name;
   if (suggested.has(id)) l.insertAdjacentHTML("beforeend", `<em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>`);
-  const box = l.querySelector("input");
+  const box = l.querySelector("input") ;
   box.checked = isDone;
   box.onchange = () => { doneStore.set(id, box.checked); l.classList.toggle("done", box.checked); };
   return l;
 }
 
 /** Línea "cómo · gemas · nota": la usan los pasos de la ruta y las tarjetas de leveling. `note` es HTML. */
-function gemLine(how, ids, { withCost = false, note = "" } = {}) {
+function gemLine(how        , ids          , { withCost = false, note = "" }                                        = {})                 {
   const line = document.createElement("div");
   line.className = "line";
   line.innerHTML = `<span class="how"></span>`;
-  line.firstChild.textContent = how;
+  line.firstElementChild .textContent = how;
   ids.forEach(id => line.append(gemEl(id, withCost)));
   if (note) line.insertAdjacentHTML("beforeend", `<span class="cost">${note}</span>`);
   return line;
 }
 
 /** Bloque de gemas de un paso: una línea por recompensa o vendedor; las compras llevan su coste. */
-function gemsBlock(groups) {
+function gemsBlock(groups            )                 {
   const box = document.createElement("div");
   box.className = "gems";
   for (const g of groups) box.append(gemLine(g.how, g.ids, g.buy ? { withCost: true, note: `Coste: ${costText(g.ids)}` } : {}));
@@ -905,9 +922,9 @@ function gemsBlock(groups) {
 /* La ruta de campaña: un desplegable por acto con sus pasos, notas y gemas. */
 
 /** La ruta, un desplegable por acto; sin "actividades de zona" solo quedan los pasos con gemas. */
-function routeSections(steps, start, showZones) {
-  const sections = [];
-  let act = 0, list = null;
+function routeSections(steps               , start          , showZones         )                       {
+  const sections                       = [];
+  let act = 0, list                          = null;
   for (const s of steps) {
     if (s.act !== act) {
       act = s.act;
@@ -915,7 +932,7 @@ function routeSections(steps, start, showZones) {
       const det = section(`Acto ${act} <span>· ${n ? n + (n === 1 ? " paso con gemas" : " pasos con gemas") : "sin gemas"}</span>`, "act", act === 1, { id: "acto-" + act, label: String(act), group: "Ruta" });
       det.insertAdjacentHTML("beforeend", `<ol class="route"></ol>`);
       sections.push(det);
-      list = det.querySelector("ol");
+      list = det.querySelector("ol") ;
       if (act === 1 && start.length) {
         const li = document.createElement("li");
         li.className = "has-gems";
@@ -935,7 +952,7 @@ function routeSections(steps, start, showZones) {
       li.append(ul);
     }
     if (s.gems.length) li.append(gemsBlock(s.gems));
-    list.append(li);
+    list .append(li);
   }
   return sections;
 }
@@ -943,10 +960,10 @@ function routeSections(steps, start, showZones) {
 /* Gemas que no salen en la ruta y cómo conseguirlas. */
 
 /** Gemas que no salen en la ruta para esta clase y cómo conseguirlas. */
-function otherWaysSection(build, plan) {
+function otherWaysSection(build       , plan      )                            {
   const { got, missing } = plan;
-  const where = id => got.has(id) ? ` (acto ${got.get(id).act}, ${got.get(id).quest})` : "";
-  const notes = build.gems.filter(g => g.kind !== "normal").map(g => {
+  const where = (id        )         => { const at = got.get(id); return at ? ` (acto ${at.act}, ${at.quest})` : ""; };
+  const notes = build.gems.filter(g => g.kind !== "normal").map((g)                   => {
     if (g.kind === "vaal") return [g.name, g.base ? `Consigue ${GEMS[g.base].name}${where(g.base)} y corrómpela con un Orbe Vaal (puede salir otra cosa), o búscala en drop o en el mercado.` : "Búscala en drop o en el mercado."];
     if (g.kind === "transfigured") return [g.name, g.base ? `Es una gema transfigurada: consigue ${GEMS[g.base].name}${where(g.base)} y transfigúrala en la Fuente Divina del Laberinto, o búscala en drop o en el mercado.` : "Es una gema transfigurada: búscala en drop o en el mercado."];
     if (g.kind === "awakened") return [g.name, "Gema despertada: solo cae en el endgame. Lo práctico es comprarla en el mercado."];
@@ -956,27 +973,27 @@ function otherWaysSection(build, plan) {
   if (!notes.length) return null;
   const sec = section("Por otras vías", "act other", true, { id: "otras-vias", label: "Por otras vías" });
   sec.insertAdjacentHTML("beforeend", "<ul></ul>");
-  fillNamed(sec.querySelector("ul"), notes);
+  fillNamed(sec.querySelector("ul") , notes);
   return sec;
 }
 
 /* Equipo de la build: únicos por nivel y prioridad de stats de los raros. */
 
 /** Equipo de la build: los únicos por nivel requerido y qué stats se repiten en sus raros. */
-function gearSection(items) {
+function gearSection(items        )                     {
   const sec = section("Equipo de la build", "act gear", true, { id: "equipo", label: "Equipo" });
   // Por nivel requerido; los que no piden nivel (joyas) van al final.
   const uniques = items.filter(i => i.rarity === "UNIQUE").sort((a, b) => (a.req || 999) - (b.req || 999));
   if (uniques.length) {
     sec.insertAdjacentHTML("beforeend", `<h3>Únicos</h3><table><thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th></tr></thead><tbody></tbody></table>`);
-    const tb = sec.querySelector("tbody");
+    const tb = sec.querySelector("tbody") ;
     for (const u of uniques) {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td><b class="unique"></b><small></small></td><td></td><td class="n"></td>`;
-      tr.querySelector("b").textContent = u.name;
-      tr.querySelector("small").textContent = " " + u.base;
+      tr.querySelector("b") .textContent = u.name;
+      tr.querySelector("small") .textContent = " " + u.base;
       tr.children[1].textContent = slotEs(u.slot);
-      tr.children[2].textContent = u.req || "—";
+      tr.children[2].textContent = u.req ? String(u.req) : "—";
       tb.append(tr);
     }
   }
@@ -984,11 +1001,11 @@ function gearSection(items) {
   const rares = items.filter(i => i.rarity === "RARE" && i.slot !== "Jewel" && !i.slot.includes("Abyssal"));
   if (rares.length) {
     sec.insertAdjacentHTML("beforeend", `<h3>Prioridad de stats en los raros</h3><p class="note">Cuántas de sus ${rares.length} piezas raras (${[...new Set(rares.map(r => slotEs(r.slot)))].join(", ").toLowerCase()}) llevan cada tipo de stat.</p><ol class="stats"></ol>`);
-    const ol = sec.querySelector("ol.stats");
+    const ol = sec.querySelector("ol.stats") ;
     for (const [label, n] of gearStatCounts(rares)) {
       const li = document.createElement("li");
       li.innerHTML = `<span></span><span class="bar"><i style="width:${n / rares.length * 100}%"></i></span><b>${n}/${rares.length}</b>`;
-      li.firstChild.textContent = label;
+      li.firstElementChild .textContent = label;
       ol.append(li);
     }
   }
@@ -999,14 +1016,14 @@ function gearSection(items) {
 /* Leveling sugerido: una tarjeta por tramo con habilidad, soportes y árbol. */
 
 /** Leveling sugerido: por tramo, la habilidad y sus soportes y cuánto del árbol final tendrías. */
-function levelingSection(skills, trees, treesSuggested, mainId) {
+function levelingSection(skills              , trees             , treesSuggested         , mainId        )                     {
   const sec = section("Leveling sugerido", "act gear leveling", true, { id: "leveling", label: "Leveling sugerido" });
   sec.insertAdjacentHTML("beforeend", `
     <p class="banner"><b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
     que tu clase puede conseguir a ese nivel (mismo tipo y misma arma), soportes que de verdad se pueden enlazar a ella (primero los de tu build) y
     ${treesSuggested ? "un orden para coger los nodos de tu árbol final." : "los árboles que trae tu build."} No es la guía del autor de la build ni lo que suele usar la comunidad.</p>
     <div class="stagecards"></div>`);
-  const box = sec.querySelector(".stagecards");
+  const box = sec.querySelector(".stagecards") ;
   skills.forEach((s, i) => {
     const card = document.createElement("div");
     card.className = "stagecard";
@@ -1026,33 +1043,33 @@ function levelingSection(skills, trees, treesSuggested, mainId) {
 
 /* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
 
-const hexAlpha = a => Math.round(a * 255).toString(16).padStart(2, "0");
+const hexAlpha = (a        )         => Math.round(a * 255).toString(16).padStart(2, "0");
 
 /**
  * Pinta el árbol: aristas y nodos tenues, el calor de los nodos cogidos y los puntos indispensables numerados.
  * key: [[nodo, número en la lista de indispensables]], para que el número no cambie al filtrar por etapa.
  * frame: nodos que fijan el encuadre (el árbol final), para que las etapas se vean en el mismo sitio.
  */
-function drawHeat(canvas, taken, key, mode, frame = taken) {
+function drawHeat(canvas                   , taken          , key                             , mode        , frame           = taken)       {
   // Un repintado pendiente de una guía ya sustituida llega con el canvas fuera de la página (ancho 0): no hay nada que pintar.
   if (!canvas.isConnected) return;
-  const css = getComputedStyle(document.documentElement), col = v => css.getPropertyValue(v).trim();
+  const css = getComputedStyle(document.documentElement), col = (v        )         => css.getPropertyValue(v).trim();
   const all = Object.values(NODES).filter(n => !n.ascendancy);
   // Encuadre sobre la zona de la build, con margen: el árbol entero deja los puntos de la build diminutos.
   const own = frame.map(id => NODES[id]), pad = 1200;
   const xs = own.map(n => n.x), ys = own.map(n => n.y);
   const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad, minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
-  const w = canvas.parentElement.clientWidth, h = Math.min(Math.round(w * (maxY - minY) / (maxX - minX)), Math.round(innerHeight * 0.8)), dpr = devicePixelRatio || 1;
+  const w = canvas.parentElement .clientWidth, h = Math.min(Math.round(w * (maxY - minY) / (maxX - minX)), Math.round(innerHeight * 0.8)), dpr = devicePixelRatio || 1;
   canvas.style.width = w + "px"; canvas.style.height = h + "px";
   canvas.width = w * dpr; canvas.height = h * dpr;
   // Misma escala en los dos ejes, centrado en la zona de la build.
   const s = Math.min(w / (maxX - minX), h / (maxY - minY));
   const ox = (w / s - (maxX - minX)) / 2, oy = (h / s - (maxY - minY)) / 2;
-  const X = x => (x - minX + ox) * s * dpr, Y = y => (y - minY + oy) * s * dpr;
-  const ctx = canvas.getContext("2d");
+  const X = (x        ) => (x - minX + ox) * s * dpr, Y = (y        ) => (y - minY + oy) * s * dpr;
+  const ctx = canvas.getContext("2d") ;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const takenSet = new Set(taken);
-  const edges = filter => {
+  const edges = (filter                                                  ) => {
     ctx.beginPath();
     for (let i = 0; i < EDGES.length; i += 2) {
       const a = NODES[EDGES[i]], b = NODES[EDGES[i + 1]];
@@ -1060,18 +1077,18 @@ function drawHeat(canvas, taken, key, mode, frame = taken) {
     }
     ctx.stroke();
   };
-  const dot = (n, r) => { ctx.beginPath(); ctx.arc(X(n.x), Y(n.y), r * dpr, 0, 7); ctx.fill(); };
+  const dot = (n          , r        ) => { ctx.beginPath(); ctx.arc(X(n.x), Y(n.y), r * dpr, 0, 7); ctx.fill(); };
 
   ctx.lineWidth = 1 * dpr;
   ctx.strokeStyle = col("--line");
-  edges((ia, ib, a) => !a.ascendancy);
+  edges((_ia, _ib, a) => !a.ascendancy);
 
   // Calor: un degradado por nodo cogido, sumados con "lighter" para que las zonas densas brillen más.
   ctx.globalCompositeOperation = "lighter";
   const r = 500 * s * dpr;
   for (const id of taken) {
     const n = NODES[id], sc = nodeScore(id);
-    for (const [k, color] of [["dmg", col("--str")], ["def", col("--int")]]) {
+    for (const [k, color] of [["dmg", col("--str")], ["def", col("--int")]]         ) {
       if ((mode !== "both" && mode !== k) || !sc[k]) continue;
       const g = ctx.createRadialGradient(X(n.x), Y(n.y), 0, X(n.x), Y(n.y), r);
       g.addColorStop(0, color + hexAlpha(Math.min(0.7, 0.22 * sc[k])));
@@ -1095,28 +1112,28 @@ function drawHeat(canvas, taken, key, mode, frame = taken) {
     const n = NODES[id];
     ctx.fillStyle = col("--card"); ctx.strokeStyle = col("--accent"); ctx.lineWidth = 1.5 * dpr;
     dot(n, 6.5); ctx.stroke();
-    ctx.fillStyle = col("--fg"); ctx.fillText(num, X(n.x), Y(n.y) + 0.5 * dpr);
+    ctx.fillStyle = col("--fg"); ctx.fillText(String(num), X(n.x), Y(n.y) + 0.5 * dpr);
   }
 }
 
 // Un solo oyente para todo: el mapa vigente se repinta al cambiar el tamaño o el tema.
-let redrawHeat = null;
+let redrawHeat                      = null;
 addEventListener("resize", () => redrawHeat?.());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => redrawHeat?.());
 
 /* Árbol de pasivas: stats sumadas, mapa de calor por etapas y puntos indispensables. */
 
 /** Botonera de opciones excluyentes: marca la pulsada y avisa con su valor. */
-function toggleGroup(root, selector, attr, onPick) {
+function toggleGroup(root         , selector        , attr        , onPick                         )       {
   root.querySelector(selector)?.addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
-    root.querySelectorAll(selector + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
-    onPick(b.dataset[attr]);
+    const b = (e.target           ).closest("button"); if (!b) return;
+    root.querySelectorAll(selector + " button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    onPick(b.dataset[attr] ?? "");
   });
 }
 
 /** Árbol: stats sumadas, mapa de calor de daño/defensa (por etapas si las hay) y los puntos indispensables. */
-function treeSection(tree, stages, stagesSuggested) {
+function treeSection(tree           , stages             , stagesSuggested         )                     {
   const sec = section("Árbol de pasivas", "act gear tree", true, { id: "arbol", label: "Árbol de pasivas" });
   const main = tree.nodes.filter(id => !NODES[id].ascendancy);
   const asc = tree.nodes.filter(id => NODES[id].ascendancy && NODES[id].type === NODE.NOTABLE);
@@ -1125,13 +1142,13 @@ function treeSection(tree, stages, stagesSuggested) {
 
   const stats = treeStats(tree);
   sec.insertAdjacentHTML("beforeend", `<h3>Stats del árbol</h3><p class="note">${main.length} puntos en el árbol, ${asc.length} notables de ascendencia y ${tree.masteries.length} maestrías. Clasificación aproximada por palabras clave.</p><div class="cols"></div>`);
-  for (const k of ["dmg", "def", "other"]) {
+  for (const k of ["dmg", "def", "other"]         ) {
     if (!stats[k].length) continue;
     const col = document.createElement("div");
     col.innerHTML = `<b class="kind ${k}">${KIND_ES[k]}</b><ul></ul>`;
-    for (const s of stats[k].slice(0, 14)) { const li = document.createElement("li"); li.textContent = s.text; if (s.n > 1) li.title = `${s.n} nodos`; col.querySelector("ul").append(li); }
+    for (const s of stats[k].slice(0, 14)) { const li = document.createElement("li"); li.textContent = s.text; if (s.n > 1) li.title = `${s.n} nodos`; col.querySelector("ul") .append(li); }
     if (stats[k].length > 14) col.insertAdjacentHTML("beforeend", `<p class="note">y ${stats[k].length - 14} más</p>`);
-    sec.querySelector(".cols").append(col);
+    sec.querySelector(".cols") .append(col);
   }
 
   sec.insertAdjacentHTML("beforeend", `<h3>Mapa de calor</h3>
@@ -1140,13 +1157,13 @@ function treeSection(tree, stages, stagesSuggested) {
     <canvas class="heat" role="img" aria-label="Árbol de pasivas con las zonas de daño en rojo y las de defensa en azul"></canvas>
     <p class="note stage-note"></p>
     <p class="note"><span class="kind dmg">rojo</span>: zonas que aportan daño · <span class="kind def">azul</span>: defensa · los números marcan los puntos indispensables de la lista.</p>`);
-  const canvas = sec.querySelector("canvas");
+  const canvas = sec.querySelector("canvas") ;
   let mode = "both", stage = -1;
   const draw = () => {
     const nodes = stage < 0 ? main : stages[stage].nodes.filter(id => !NODES[id].ascendancy), set = new Set(nodes);
-    drawHeat(canvas, nodes, key.map((id, i) => [id, i + 1]).filter(([id]) => set.has(id)), mode, main);
+    drawHeat(canvas, nodes, key.map((id, i)                   => [id, i + 1]).filter(([id]) => set.has(id)), mode, main);
     const st = stages[stage];
-    sec.querySelector(".stage-note").textContent = !st ? "" : (stagesSuggested ? `Sugerencia automática: ≈${st.points} puntos hasta nv ≈${st.level}, solo con nodos de tu árbol final. ` : `Árbol "${st.title}" de la build. `) + `${nodes.length} nodos cogidos.`;
+    sec.querySelector(".stage-note") .textContent = !st ? "" : (stagesSuggested ? `Sugerencia automática: ≈${st.points} puntos hasta nv ≈${st.level}, solo con nodos de tu árbol final. ` : `Árbol "${st.title}" de la build. `) + `${nodes.length} nodos cogidos.`;
   };
   toggleGroup(sec, ".kinds", "m", v => { mode = v; draw(); });
   toggleGroup(sec, ".stages", "s", v => { stage = +v; draw(); });
@@ -1154,20 +1171,20 @@ function treeSection(tree, stages, stagesSuggested) {
   requestAnimationFrame(draw);
 
   sec.insertAdjacentHTML("beforeend", `<h3>Puntos indispensables</h3><p class="note">Las keystones y los notables que tiene cogidos la build; el resto son nodos pequeños o de paso.</p><ol class="key"></ol>`);
-  const ol = sec.querySelector("ol.key");
+  const ol = sec.querySelector("ol.key") ;
   key.forEach((id, i) => {
     const n = NODES[id], kind = nodeKind(id);
     const li = document.createElement("li");
     li.innerHTML = `<span class="num">${i + 1}</span><div><b></b> <span class="kind ${kind === "keystone" ? "key" : kind}">${kind === "keystone" ? "Keystone" : KIND_ES[kind]}</span><p></p></div>`;
-    li.querySelector("b").textContent = n.name;
-    li.querySelector("p").textContent = n.stats.join(" · ");
+    li.querySelector("b") .textContent = n.name;
+    li.querySelector("p") .textContent = n.stats.join(" · ");
     ol.append(li);
   });
-  const extras = [...asc.map(id => [NODES[id].name + " (ascendencia)", NODES[id].stats.join(" · ")]),
-    ...tree.masteries.map(([node, eff]) => [NODES[node]?.name || "Maestría", (MASTERIES[node]?.[eff] || "").replace(/\n/g, " · ")])].filter(([, s]) => s);
+  const extras = [...asc.map((id)                   => [NODES[id].name + " (ascendencia)", NODES[id].stats.join(" · ")]),
+    ...tree.masteries.map(([node, eff])                   => [NODES[node]?.name || "Maestría", (MASTERIES[node]?.[eff] || "").replace(/\n/g, " · ")])].filter(([, s]) => s);
   if (extras.length) {
     sec.insertAdjacentHTML("beforeend", `<h3>Ascendencia y maestrías</h3><ul class="extras"></ul>`);
-    fillNamed(sec.querySelector(".extras"), extras);
+    fillNamed(sec.querySelector(".extras") , extras);
   }
   return sec;
 }
@@ -1180,17 +1197,17 @@ const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const tocBeside = matchMedia("(min-width: 1260px)");
 // Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
 const SPY_LINE = 100;
-let tocTargets = [], tocLinks = new Map(), tocPinned = null;
+let tocTargets                = [], tocLinks = new Map                                (), tocPinned                     = null;
 
 /** Abre o cierra el índice en pantalla estrecha (en ancha siempre está a la vista). */
-function setTocOpen(open) {
+function setTocOpen(open         )       {
   $("toc").classList.toggle("open", open);
-  $("toc-toggle").setAttribute("aria-expanded", open);
+  $("toc-toggle").setAttribute("aria-expanded", String(open));
 }
 
 /** Lleva a una sección: la despliega si estaba plegada y se desplaza hasta ella (sin animar si el sistema pide reducir movimiento). */
-function goTo(target) {
-  if (target.tagName === "DETAILS") target.open = true;
+function goTo(target             )       {
+  if (target instanceof HTMLDetailsElement) target.open = true;
   tocPinned = target;
   if (!tocBeside.matches) setTocOpen(false);
   const from = scrollY;
@@ -1206,7 +1223,7 @@ function goTo(target) {
 }
 
 /** Sección actual: la última cuyo inicio ya pasó la línea; al final de la página, la pulsada si está a la vista. */
-function updateTocCurrent() {
+function updateTocCurrent()       {
   const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
   const pinnedInView = tocPinned && tocPinned.getBoundingClientRect().top < innerHeight;
   const current = atBottom && pinnedInView ? tocPinned : tocTargets.findLast(t => t.getBoundingClientRect().top <= SPY_LINE);
@@ -1214,16 +1231,16 @@ function updateTocCurrent() {
 }
 
 /** Rellena el índice con los destinos de la página, en orden; las entradas con grupo (los actos) van juntas en una fila. */
-function renderToc() {
+function renderToc()       {
   const nav = $("toc");
-  tocTargets = [...document.querySelectorAll("main [data-toc]")].filter(el => !el.closest("[hidden]"));
+  tocTargets = [...document.querySelectorAll             ("main [data-toc]")].filter(el => !el.closest("[hidden]"));
   tocLinks = new Map(); tocPinned = null;
   nav.innerHTML = `<b class="toc-title">Índice</b><ol></ol>`;
-  const ol = nav.querySelector("ol"), groups = new Map();
+  const ol = nav.querySelector("ol") , groups = new Map                 ();
   for (const el of tocTargets) {
     const a = document.createElement("a");
     a.href = "#" + el.id;
-    a.textContent = el.dataset.toc;
+    a.textContent = el.dataset.toc ?? "";
     a.onclick = e => { e.preventDefault(); goTo(el); };
     tocLinks.set(el, a);
     const group = el.dataset.tocGroup;
@@ -1231,13 +1248,13 @@ function renderToc() {
     if (!groups.has(group)) {
       const li = document.createElement("li");
       li.innerHTML = `<span class="toc-group"></span><span class="toc-chips"></span>`;
-      li.firstChild.textContent = group;
+      li.firstElementChild .textContent = group;
       ol.append(li);
-      groups.set(group, li.lastChild);
+      groups.set(group, li.lastElementChild );
     }
     a.className = "chip";
     a.setAttribute("aria-label", `${group} ${el.dataset.toc}`);
-    groups.get(group).append(a);
+    groups.get(group) .append(a);
   }
   nav.hidden = $("toc-toggle").hidden = tocTargets.length === 0;
   setTocOpen(false);
@@ -1252,15 +1269,15 @@ for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => {
 
 $("toc-toggle").onclick = e => { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); };
 addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
-addEventListener("click", e => { if (!tocBeside.matches && !e.target.closest("#toc")) setTocOpen(false); });
+addEventListener("click", e => { if (!tocBeside.matches && !(e.target           ).closest("#toc")) setTocOpen(false); });
 
 /* Arranque: lee el formulario, compone la guía y la vuelve a componer cuando cambia una opción. */
 
 /** Compone toda la guía para una build con las opciones dadas. */
-function render(build, { cls, leagueStart, showZones }) {
+function render(build       , { cls, leagueStart, showZones }              )       {
   const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, new Set([...routeDefs(build, leagueStart), "LIBRARY"])) : [];
-  const own = new Set(build.gems.map(g => g.id).filter(Boolean));
-  suggested = new Set(skills.flatMap(s => [s.skill, ...s.supports]).filter(id => id && !own.has(id)));
+  const own = new Set(build.gems.map(g => g.id).filter((id)               => !!id));
+  suggested = new Set(skills.flatMap(s => [s.skill, ...s.supports]).filter((id)               => !!id && !own.has(id)));
   const authorTrees = build.tree.stages.length > 0;
   const trees = authorTrees ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
   const result = plan(build, cls, leagueStart, [...suggested]);
@@ -1271,7 +1288,7 @@ function render(build, { cls, leagueStart, showZones }) {
   out.replaceChildren();
   out.insertAdjacentHTML("beforeend", summaryHtml(build, result));
   $("who").textContent = cls + (cls === build.cls && build.ascend && build.ascend !== "None" ? " · " + build.ascend : "");
-  if (skills.length) out.append(levelingSection(skills, authorTrees ? [] : trees, !authorTrees, build.main.id));
+  if (skills.length && build.main) out.append(levelingSection(skills, authorTrees ? [] : trees, !authorTrees, build.main.id));
   if (build.items.length) out.append(gearSection(build.items));
   redrawHeat = null;
   if (build.tree.nodes.length) out.append(treeSection(build.tree, trees, !authorTrees));
@@ -1284,29 +1301,29 @@ function render(build, { cls, leagueStart, showZones }) {
 /** Sin guía (campo vacío o código inválido) tampoco hay índice. */
 const hideGuide = () => { $("out").hidden = $("toc").hidden = $("toc-toggle").hidden = true; };
 
-let build = null;
-const options = () => ({ cls: $("cls").value, leagueStart: $("league").checked, showZones: $("zones").checked });
-const rerender = () => build && render(build, options());
+let build               = null;
+const options = ()               => ({ cls: form.cls.value, leagueStart: form.league.checked, showZones: form.zones.checked });
+const rerender = ()       => { if (build) render(build, options()); };
 
-async function run() {
+async function run()                {
   $("msg").className = ""; $("msg").textContent = "";
-  if (!$("code").value.trim()) { hideGuide(); $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
+  if (!form.code.value.trim()) { hideGuide(); $("msg").textContent = "Primero pega el código de tu build: en Path of Building, Import/Export Build → Generate."; return; }
   try {
-    build = parseBuild(await decode($("code").value));
+    build = parseBuild(await decode(form.code.value));
     if (!build.gems.length) throw userError("la build no tiene gemas");
-    if (CLASSES.includes(build.cls)) $("cls").value = build.cls;
+    if (build.cls && CLASSES.includes(build.cls)) form.cls.value = build.cls;
     rerender();
     $("msg").textContent = `Build leída: ${build.gems.length} gemas.`;
   } catch (e) {
     hideGuide();
     $("msg").className = "error";
     // Los errores del navegador (base64 o zlib inválidos) no dicen nada útil; los nuestros sí.
-    const why = e.own ? e.message : "no tiene el formato de un código de Path of Building";
+    const why = isUserError(e) ? e.message : "no tiene el formato de un código de Path of Building";
     $("msg").textContent = "No he podido leer el código: " + why + ". Cópialo de nuevo desde Path of Building, en Import/Export Build → Generate.";
   }
 }
 
-CLASSES.forEach(c => $("cls").add(new Option(c, c)));
+CLASSES.forEach(c => form.cls.add(new Option(c, c)));
 $("go").onclick = run;
 for (const id of ["cls", "league", "zones"]) $(id).onchange = rerender;
 $("msg").textContent = "Pega el código de tu build y pulsa Crear guía.";

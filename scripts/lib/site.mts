@@ -1,6 +1,6 @@
 // Datos del sitio para buscadores y redes: una sola fuente para la URL canónica, Open Graph, JSON-LD y el sitemap.
 
-const SITE = {
+export const SITE = {
   url: "https://xdextx.github.io/poe-leveling-guide/",
   name: "Gemas de la Build",
   // Menos de 160 caracteres, que es lo que suelen mostrar los buscadores antes de cortar.
@@ -9,7 +9,7 @@ const SITE = {
 };
 
 /** JSON-LD (schema.org WebApplication) listo para ir dentro de <script type="application/ld+json">. */
-function jsonLd() {
+export function jsonLd(): string {
   const data = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -30,12 +30,11 @@ function jsonLd() {
 }
 
 /** sitemap.xml con la única página, para enviarlo a Google Search Console. */
-const sitemap = date => `<?xml version="1.0" encoding="UTF-8"?>
+export const sitemap = (date: string): string => `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE.url}</loc><lastmod>${date}</lastmod></url>
 </urlset>
 `;
 
-const attr = s => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-
-module.exports = { SITE, jsonLd, sitemap, attr };
+/** Texto seguro dentro de un atributo HTML entre comillas dobles. */
+export const attr = (s: string): string => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");

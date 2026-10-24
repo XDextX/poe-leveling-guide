@@ -4,25 +4,25 @@
  * Recorre la ruta: pinta cada paso y, en cada entrega de misión, elige una recompensa y compra lo que ya esté a la venta.
  * Devuelve el HTML por paso y qué gemas se consiguieron dónde.
  */
-function walk(steps, cls, want) {
-  const bit = 1 << CLASSES.indexOf(cls), got = new Map();
-  const ctx = { here: "1_1_1", portalFrom: null, onQuest: null };
+function walk(steps: RouteStep[], cls: string, want: string[]): { out: PlannedStep[]; got: Map<string, GotAt> } {
+  const bit = 1 << CLASSES.indexOf(cls), got = new Map<string, GotAt>();
+  const ctx: RouteCtx = { here: "1_1_1", portalFrom: null, onQuest: () => "" };
   const out = steps.map(step => {
-    const gems = [];
-    ctx.onQuest = args => {
+    const gems: GemGroup[] = [];
+    ctx.onQuest = (args: string[]) => {
       const found = questOffers(args);
       if (!found) return esc(args[0]);
       const npcs = new Set();
       for (const { npc, rewards, vendor } of found.offers) {
         if (npc) npcs.add(npc);
         const open = want.filter(id => !got.has(id));
-        const sold = id => vendor[id] && vendor[id][0] & bit;
-        const canReward = open.filter(id => rewards[id] & bit);
+        const sold = (id: string): boolean => !!vendor[id] && (vendor[id][0] & bit) !== 0;
+        const canReward = open.filter(id => (rewards[id] & bit) !== 0);
         // Mejor gastar la recompensa gratuita en una gema que este mismo vendedor no venda.
         const reward = canReward.find(id => !sold(id)) || canReward[0] || null;
-        const buys = {};
+        const buys: Record<string, string[]> = {};
         for (const id of open) if (id !== reward && sold(id)) (buys[vendor[id][1]] ??= []).push(id);
-        const at = { act: step.act, quest: found.quest.name };
+        const at: GotAt = { act: step.act, quest: found.quest.name };
         if (reward) { got.set(reward, at); gems.push({ how: "Recompensa", npc, ids: [reward] }); }
         for (const [who, ids] of Object.entries(buys)) { ids.forEach(id => got.set(id, at)); gems.push({ how: "Comprar a " + who, ids, buy: true }); }
       }
@@ -37,10 +37,10 @@ function walk(steps, cls, want) {
  * Ruta y gemas para una build; la Biblioteca (Siosa) solo se incluye si aporta alguna gema.
  * `extra` son las gemas de leveling sugeridas: van detrás, así que si una recompensa sirve para ambas gana la de la build.
  */
-function plan(build, cls, leagueStart, extra = []) {
-  const want = [];
+function plan(build: Build, cls: string, leagueStart: boolean, extra: string[] = []): Plan {
+  const want: string[] = [];
   for (const g of build.gems) {
-    if (g.kind === "normal") want.push(g.id);
+    if (g.kind === "normal" && g.id) want.push(g.id);
     if ((g.kind === "vaal" || g.kind === "transfigured") && g.base && !want.includes(g.base)) want.push(g.base);
   }
   for (const id of extra) if (!want.includes(id)) want.push(id);

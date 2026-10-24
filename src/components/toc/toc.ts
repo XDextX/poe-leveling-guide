@@ -6,17 +6,17 @@ const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const tocBeside = matchMedia("(min-width: 1260px)");
 // Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
 const SPY_LINE = 100;
-let tocTargets = [], tocLinks = new Map(), tocPinned = null;
+let tocTargets: HTMLElement[] = [], tocLinks = new Map<HTMLElement, HTMLAnchorElement>(), tocPinned: HTMLElement | null = null;
 
 /** Abre o cierra el índice en pantalla estrecha (en ancha siempre está a la vista). */
-function setTocOpen(open) {
+function setTocOpen(open: boolean): void {
   $("toc").classList.toggle("open", open);
-  $("toc-toggle").setAttribute("aria-expanded", open);
+  $("toc-toggle").setAttribute("aria-expanded", String(open));
 }
 
 /** Lleva a una sección: la despliega si estaba plegada y se desplaza hasta ella (sin animar si el sistema pide reducir movimiento). */
-function goTo(target) {
-  if (target.tagName === "DETAILS") target.open = true;
+function goTo(target: HTMLElement): void {
+  if (target instanceof HTMLDetailsElement) target.open = true;
   tocPinned = target;
   if (!tocBeside.matches) setTocOpen(false);
   const from = scrollY;
@@ -32,7 +32,7 @@ function goTo(target) {
 }
 
 /** Sección actual: la última cuyo inicio ya pasó la línea; al final de la página, la pulsada si está a la vista. */
-function updateTocCurrent() {
+function updateTocCurrent(): void {
   const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
   const pinnedInView = tocPinned && tocPinned.getBoundingClientRect().top < innerHeight;
   const current = atBottom && pinnedInView ? tocPinned : tocTargets.findLast(t => t.getBoundingClientRect().top <= SPY_LINE);
@@ -40,16 +40,16 @@ function updateTocCurrent() {
 }
 
 /** Rellena el índice con los destinos de la página, en orden; las entradas con grupo (los actos) van juntas en una fila. */
-function renderToc() {
+function renderToc(): void {
   const nav = $("toc");
-  tocTargets = [...document.querySelectorAll("main [data-toc]")].filter(el => !el.closest("[hidden]"));
+  tocTargets = [...document.querySelectorAll<HTMLElement>("main [data-toc]")].filter(el => !el.closest("[hidden]"));
   tocLinks = new Map(); tocPinned = null;
   nav.innerHTML = `<b class="toc-title">Índice</b><ol></ol>`;
-  const ol = nav.querySelector("ol"), groups = new Map();
+  const ol = nav.querySelector("ol")!, groups = new Map<string, Element>();
   for (const el of tocTargets) {
     const a = document.createElement("a");
     a.href = "#" + el.id;
-    a.textContent = el.dataset.toc;
+    a.textContent = el.dataset.toc ?? "";
     a.onclick = e => { e.preventDefault(); goTo(el); };
     tocLinks.set(el, a);
     const group = el.dataset.tocGroup;
@@ -57,13 +57,13 @@ function renderToc() {
     if (!groups.has(group)) {
       const li = document.createElement("li");
       li.innerHTML = `<span class="toc-group"></span><span class="toc-chips"></span>`;
-      li.firstChild.textContent = group;
+      li.firstElementChild!.textContent = group;
       ol.append(li);
-      groups.set(group, li.lastChild);
+      groups.set(group, li.lastElementChild!);
     }
     a.className = "chip";
     a.setAttribute("aria-label", `${group} ${el.dataset.toc}`);
-    groups.get(group).append(a);
+    groups.get(group)!.append(a);
   }
   nav.hidden = $("toc-toggle").hidden = tocTargets.length === 0;
   setTocOpen(false);
@@ -78,4 +78,4 @@ for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => {
 
 $("toc-toggle").onclick = e => { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); };
 addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
-addEventListener("click", e => { if (!tocBeside.matches && !e.target.closest("#toc")) setTocOpen(false); });
+addEventListener("click", e => { if (!tocBeside.matches && !(e.target as Element).closest("#toc")) setTocOpen(false); });

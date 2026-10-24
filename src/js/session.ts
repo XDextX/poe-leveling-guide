@@ -6,15 +6,15 @@ const SESSION_KEY = "poe-gemas:sesion";
 history.scrollRestoration = "manual";
 
 /** Valor del botón pulsado en una botonera del mapa de calor (data-s de las etapas, data-m de los modos). */
-const pressedValue = (selector, key) => document.querySelector(`${selector} [aria-pressed="true"]`)?.dataset[key];
+const pressedValue = (selector: string, key: string): string | undefined => document.querySelector<HTMLElement>(`${selector} [aria-pressed="true"]`)?.dataset[key];
 
 /** Guarda el estado actual; sin guía a la vista (campo vacío o código inválido) no hay nada que conservar. */
-function saveSession() {
+function saveSession(): void {
   try {
-    if (!$("code").value.trim() || $("out").hidden) { localStorage.removeItem(SESSION_KEY); return; }
+    if (!form.code.value.trim() || $("out").hidden) { localStorage.removeItem(SESSION_KEY); return; }
     localStorage.setItem(SESSION_KEY, JSON.stringify({
-      code: $("code").value, cls: $("cls").value, league: $("league").checked, zones: $("zones").checked,
-      open: [...$("out").querySelectorAll("details[id]")].filter(d => d.open).map(d => d.id),
+      code: form.code.value, cls: form.cls.value, league: form.league.checked, zones: form.zones.checked,
+      open: [...$("out").querySelectorAll<HTMLDetailsElement>("details[id]")].filter(d => d.open).map(d => d.id),
       stage: pressedValue(".stages", "s") ?? "-1", mode: pressedValue(".kinds", "m") ?? "both",
       scroll: scrollY,
     }));
@@ -22,20 +22,21 @@ function saveSession() {
 }
 
 /** Si había una guía guardada, la vuelve a componer y deja la vista como estaba. */
-async function restoreSession() {
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch {}
+async function restoreSession(): Promise<void> {
+  /** Lo que se guarda: la build, las opciones y la vista. */
+  let saved: { code: string; cls: string; league: boolean; zones: boolean; open: string[]; stage: string; mode: string; scroll: number } | null = null;
+  try { saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null"); } catch {}
   if (!saved?.code) return;
-  $("code").value = saved.code;
-  $("league").checked = saved.league;
-  $("zones").checked = saved.zones;
+  form.code.value = saved.code;
+  form.league.checked = saved.league;
+  form.zones.checked = saved.zones;
   await run();
   if ($("out").hidden) return;
   // run() pone la clase de la build; si se estaba viendo otra, se recompone con ella.
-  if (saved.cls && $("cls").value !== saved.cls) { $("cls").value = saved.cls; rerender(); }
-  for (const d of $("out").querySelectorAll("details[id]")) d.open = saved.open.includes(d.id);
-  document.querySelector(`.stages [data-s="${saved.stage}"]`)?.click();
-  document.querySelector(`.kinds [data-m="${saved.mode}"]`)?.click();
+  if (saved.cls && form.cls.value !== saved.cls) { form.cls.value = saved.cls; rerender(); }
+  for (const d of $("out").querySelectorAll<HTMLDetailsElement>("details[id]")) d.open = saved.open.includes(d.id);
+  document.querySelector<HTMLElement>(`.stages [data-s="${saved.stage}"]`)?.click();
+  document.querySelector<HTMLElement>(`.kinds [data-m="${saved.mode}"]`)?.click();
   // Dos fotogramas: el primero pinta el mapa de calor (que fija su alto), el segundo ya puede desplazarse.
   requestAnimationFrame(() => requestAnimationFrame(() => scrollTo({ top: saved.scroll, behavior: "instant" })));
 }

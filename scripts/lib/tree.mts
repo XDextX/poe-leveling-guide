@@ -1,20 +1,30 @@
 // Árbol de pasivas oficial (GGG skilltree-export) reducido a posiciones, stats, conexiones, maestrías e inicios de clase.
 
 // Las órbitas de 16 y 40 nodos no son equidistantes; estos ángulos son los mismos que usa Path of Building.
-const ANGLES = { 16: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330],
+const ANGLES: Record<number, number[]> = { 16: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330],
   40: [0, 10, 20, 30, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 135, 140, 150, 160, 170, 180, 190, 200, 210, 220, 225, 230, 240, 250, 260, 270, 280, 290, 300, 310, 315, 320, 330, 340, 350] };
-// Mismos valores que NODE en src/js/data.js.
-const TYPE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 };
+// Mismos valores que NODE en src/js/data.ts.
+const TYPE = { SMALL: 0, NOTABLE: 1, KEYSTONE: 2, MASTERY: 3, JEWEL: 4, START: 5 } as const;
 
-/**
- * Nodo: [x, y, tipo, nombre, stats separadas por \n, ascendencia]. edges: pares [a, b] en un array plano.
- * starts: nodo inicial por clase, con el mismo índice que el classId de Path of Building.
- */
-function reduceTree(tree) {
+/** Lo que leemos de data.json de skilltree-export. */
+export interface SourceNode {
+  name?: string; stats?: string[]; group?: number; orbit: number; orbitIndex: number; out?: string[];
+  isProxy?: boolean; isKeystone?: boolean; isMastery?: boolean; isNotable?: boolean; isJewelSocket?: boolean;
+  expansionJewel?: unknown; classStartIndex?: number; ascendancyName?: string;
+  masteryEffects?: { effect: number; stats: string[] }[];
+}
+export interface SourceTree {
+  constants: { skillsPerOrbit: number[]; orbitRadii: number[] };
+  groups: Record<string, { x: number; y: number }>;
+  nodes: Record<string, SourceNode>;
+}
+
+/** Nodos con su posición ya calculada, aristas en un array plano y el nodo inicial de cada clase (índice = classId de PoB). */
+export function reduceTree(tree: SourceTree): TreeRaw {
   const { skillsPerOrbit, orbitRadii } = tree.constants;
-  const T = { nodes: {}, edges: [], masteries: {}, starts: {} };
+  const T: TreeRaw = { nodes: {}, edges: [], masteries: {}, starts: {} };
   for (const [id, n] of Object.entries(tree.nodes)) {
-    const g = tree.groups[n.group];
+    const g = n.group !== undefined ? tree.groups[n.group] : undefined;
     if (!g || n.isProxy || n.expansionJewel && !n.isJewelSocket) continue;
     const count = skillsPerOrbit[n.orbit], r = orbitRadii[n.orbit];
     const a = (ANGLES[count] ? ANGLES[count][n.orbitIndex] : 360 * n.orbitIndex / count) * Math.PI / 180;
@@ -32,5 +42,3 @@ function reduceTree(tree) {
     }
   return T;
 }
-
-module.exports = { reduceTree };

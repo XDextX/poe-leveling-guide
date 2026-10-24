@@ -24,14 +24,16 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 
 ## Regenerar los datos
 
-Los datos van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva hace falta [Node.js](https://nodejs.org) 18 o superior:
+Los datos van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva hace falta [Node.js](https://nodejs.org) 22.18 o superior, que ejecuta TypeScript directamente:
 
 ```bash
-node scripts/download-data.js
-node scripts/build.js
+npm install
+npm run data
+npm run build
+npm run typecheck
 ```
 
-`download-data.js` descarga los archivos a `data/` (una petición por segundo) y `build.js` los reduce a `gamedata/` y junta `src/` en `index.html`. La carpeta `data/` no se sube al repositorio.
+`npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run build` los reduce a `gamedata/` y junta `src/` en `index.html`. `npm run typecheck` comprueba los tipos con `tsc` en modo estricto, sin generar nada. Las carpetas `data/` y `node_modules/` no se suben al repositorio.
 
 ## Estructura
 
@@ -44,18 +46,19 @@ social-card.png       la imagen al compartir el enlace (Open Graph, 1200x630)
 sitemap.xml           para enviar la página a Google Search Console
 src/
   index.html          el marcado de la página
+  types.d.ts          los tipos compartidos por la app y los scripts
   styles.css          estilos base: tema, formulario, paneles
   icon.svg            el icono
   js/                 lógica sin interfaz, un módulo por responsabilidad:
-    data.js           los datos con nombre de campo y utilidades comunes
-    pob.js            leer el código de Path of Building
-    route.js          la ruta de campaña y sus marcas
-    plan.js           qué gema se consigue en cada paso
-    stats.js          clasificación de stats en daño y defensa
-    suggest.js        el leveling sugerido
-    session.js        conservar la build y la vista al recargar
-    app.js            arranque: compone la guía con los componentes
-  components/         interfaz: cada componente con su JS y su CSS
+    data.ts           los datos con nombre de campo y utilidades comunes
+    pob.ts            leer el código de Path of Building
+    route.ts          la ruta de campaña y sus marcas
+    plan.ts           qué gema se consigue en cada paso
+    stats.ts          clasificación de stats en daño y defensa
+    suggest.ts        el leveling sugerido
+    session.ts        conservar la build y la vista al recargar
+    app.ts            arranque: compone la guía con los componentes
+  components/         interfaz: cada componente con su TS y su CSS
     section/          sección desplegable (la base de las demás)
     summary/          resumen de gemas, bandidos y moneda
     gem/              gema con casilla, líneas de gemas y costes
@@ -66,14 +69,16 @@ src/
     heatmap/          el mapa de calor
     tree/             stats del árbol, mapa por etapas e indispensables
     toc/              el índice
+tsconfig.json         tipos de la app (navegador)
 scripts/
-  download-data.js    descarga los datos a data/
+  tsconfig.json       tipos de los scripts (Node)
+  download-data.mts   descarga los datos a data/
   icons.ps1           genera favicon.ico, apple-touch-icon.png y social-card.png (Windows)
-  build.js            reduce los datos a gamedata/ y genera index.html
-  lib/                un reductor por fuente de datos, el empaquetado y los datos del sitio (site.js: URL, descripción, JSON-LD)
+  build.mts           reduce los datos a gamedata/ y genera index.html
+  lib/                un reductor por fuente de datos, el empaquetado y los datos del sitio (site.mts: URL, descripción, JSON-LD)
 ```
 
-Todo comparte un único `<script>` y un único `<style>`, así que no hacen falta herramientas de compilación: `scripts/lib/bundle.js` concatena la lógica (`MODULES`), los componentes (`COMPONENTS`, que también fija el orden del CSS) y por último `app.js`.
+Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`), los componentes (`COMPONENTS`, que también fija el orden del CSS) y por último `app.ts`. Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.
 
 ## Fuentes
 

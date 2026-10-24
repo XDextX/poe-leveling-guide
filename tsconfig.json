@@ -1,0 +1,17 @@
+{
+  // Solo comprobación de tipos de la app (src/). El JS lo genera scripts/lib/bundle.mts quitando los tipos con
+  // node:module stripTypeScriptTypes, así que aquí no se emite nada y solo vale sintaxis "borrable".
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}
