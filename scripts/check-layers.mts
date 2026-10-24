@@ -6,12 +6,15 @@ import path from "node:path";
 
 const dir = path.join(import.meta.dirname, "..", "src", "js");
 const DOM = /\b(?:document|localStorage|sessionStorage)\b|\bwindow\.(?!DATA\b)/;
+// Todos los .ts de src/js/, también los de sus subcarpetas (como pob/), con la ruta relativa a src/js/ y barras "/".
+const files = fs.readdirSync(dir, { recursive: true, encoding: "utf8" }).map(f => f.split(path.sep).join("/")).filter(f => f.endsWith(".ts"));
 const bad: string[] = [];
-for (const f of fs.readdirSync(dir).filter(f => f.endsWith(".ts"))) {
+for (const f of files) {
   const lines = fs.readFileSync(path.join(dir, f), "utf8").split(/\r?\n/);
   lines.forEach((line, i) => {
     const m = line.match(/^import .* from "([^"]+)";$/);
-    if (m && /\/(components|app|jsx)\//.test(path.posix.join("/src/js/", m[1]))) bad.push(`src/js/${f}:${i + 1}: import "${m[1]}"`);
+    // El import se resuelve desde la carpeta del archivo: "../components/x" desde src/js/pob/ también es interfaz.
+    if (m && /\/(components|app|jsx)\//.test(path.posix.join("/src/js/", path.posix.dirname(f), m[1]))) bad.push(`src/js/${f}:${i + 1}: import "${m[1]}"`);
     // Los comentarios pueden nombrar la página; el código no.
     const code = line.replace(/\/\/.*$|\/\*.*?\*\/|^\s*\*.*$/g, "");
     if (DOM.test(code)) bad.push(`src/js/${f}:${i + 1}: ${code.trim()}`);
