@@ -13,8 +13,9 @@ const tocButton = () => document.getElementById("toc-toggle")!;
 
 // Se consultan al usarlas, no al cargar el módulo: <TocNav> está en la página prerenderizada, que se ejecuta en Node, sin ventana.
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-// Mismo ancho que la media query de toc-nav.css a partir del cual el índice cabe al lado de la guía.
-const tocBeside = () => matchMedia("(min-width: 1260px)").matches;
+// El índice cabe al lado de la guía justo cuando toc-nav.css oculta el botón flotante (su media query de ancho), así que se
+// lee de ahí y el ancho no se repite. El botón también está oculto mientras no hay guía, pero entonces no hay panel que abrir.
+const tocBeside = () => getComputedStyle(tocButton()).display === "none";
 // Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
 const SPY_LINE = 100;
 let tocTargets: HTMLElement[] = [], tocPinned: HTMLElement | null = null;

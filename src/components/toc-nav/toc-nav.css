@@ -24,7 +24,9 @@
   padding: 12px 18px; cursor: pointer; box-shadow: 0 4px 16px rgb(0 0 0 / .3); }
 .toc-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 
-/* La guía mide 780px centrada; el índice (200px) se coloca a su izquierda con 32px de aire cuando cabe entero. */
+/* La guía mide 780px centrada; el índice (200px) se coloca a su izquierda con 32px de aire cuando cabe entero.
+   Aquí se oculta el botón flotante: toc-nav.tsx lo usa para saber que el índice va al lado, así que este es el único
+   sitio donde está el ancho. */
 @media (min-width: 1260px) {
   .toc, .toc:not(.open) { display: grid; left: calc(50% - 390px - 232px); right: auto; top: 32px; bottom: auto; width: 200px;
     max-height: calc(100vh - 64px); box-shadow: none; }
