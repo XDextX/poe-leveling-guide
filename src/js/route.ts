@@ -1,14 +1,17 @@
 /* Ruta de campaña (formato de exile-leveling): parseo, traducción de los verbos y pintado de sus marcas {tipo|args}. */
 
+import { AREAS, QUESTS, ROUTE } from "./data";
+import { esc } from "./dom";
+
 /** Opciones de la ruta para una build: qué hacer con los bandidos y si es inicio de liga. */
-function routeDefs(build: Build, leagueStart: boolean): Set<string> {
+export function routeDefs(build: Build, leagueStart: boolean): Set<string> {
   const defs = new Set<string>(["BANDIT_" + (build.bandit === "None" ? "KILL" : build.bandit.toUpperCase())]);
   if (leagueStart) defs.add("LEAGUE_START");
   return defs;
 }
 
 /** Texto de la ruta → pasos [{ act, line, notes }], aplicando #ifdef/#ifndef con las opciones dadas. */
-function parseRoute(defs: Set<string>): RouteStep[] {
+export function parseRoute(defs: Set<string>): RouteStep[] {
   const steps: RouteStep[] = [], stack: boolean[] = [];
   let act = 0;
   for (const raw of ROUTE.split(/\r?\n/)) {
@@ -27,7 +30,7 @@ function parseRoute(defs: Set<string>): RouteStep[] {
 }
 
 /** Argumentos de una marca {quest|id|oferta…} → la misión y sus ofertas (todas si la marca no las nombra). */
-function questOffers([qid, ...named]: string[]): { quest: Quest; offers: Offer[] } | null {
+export function questOffers([qid, ...named]: string[]): { quest: Quest; offers: Offer[] } | null {
   const quest = QUESTS[qid];
   if (!quest) return null;
   return { quest, offers: (named.length ? named : Object.keys(quest.offers)).map(oid => quest.offers[oid]).filter((o): o is Offer => !!o) };
@@ -50,7 +53,7 @@ const lvlTag = (level: number): string => `<span class="lvl">nv ${minLevel(level
 const areaHtml = (id: string): string => { const a = AREAS[id]; if (!a) return esc(id); return `<span class="area">${esc(a.name)}</span>${a.town ? "" : lvlTag(a.level)}`; };
 
 /** Estado del recorrido de la ruta: la zona actual, dónde se puso el portal y qué hacer en cada entrega de misión. */
-interface RouteCtx { here: string; portalFrom: string | null; onQuest: (args: string[]) => string }
+export interface RouteCtx { here: string; portalFrom: string | null; onQuest: (args: string[]) => string }
 
 /**
  * Cómo se pinta cada marca de la ruta. `ctx` lleva la zona actual (para Logout, Portal y recetas) y `onQuest`, que decide
@@ -89,8 +92,8 @@ const TOKENS: Record<string, (args: string[], ctx: RouteCtx) => string> = {
 };
 
 /** Pinta una línea de la ruta: traduce el verbo y sustituye cada marca por su HTML. */
-const renderLine = (line: string, ctx: RouteCtx): string => translate(line).replace(/\{([a-z_]+)(?:\|([^}]*))?\}/g, (_, type: string, arg: string = "") =>
+export const renderLine = (line: string, ctx: RouteCtx): string => translate(line).replace(/\{([a-z_]+)(?:\|([^}]*))?\}/g, (_, type: string, arg: string = "") =>
   TOKENS[type] ? TOKENS[type](arg.split("|"), ctx) : esc(arg || type));
 
 /** Las notas (#sub) son texto: se traducen los verbos, se dibujan las flechas y del resto de marcas queda su texto. */
-const renderNote = (note: string): string => translate(note).replace(/\{dir\|(\d+)\}/g, (_, d: string) => `<span class="dir">${arrow(d)}</span>`).replace(/\{[a-z_]+\|([^}]*)\}/g, "$1");
+export const renderNote = (note: string): string => translate(note).replace(/\{dir\|(\d+)\}/g, (_, d: string) => `<span class="dir">${arrow(d)}</span>`).replace(/\{[a-z_]+\|([^}]*)\}/g, "$1");

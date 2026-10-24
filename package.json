@@ -3,23 +3,25 @@
   "private": true,
   "description": "Guía de campaña para Path of Exile 1 a partir de una build de Path of Building.",
   "license": "MIT",
-  "type": "commonjs",
+  "type": "module",
   "engines": {
     "node": ">=22.18"
   },
   "scripts": {
-    "build": "node --disable-warning=ExperimentalWarning scripts/build.mts",
-    "dev": "node --disable-warning=ExperimentalWarning scripts/dev.mts",
-    "serve": "node --disable-warning=ExperimentalWarning scripts/serve.mts",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "data": "node scripts/download-data.mts",
     "gamedata": "node --disable-warning=ExperimentalWarning scripts/gamedata.mts",
     "update-data": "npm run data && npm run gamedata && npm run build",
     "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/icons.ps1",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json && tsc -p scripts/tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && node scripts/check-layers.mts"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vite-plugin-singlefile": "2.3.4"
   }
 }

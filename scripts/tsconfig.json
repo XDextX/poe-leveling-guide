@@ -16,5 +16,5 @@
     "noUnusedParameters": true,
     "skipLibCheck": true
   },
-  "include": ["./**/*.mts", "../src/types.d.ts"]
+  "include": ["./**/*.mts", "../src/types.d.ts", "../vite.config.ts"]
 }

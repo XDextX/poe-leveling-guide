@@ -1,5 +1,10 @@
 /* Qué gema se consigue en cada paso de la ruta: una recompensa por oferta de misión y compras en cuanto se venden. */
 
+import { CLASSES, START } from "./data";
+import { esc } from "./dom";
+import { parseRoute, questOffers, renderLine, routeDefs } from "./route";
+import type { RouteCtx } from "./route";
+
 /**
  * Recorre la ruta: pinta cada paso y, en cada entrega de misión, elige una recompensa y compra lo que ya esté a la venta.
  * Devuelve el HTML por paso y qué gemas se consiguieron dónde.
@@ -37,7 +42,7 @@ function walk(steps: RouteStep[], cls: string, want: string[]): { out: PlannedSt
  * Ruta y gemas para una build; la Biblioteca (Siosa) solo se incluye si aporta alguna gema.
  * `extra` son las gemas de leveling sugeridas: van detrás, así que si una recompensa sirve para ambas gana la de la build.
  */
-function plan(build: Build, cls: string, leagueStart: boolean, extra: string[] = []): Plan {
+export function plan(build: Build, cls: string, leagueStart: boolean, extra: string[] = []): Plan {
   const want: string[] = [];
   for (const gem of build.gems) {
     if (gem.kind === "normal" && gem.id) want.push(gem.id);

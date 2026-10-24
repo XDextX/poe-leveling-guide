@@ -24,7 +24,7 @@ Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexió
 
 ## Generar la app
 
-Hace falta [Node.js](https://nodejs.org) 22.18 o superior, que ejecuta TypeScript directamente:
+Hace falta [Node.js](https://nodejs.org) 22.18 o superior. La app se construye con [Vite](https://vite.dev):
 
 ```bash
 npm install
@@ -33,57 +33,65 @@ npm run dev
 
 | Comando | Qué hace |
 |---|---|
-| `npm run dev` | Genera `dist/`, la sirve en http://localhost:8080 y la vuelve a generar al guardar cambios en `src/`, `gamedata/` o `public/` (recarga el navegador a mano). |
-| `npm run build` | Genera la web en `dist/`: junta `src/` en `index.html` y copia los datos de `gamedata/` y los archivos de `public/`. |
-| `npm run serve` | Sirve el `dist/` ya generado en http://localhost:8080, como lo sirve GitHub Pages. |
+| `npm run dev` | Servidor de desarrollo de Vite (http://localhost:5173), con recarga en caliente al guardar. |
+| `npm run build` | Genera la web en `dist/`: un solo `index.html` con todo el JS y el CSS dentro, la página ya escrita (prerender), `sitemap.xml` y lo que hay en `public/` (iconos y datos del juego). |
+| `npm run serve` | Sirve el `dist/` ya generado (`vite preview`), como lo sirve GitHub Pages. |
 | `npm run clean` | Borra `dist/`. |
-| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto, sin generar nada, y que la lógica (`src/js/`) no use la interfaz. |
+| `npm run typecheck` | Comprueba los tipos con `tsc` en modo estricto (app, scripts y `vite.config.ts`) y que la lógica (`src/js/`) no importe la interfaz. |
 | `npm run data` | Descarga los datos del juego a `data/` (una petición por segundo). |
-| `npm run gamedata` | Reduce `data/` a `gamedata/`. |
+| `npm run gamedata` | Reduce `data/` a `public/gamedata/`. |
 | `npm run update-data` | Liga nueva: `data`, `gamedata` y `build` seguidos. |
 | `npm run icons` | Vuelve a generar los iconos y la imagen para redes de `public/` (Windows). |
 
-`dev` y `serve` aceptan otro puerto con la variable `PORT` (por ejemplo `PORT=3000 npm run dev`) y solo escuchan en tu equipo. Las carpetas `dist/`, `data/` y `node_modules/` no se suben al repositorio.
+`dist/index.html` funciona también abierto con doble clic, sin servidor: el JS va dentro del propio HTML (`vite-plugin-singlefile`) y los datos se cargan con `<script src>`. Las carpetas `dist/`, `data/` y `node_modules/` no se suben al repositorio.
 
-**Publicación:** en cada push a `main`, el workflow `.github/workflows/pages.yml` comprueba los tipos, ejecuta `npm run build` y publica `dist/` en GitHub Pages (en Settings → Pages, la fuente es "GitHub Actions"). No descarga nada: usa `gamedata/`, que va en el repositorio.
+**Publicación:** en cada push a `main`, el workflow `.github/workflows/pages.yml` comprueba los tipos, ejecuta `npm run build` y publica `dist/` en GitHub Pages (en Settings → Pages, la fuente es "GitHub Actions"). No descarga nada: usa `public/gamedata/`, que va en el repositorio.
 
 ## Regenerar los datos
 
-Los datos del juego van en `gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva:
+Los datos del juego van en `public/gamedata/`, un archivo por tipo, aparte del código de la app. Para actualizarlos a una liga nueva:
 
 ```bash
 npm run update-data
 ```
 
-`npm run update-data` equivale a `npm run data`, `npm run gamedata` y `npm run build` seguidos. `npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run gamedata` los reduce a `gamedata/`, junto con la fecha de descarga y la licencia de exile-leveling. Después hay que subir `gamedata/` al repositorio.
+`npm run update-data` equivale a `npm run data`, `npm run gamedata` y `npm run build` seguidos. `npm run data` descarga los archivos a `data/` (una petición por segundo) y `npm run gamedata` los reduce a `public/gamedata/`, junto con la fecha de descarga y la licencia de exile-leveling. Después hay que subir `public/gamedata/` al repositorio.
 
 ## Estructura
 
 ```
-dist/                 la web generada por npm run build (no va en el repositorio): index.html, gamedata/, public/ y sitemap.xml
-gamedata/             los datos del juego reducidos (gems.js, campaign.js, tree.js, items.js), su fecha y la licencia de exile-leveling
-public/               archivos que se copian tal cual a dist/
+index.html            plantilla de Vite con tres huecos: el <head>, la página prerenderizada y los <script> de los datos
+vite.config.ts        build y servidor de desarrollo; su plugin "prerender" rellena los huecos de index.html
+public/               lo que se copia tal cual a dist/
+  gamedata/           los datos del juego reducidos (gems.js, campaign.js, tree.js, items.js), su fecha y la licencia de exile-leveling
   favicon.ico         el icono (16 a 256 px); dentro de la app va en SVG
   apple-touch-icon.png  el icono para la pantalla de inicio de iOS
   social-card.png     la imagen al compartir el enlace (Open Graph, 1200x630)
 .github/workflows/    pages.yml: genera dist/ y la publica en GitHub Pages en cada push a main
 src/
-  index.html          el marcado de la página
-  types.d.ts          los tipos compartidos por la app y los scripts
+  types.d.ts          los tipos compartidos por la app y los scripts (y el JSX)
   styles.css          estilos base: tema, formulario, paneles
   icon.svg            el icono
-  js/                 lógica sin interfaz, un módulo por responsabilidad (no puede usar componentes):
-    dom.ts            utilidades del DOM: $, esc y el (crear elementos con texto seguro)
+  jsx/                el runtime del JSX: crea nodos DOM en el navegador y escribe HTML en el prerender
+  js/                 lógica sin interfaz, un módulo por responsabilidad (no puede importar la interfaz):
+    dom.ts            $ y esc
     data.ts           los datos con nombre de campo y utilidades comunes
     pob.ts            leer el código de Path of Building
     route.ts          la ruta de campaña y sus marcas
     plan.ts           qué gema se consigue en cada paso
     stats.ts          clasificación de stats en daño y defensa
     suggest.ts        el leveling sugerido
-  app/                arranque: une la lógica y los componentes
+  app/                arranque
+    app.tsx           punto de entrada: monta <Page>, lee el formulario y compone la guía
     session.ts        conservar la build y la vista al recargar
-    app.ts            lee el formulario y compone la guía con los componentes
-  components/         interfaz: una carpeta por componente, con su TS y, si tiene estilos, su CSS (ver «Componentes»)
+    document.tsx      <Head> y el prerender que usa vite.config.ts
+  components/         interfaz: una carpeta por componente, con su .tsx y, si tiene estilos, su .css (ver «Componentes»)
+    page/             la página entera
+    header/           la cabecera
+    build-form/       el formulario de la build
+    toc-nav/          el índice y su botón (vacíos hasta que hay guía)
+    about/            «Qué hace»
+    sources/          «Fuentes»
     section/          sección desplegable y subtítulos (la base de las demás)
     named-list/       lista de pares nombre/texto
     toggle-group/     botonera de opciones excluyentes
@@ -109,35 +117,55 @@ src/
     node-icon/        icono de un nodo (CDN de GGG)
     key-nodes/        puntos indispensables
     tree-extras/      ascendencia y maestrías
-    toc/              el índice
+    toc/              la lógica del índice (enlaces, sección actual, desplazamiento)
 tsconfig.json         tipos de la app (navegador)
-tsconfig.logic.json   la capa de lógica sola: falla si src/js/ usa un componente o algo de src/app/
 scripts/
-  tsconfig.json       tipos de los scripts (Node)
+  tsconfig.json       tipos de los scripts (Node) y de vite.config.ts
   download-data.mts   descarga los datos a data/
-  gamedata.mts        reduce los datos de data/ a gamedata/
+  gamedata.mts        reduce los datos de data/ a public/gamedata/
+  check-layers.mts    falla si src/js/ importa algo de la interfaz
   icons.ps1           genera los iconos y la imagen para redes de public/ (Windows)
-  build.mts           genera dist/: index.html, sitemap.xml y la copia de gamedata/ y public/
-  serve.mts           sirve dist/ en local
-  dev.mts             build + serve, y build de nuevo al cambiar algo
-  lib/                un reductor por fuente de datos, el empaquetado, el servidor local y los datos del sitio (site.mts: URL, descripción, JSON-LD)
+  lib/                un reductor por fuente de datos, gamedata/ y los datos del sitio (site.mts: URL, descripción, JSON-LD, sitemap)
 ```
 
-Todo comparte un único `<script>` y un único `<style>`, así que no hace falta empaquetador: `scripts/lib/bundle.mts` quita los tipos con `stripTypeScriptTypes` de Node y concatena la lógica (`MODULES`, en orden), todas las carpetas de `components/` (en orden alfabético: cada componente solo define funciones y solo da estilo a sus propias clases, así que el orden no importa) y por último `src/app/` (`session.ts` y `app.ts`). Por eso solo vale TypeScript que se borra sin más (`erasableSyntaxOnly`): nada de `enum` ni `namespace`.
+**Cómo se genera la página:** la página entera son componentes. En el build, el plugin `prerender` de `vite.config.ts` ejecuta `src/app/document.tsx` en Node (con `ssrLoadModule` de Vite) y escribe el `<head>` y `<Page>` ya en HTML dentro de `index.html`, así los buscadores, las previsualizaciones y quien no tiene JavaScript ven el contenido. En el navegador, `app.tsx` vuelve a crear `<Page>` con sus eventos y la cambia por la prerenderizada, que es idéntica.
 
 ## Componentes
 
-Un componente es una función de `src/components/` que recibe datos y devuelve DOM. Se declara con el tipo `Component` (de `src/types.d.ts`), así se ve en cada uno qué recibe y qué devuelve:
+Los componentes se escriben en JSX, como en React o Solid, pero sin librería: el runtime de `src/jsx/` crea nodos DOM reales, sin Virtual DOM ni redibujado. Cada componente es una función con nombre en PascalCase que recibe sus props y devuelve DOM; sus props tienen su propia interfaz, `<Nombre>Props`, y se declara con el tipo `Component` (de `src/types.d.ts`). Cada archivo importa lo que usa:
 
-```ts
-/** Etiqueta con un texto. */
-const badge: Component<[text: string], HTMLSpanElement> = text => el("span", "badge", text);
+```tsx
+// src/components/badge/badge.tsx
+import "./badge.css";
+
+interface BadgeProps {
+  /** Resaltada con el color de acento. */
+  strong?: boolean;
+  children: JSX.Child;
+}
+
+/** Etiqueta pequeña. */
+export const Badge: Component<BadgeProps, HTMLSpanElement> = ({ strong = false, children }) =>
+  <span class={strong ? "badge strong" : "badge"}>{children}</span> as HTMLSpanElement;
 ```
 
-- `Component<[argumentos], Devuelve>`: lo que devuelve es un elemento o un `DocumentFragment` (`View`), o `| null` si a veces no hay nada que mostrar.
-- Las demás funciones de `src/components/` (`placeTip`, `uniqueIcon`, `drawHeat`…) son ayudantes, no componentes: no llevan ese tipo.
-- No hay `import`: todo es global y se llama por su nombre. Para añadir uno, crea `src/components/<nombre>/<nombre>.ts` (y `.css` si tiene estilos, solo para sus propias clases); el empaquetado lo encuentra solo.
-- La lógica (`src/js/`) no puede usar componentes: `npm run typecheck` lo comprueba con `tsconfig.logic.json`.
+```tsx
+// Uso, desde otro componente:
+import { Badge } from "../badge/badge";
+
+<Section title="Equipo" className="act gear">
+  <Badge strong>nuevo</Badge>
+</Section>
+```
+
+- **Props comprobadas:** TypeScript revisa las props dentro del JSX: una prop que no existe o una obligatoria que falta es un error en `npm run typecheck`.
+- **Sin importar `h`:** el JSX usa el runtime automático (`jsxImportSource`), así que no hace falta importar nada para escribir JSX.
+- **Diferencias con React:** se escribe `class` (no `className`); los eventos son `onClick`, `onChange`, `onMousemove`… (nombre del evento del DOM tras `on`); `html` pone HTML sin escapar, solo para HTML que genera la propia app. El texto entre etiquetas o en `{…}` siempre va como texto, nunca como HTML.
+- **Sin estado ni redibujado:** un componente se ejecuta una vez y devuelve DOM. Si algo cambia, se vuelve a componer la guía (`render` en `app.tsx`) o se modifica el DOM directamente, como hace el mapa de calor.
+- **Tipo de una expresión JSX:** es `Node`; si necesitas el elemento concreto, afínalo con `as` (`<canvas /> as HTMLCanvasElement`).
+- **Componentes y ayudantes:** `Component<Props, Devuelve>` devuelve un elemento o un `DocumentFragment` (`View`), o `| null` si a veces no hay nada que mostrar. Las demás funciones de `src/components/` (`placeTip`, `uniqueIcon`, `drawHeat`, `heatControls`…) son ayudantes, no componentes.
+- **Prerender:** los componentes de la página (`page/` y los que usa) se ejecutan también en Node, así que no pueden tocar `document` ni `window` al crearse ni al importarse; los eventos sí, porque solo se ejecutan en el navegador.
+- **Capas:** la lógica (`src/js/`) no importa componentes, ni `src/app/`, ni el runtime del JSX; `npm run typecheck` lo comprueba con `scripts/check-layers.mts`.
 
 ## Fuentes
 

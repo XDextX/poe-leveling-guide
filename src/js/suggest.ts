@@ -1,5 +1,9 @@
 /* Sugerencias de leveling: heurísticas que la interfaz muestra siempre como "sugerencia automática". */
 
+import { AREAS, CLASSES, CLASS_STARTS, EDGES, GEMS, NODE, NODES, SKILLS, START, isSupport } from "./data";
+import { parseRoute, questOffers } from "./route";
+import { statKind } from "./stats";
+
 const STAGES: [first: number, last: number][] = [[1, 2], [3, 4], [5, 6], [7, 10]];
 // Nivel aproximado al acabar un acto: el de la zona de más nivel de ese acto.
 const actLevel = (act: number): number => Math.max(...Object.values(AREAS).filter(a => a.act === act && !a.town).map(a => a.level));
@@ -38,7 +42,7 @@ const byLikeness = (mainId: string) => (a: string, b: string): number => similar
 const UTILITY_TAGS = ["aura", "herald", "movement", "travel", "blink", "guard", "warcry", "curse", "mark", "link", "banner", "golem", "stance", "vaal", "minion", "totem", "trap", "mine", "brand", "trigger"];
 
 /** Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden. */
-function suggestSkills(main: MainSkill, cls: string, defs: Set<string>): StageSkill[] {
+export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>): StageSkill[] {
   const avail = availability(cls, defs), mainSkill = SKILLS[main.id], mainTags = new Set(mainSkill.tags);
   const isAttack = mainSkill.types.includes("Attack"), isSpell = mainSkill.types.includes("Spell");
   const skillOk = (id: string): boolean => {
@@ -102,7 +106,7 @@ function reachable(taken: Set<string>, final: Set<string>): Map<string, string> 
  * Árbol de leveling sugerido: crece desde el inicio de la clase solo por nodos del árbol final y, en cada paso,
  * coge el camino que más aporta por punto gastado. Puntos por tramo ≈ nivel − 1 + puntos de misión (≈22 en la campaña, +2 si se matan los bandidos).
  */
-function suggestTrees(tree: BuildTree, killBandits: boolean): TreeStage[] {
+export function suggestTrees(tree: BuildTree, killBandits: boolean): TreeStage[] {
   const start = tree.classId ? CLASS_STARTS[tree.classId] : undefined;
   if (!start) return [];
   const final = new Set(tree.nodes.filter(id => NODES[id].type !== NODE.MASTERY && !NODES[id].ascendancy && id !== start));

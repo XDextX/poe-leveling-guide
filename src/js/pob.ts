@@ -1,7 +1,9 @@
 /* Lectura del código de exportación de Path of Building: clase, gemas, habilidad principal, equipo y árbol. */
 
+import { GEMS, NODES, byName, isActive, isSupport, userError } from "./data";
+
 /** Código de PoB → XML: base64 "url-safe" comprimido con zlib. */
-async function decode(code: string): Promise<string> {
+export async function decode(code: string): Promise<string> {
   let b64 = code.trim().replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
   b64 += "=".repeat((4 - b64.length % 4) % 4);
   const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -10,7 +12,7 @@ async function decode(code: string): Promise<string> {
 }
 
 /** XML de PoB → la build: clase, ascendencia, bandidos, gemas sin repetir, equipo, árbol y habilidad principal. */
-function parseBuild(xml: string): Build {
+export function parseBuild(xml: string): Build {
   const doc = new DOMParser().parseFromString(xml, "application/xml");
   if (doc.querySelector("parsererror") || !doc.querySelector("PathOfBuilding")) throw userError("no es un código de Path of Building");
   const b = doc.querySelector("Build");

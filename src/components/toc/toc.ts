@@ -1,9 +1,13 @@
 /* Índice de la guía: un enlace por sección marcada con data-toc, desplazamiento suave y la sección actual resaltada.
    En pantalla ancha va fijo al lado de la guía; en estrecha, un botón flotante lo abre como panel. */
 
-const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+import { $ } from "../../js/dom";
+import "./toc.css";
+
+// Se consultan al usarlas, no al cargar el módulo: TocNav importa este archivo y el prerender lo ejecuta en Node, sin ventana.
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 // Mismo ancho que la media query de toc.css a partir del cual el índice cabe al lado de la guía.
-const tocBeside = matchMedia("(min-width: 1260px)");
+const tocBeside = () => matchMedia("(min-width: 1260px)").matches;
 // Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
 const SPY_LINE = 100;
 let tocTargets: HTMLElement[] = [], tocLinks = new Map<HTMLElement, HTMLAnchorElement>(), tocPinned: HTMLElement | null = null;
@@ -18,9 +22,9 @@ function setTocOpen(open: boolean): void {
 function goTo(target: HTMLElement): void {
   if (target instanceof HTMLDetailsElement) target.open = true;
   tocPinned = target;
-  if (!tocBeside.matches) setTocOpen(false);
+  if (!tocBeside()) setTocOpen(false);
   const from = scrollY;
-  target.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+  target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   // Algunos navegadores ignoran el desplazamiento suave (la emulación de móvil de Chromium, por ejemplo):
   // si la página no se ha movido, se salta sin animar.
   setTimeout(() => {
@@ -40,7 +44,7 @@ function updateTocCurrent(): void {
 }
 
 /** Rellena el índice con los destinos de la página, en orden; las entradas con grupo (los actos) van juntas en una fila. */
-function renderToc(): void {
+export function renderToc(): void {
   const nav = $("toc");
   tocTargets = [...document.querySelectorAll<HTMLElement>("main [data-toc]")].filter(el => !el.closest("[hidden]"));
   tocLinks = new Map(); tocPinned = null;
@@ -70,12 +74,16 @@ function renderToc(): void {
   updateTocCurrent();
 }
 
-// Un solo oyente de desplazamiento para todo, agrupado por fotograma.
-let tocFrame = 0;
-addEventListener("scroll", () => { if (!tocFrame) tocFrame = requestAnimationFrame(() => { tocFrame = 0; updateTocCurrent(); }); }, { passive: true });
-// La rueda o el dedo del usuario sueltan la sección pulsada: a partir de ahí manda la posición.
-for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => { tocPinned = null; }, { passive: true });
+/** Clic en el botón flotante del índice (TocNav): lo abre o lo cierra. */
+export function toggleToc(e: MouseEvent): void { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); }
 
-$("toc-toggle").onclick = e => { e.stopPropagation(); setTocOpen(!$("toc").classList.contains("open")); };
-addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
-addEventListener("click", e => { if (!tocBeside.matches && !(e.target as Element).closest("#toc")) setTocOpen(false); });
+let tocFrame = 0;
+/** Engancha los oyentes de la ventana; lo llama el arranque una sola vez. */
+export function initToc(): void {
+  // Un solo oyente de desplazamiento para todo, agrupado por fotograma.
+  addEventListener("scroll", () => { if (!tocFrame) tocFrame = requestAnimationFrame(() => { tocFrame = 0; updateTocCurrent(); }); }, { passive: true });
+  // La rueda o el dedo del usuario sueltan la sección pulsada: a partir de ahí manda la posición.
+  for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => { tocPinned = null; }, { passive: true });
+  addEventListener("keydown", e => { if (e.key === "Escape") setTocOpen(false); });
+  addEventListener("click", e => { if (!tocBeside() && !(e.target as Element).closest("#toc")) setTocOpen(false); });
+}

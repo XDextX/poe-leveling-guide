@@ -1,5 +1,9 @@
 /* Sesión: guarda la build, las opciones y lo que se está viendo en este navegador, para que recargar la página no lo pierda. */
 
+import { form } from "../js/data";
+import { $ } from "../js/dom";
+import { rerender, run } from "./app";
+
 const SESSION_KEY = "poe-gemas:sesion";
 // La guía se compone después de cargar la página: si el navegador restaurase el desplazamiento por su cuenta,
 // lo haría sobre una página aún vacía y luego saltaría. Lo restauramos nosotros, ya con la guía puesta.
@@ -22,7 +26,7 @@ function saveSession(): void {
 }
 
 /** Si había una guía guardada, la vuelve a componer y deja la vista como estaba. */
-async function restoreSession(): Promise<void> {
+export async function restoreSession(): Promise<void> {
   /** Lo que se guarda: la build, las opciones y la vista. */
   let saved: { code: string; cls: string; league: boolean; zones: boolean; open: string[]; stage: string; mode: string; scroll: number } | null = null;
   try { saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null"); } catch {}

@@ -1,11 +1,15 @@
 /* Mapa de calor del árbol de pasivas en un canvas, con los colores del tema. */
 
+import { EDGES, NODE, NODES } from "../../js/data";
+import { nodeScore } from "../../js/stats";
+import "./heatmap.css";
+
 /**
  * Estado de cada mapa: zoom y desplazamiento (px CSS), que fijan los controles, y lo que deja el último dibujo para la ficha
  * del nodo: pos (posición en pantalla de un nodo), taken (nodos cogidos) y num (número en la lista de indispensables).
  */
-interface HeatView { z: number; x: number; y: number; pos?: (n: TreeNode) => [number, number]; taken?: Set<string>; num?: Map<string, number> }
-const heatViews = new WeakMap<HTMLCanvasElement, HeatView>();
+export interface HeatView { z: number; x: number; y: number; pos?: (n: TreeNode) => [number, number]; taken?: Set<string>; num?: Map<string, number> }
+export const heatViews = new WeakMap<HTMLCanvasElement, HeatView>();
 
 const hexAlpha = (a: number): string => Math.round(a * 255).toString(16).padStart(2, "0");
 
@@ -14,7 +18,7 @@ const hexAlpha = (a: number): string => Math.round(a * 255).toString(16).padStar
  * key: [[nodo, número en la lista de indispensables]], para que el número no cambie al filtrar por etapa.
  * frame: nodos que fijan el encuadre (el árbol final), para que las etapas se vean en el mismo sitio.
  */
-function drawHeat(canvas: HTMLCanvasElement, taken: string[], key: [id: string, num: number][], mode: string, frame: string[] = taken): void {
+export function drawHeat(canvas: HTMLCanvasElement, taken: string[], key: [id: string, num: number][], mode: string, frame: string[] = taken): void {
   // Un repintado pendiente de una guía ya sustituida llega con el canvas fuera de la página (ancho 0): no hay nada que pintar.
   if (!canvas.isConnected) return;
   const css = getComputedStyle(document.documentElement), col = (v: string): string => css.getPropertyValue(v).trim();
@@ -86,6 +90,8 @@ function drawHeat(canvas: HTMLCanvasElement, taken: string[], key: [id: string, 
 
 // Un solo oyente para todo: el mapa vigente se repinta al cambiar el tamaño o el tema.
 let redrawHeat: (() => void) | null = null;
+/** Cambia el mapa que se repinta (null: ninguno). */
+export function setRedrawHeat(fn: (() => void) | null): void { redrawHeat = fn; }
 addEventListener("resize", () => redrawHeat?.());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => redrawHeat?.());
 

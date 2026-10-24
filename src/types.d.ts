@@ -1,7 +1,7 @@
 /* Tipos compartidos por los scripts de la app. Todos los archivos de src/ son scripts globales (comparten un único
    <script> en index.html), así que estas declaraciones también son globales: sin import ni export. */
 
-/* ---------- Datos en crudo, como los escribe scripts/build.mts en gamedata/ (campos por posición para que ocupen poco) ---------- */
+/* ---------- Datos en crudo, como los escribe scripts/gamedata.mts en public/gamedata/ (campos por posición para que ocupen poco) ---------- */
 
 /** Gema: [nombre, atributo (s/d/i/-), nivel requerido] */
 type GemRow = [name: string, attr: string, level: number];
@@ -77,11 +77,37 @@ interface StageSkill { acts: [number, number]; from: number; to: number; skill: 
 /** Lo que devuelve un componente: un elemento o un fragmento listo para meter en la página. */
 type View = HTMLElement | DocumentFragment;
 /**
- * Un componente de src/components/: una función que recibe datos y devuelve DOM (R afina el tipo, o admite null si
- * puede no haber nada que mostrar). Las demás funciones de esa carpeta son ayudantes, no componentes.
+ * Un componente de src/components/: una función que recibe sus props (un objeto, con su interfaz <Nombre>Props junto al
+ * componente) y devuelve DOM. R afina el tipo, o admite null si puede no haber nada que mostrar.
+ * Las demás funciones de esa carpeta son ayudantes, no componentes.
  */
 // interface y no type: así el editor muestra "Component<…>" al pasar el ratón, en vez de expandirlo a la firma.
-interface Component<A extends unknown[] = [], R extends View | null = View> { (...args: A): R }
+interface Component<P extends object, R extends View | null = View> { (props: P): R }
+
+/** Fecha de descarga de los datos y licencia de exile-leveling: las define Vite al compilar (define en vite.config.ts). */
+declare const PAGE_DATE: string;
+declare const PAGE_LICENSE: string;
+
+/* ---------- JSX (src/js/dom.ts: h y Fragment) ---------- */
+
+declare namespace JSX {
+  /** Lo que da una expresión JSX: un nodo DOM real. Se afina con "as" cuando hace falta (as HTMLCanvasElement). */
+  type Element = Node;
+  /** Lo que puede ir dentro de una etiqueta: nodos, textos, números o nada (null, undefined, booleanos). */
+  type Child = Node | string | number | boolean | null | undefined | Child[];
+  /** Los hijos llegan a los componentes en props.children. */
+  interface ElementChildrenAttribute { children: {} }
+  /** Atributos de las etiquetas HTML (ver h() en src/js/dom.ts). */
+  interface HtmlProps {
+    class?: string;
+    style?: string;
+    /** HTML sin escapar: solo para HTML generado por la app, nunca para datos del usuario. */
+    html?: string;
+    children?: Child | Child[];
+    [attr: string]: unknown;
+  }
+  interface IntrinsicElements { [tag: string]: HtmlProps }
+}
 interface GuideOptions { cls: string; leagueStart: boolean; showZones: boolean }
 type StatKind = "dmg" | "def" | "other";
 /** Una entrada del índice: destino de una sección marcada con data-toc. */
