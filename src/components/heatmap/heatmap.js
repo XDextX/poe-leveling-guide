@@ -8,6 +8,8 @@ const hexAlpha = a => Math.round(a * 255).toString(16).padStart(2, "0");
  * frame: nodos que fijan el encuadre (el árbol final), para que las etapas se vean en el mismo sitio.
  */
 function drawHeat(canvas, taken, key, mode, frame = taken) {
+  // Un repintado pendiente de una guía ya sustituida llega con el canvas fuera de la página (ancho 0): no hay nada que pintar.
+  if (!canvas.isConnected) return;
   const css = getComputedStyle(document.documentElement), col = v => css.getPropertyValue(v).trim();
   const all = Object.values(NODES).filter(n => !n.ascendancy);
   // Encuadre sobre la zona de la build, con margen: el árbol entero deja los puntos de la build diminutos.
