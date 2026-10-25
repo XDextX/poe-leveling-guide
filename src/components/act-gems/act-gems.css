@@ -7,3 +7,7 @@
 .act-gems-title { font-family: var(--display); color: var(--accent); letter-spacing: .04em; }
 .act-gems .how { min-width: 0; width: 100%; }
 .act-gems .line { gap: 2px 8px; }
+/* El panel mide 200 px: una gema (casilla, icono, nombre, nivel y "sugerida") no cabe en una línea, así que se parte en varias. */
+.act-gems .gem { display: flex; flex-wrap: wrap; max-width: 100%; }
+.act-gems .gem span { min-width: 0; overflow-wrap: anywhere; }
+.act-gems { overflow-x: hidden; }
