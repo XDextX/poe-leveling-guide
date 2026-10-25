@@ -39,13 +39,17 @@ interface GemProps {
 export const Gem: Component<GemProps, HTMLLabelElement> = ({ id, withCost }) => {
   const { name, attr, level, icon } = GEMS[id];
   const isDone = doneStore.ids.has(id);
+  // La misma gema sale en varios sitios (ruta, etapas, equipo…): marcarla en uno la marca en todos.
   const toggle = (e: Event) => {
-    const box = e.target as HTMLInputElement;
-    doneStore.set(id, box.checked);
-    box.parentElement!.classList.toggle("done", box.checked);
+    const on = (e.target as HTMLInputElement).checked;
+    doneStore.set(id, on);
+    document.querySelectorAll<HTMLLabelElement>(`label.gem[data-id="${id}"]`).forEach(label => {
+      label.classList.toggle("done", on);
+      label.querySelector("input")!.checked = on;
+    });
   };
   return (
-    <label class={"gem" + (isDone ? " done" : "")}>
+    <label class={"gem" + (isDone ? " done" : "")} data-id={id}>
       <input type="checkbox" checked={isDone} onChange={toggle} />
       <i class={attr} />
       {icon && <img class="gem-ico" src={gemIcon(icon)} alt="" width="24" height="24" loading="lazy" />}
