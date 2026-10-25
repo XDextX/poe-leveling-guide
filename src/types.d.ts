@@ -67,6 +67,8 @@ interface Build {
   gems: BuildGem[]; items: Item[]; tree: BuildTree; main: MainSkill | null;
   /** Los grupos de gemas del conjunto activo (ids de las que conocemos, en su orden), uno por habilidad de la build. */
   groups: string[][];
+  /** Las estadísticas que Path of Building calculó y guardó en el código (TotalDPS, PoisonDPS, Life…); vacío si el código no las trae. */
+  stats: Record<string, number>;
 }
 
 /* ---------- Ruta, plan y sugerencias ---------- */

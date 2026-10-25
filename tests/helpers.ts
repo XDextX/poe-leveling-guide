@@ -12,5 +12,5 @@ export function gemId(name: string): string {
 /** Una build mínima: Marauder, sin gemas, sin equipo y sin árbol; `over` cambia lo que haga falta. */
 export const build = (over: Partial<Build> = {}): Build => ({
   cls: "Marauder", ascend: null, bandit: "None", gems: [], items: [],
-  tree: { nodes: [], masteries: [], classId: null, stages: [] }, main: null, groups: [], ...over,
+  tree: { nodes: [], masteries: [], classId: null, stages: [] }, main: null, groups: [], stats: {}, ...over,
 });
