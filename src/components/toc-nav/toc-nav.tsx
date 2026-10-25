@@ -19,6 +19,10 @@ const tocBeside = () => getComputedStyle(tocButton()).display === "none";
 // Una sección cuenta como "la actual" cuando su inicio pasa por encima de esta línea (px desde arriba).
 const SPY_LINE = 100;
 let tocTargets: HTMLElement[] = [], tocPinned: HTMLElement | null = null;
+const currentListeners: ((id: string | null) => void)[] = [];
+
+/** Avisa de qué sección se está leyendo (su id, o null si ninguna) cada vez que se calcula. */
+export function onCurrentSection(listener: (id: string | null) => void): void { currentListeners.push(listener); }
 
 /** Índice y botón para abrirlo en pantalla estrecha. */
 export const TocNav: Component<{}, DocumentFragment> = () => (
@@ -57,6 +61,7 @@ function updateTocCurrent(): void {
   const pinnedInView = tocPinned && tocPinned.getBoundingClientRect().top < innerHeight;
   const current = atBottom && pinnedInView ? tocPinned : tocTargets.findLast(t => t.getBoundingClientRect().top <= SPY_LINE);
   tocNav().querySelectorAll("a").forEach(a => a.toggleAttribute("aria-current", !!current && a.getAttribute("href") === "#" + current.id));
+  currentListeners.forEach(listener => listener(current?.id ?? null));
 }
 
 interface TocLinksProps {
