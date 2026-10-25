@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { CLASSES, readJson } from "./lib/common.mts";
-import { reduceGems, reduceSkills, type SourceGem, type RepoeGem } from "./lib/gems.mts";
+import { reduceGems, reduceSkills, type SourceGem, type RepoeGem, type RepoeBaseItem } from "./lib/gems.mts";
 import { reduceQuests, reduceAreas, reduceStarts, readRoute, type SourceQuest, type SourceArea, type SourceCharacter } from "./lib/campaign.mts";
 import { reduceTree, type SourceTree } from "./lib/tree.mts";
 import { reduceUniques, type RepoeUnique } from "./lib/items.mts";
@@ -12,9 +12,10 @@ import { writeGameData } from "./lib/gamedata.mts";
 const root = path.join(import.meta.dirname, ".."), dataDir = path.join(root, "data");
 const read = <T,>(f: string) => readJson<T>(dataDir, f);
 
-const G = reduceGems(read<Record<string, SourceGem>>("gems.json"));
+const repoeGems = read<Record<string, RepoeGem>>("repoe-gems.json");
+const G = reduceGems(read<Record<string, SourceGem>>("gems.json"), repoeGems, read<Record<string, RepoeBaseItem>>("repoe-base-items.json"));
 const data: GameDataRaw = {
-  CLASSES, G, K: reduceSkills(read<Record<string, RepoeGem>>("repoe-gems.json"), G),
+  CLASSES, G, K: reduceSkills(repoeGems, G),
   Q: reduceQuests(read<Record<string, SourceQuest>>("quests.json")), A: reduceAreas(read<Record<string, SourceArea>>("areas.json")),
   START: reduceStarts(read<Record<string, SourceCharacter>>("characters.json")),
   ROUTE: readRoute(dataDir), T: reduceTree(read<SourceTree>("tree.json")),

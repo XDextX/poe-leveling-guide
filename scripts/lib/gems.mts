@@ -11,10 +11,27 @@ export interface RepoeGem {
   support_gem?: { allowed_types?: string[]; excluded_types?: string[] };
 }
 
+/** Lo que leemos de base_items.min.json de RePoE: solo el arte del objeto. */
+export interface RepoeBaseItem { visual_identity?: { dds_file: string } }
+
+/** Ruta del arte de cada gema (sin "Art/" ni extensión), por el objeto base que RePoE da a cada una. */
+function gemArt(repoe: Record<string, RepoeGem>, baseItems: Record<string, RepoeBaseItem>): Map<string, string> {
+  const art = new Map<string, string>();
+  for (const v of Object.values(repoe)) {
+    const id = v.base_item && shortGemId(v.base_item.id), dds = v.base_item && baseItems[v.base_item.id]?.visual_identity?.dds_file;
+    if (id && dds && !art.has(id)) art.set(id, dds.replace(/^Art\//, "").replace(/\.dds$/, ""));
+  }
+  return art;
+}
+
 /** Las "Royale" son del antiguo modo battle royale y repiten el nombre de la gema real. */
-export function reduceGems(gems: Record<string, SourceGem>): Record<string, GemRow> {
-  const G: Record<string, GemRow> = {};
-  for (const g of Object.values(gems)) if (!g.id.includes("Royale")) G[shortGemId(g.id)] = [g.name, (g.primary_attribute || "-")[0], g.required_level];
+export function reduceGems(gems: Record<string, SourceGem>, repoe: Record<string, RepoeGem>, baseItems: Record<string, RepoeBaseItem>): Record<string, GemRow> {
+  const G: Record<string, GemRow> = {}, art = gemArt(repoe, baseItems);
+  for (const g of Object.values(gems)) {
+    if (g.id.includes("Royale")) continue;
+    const id = shortGemId(g.id);
+    G[id] = [g.name, (g.primary_attribute || "-")[0], g.required_level, art.get(id) ?? ""];
+  }
   return G;
 }
 

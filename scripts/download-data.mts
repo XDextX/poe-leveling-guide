@@ -12,6 +12,7 @@ const FILES: [url: string, file: string][] = [
   ["https://raw.githubusercontent.com/grindinggear/skilltree-export/master/data.json", "tree.json"],
   ["https://repoe-fork.github.io/gems.min.json", "repoe-gems.json"],
   ["https://repoe-fork.github.io/uniques.min.json", "repoe-uniques.json"],
+  ["https://repoe-fork.github.io/base_items.min.json", "repoe-base-items.json"],
 ];
 
 try {

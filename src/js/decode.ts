@@ -10,7 +10,7 @@ const mapValues = <V, R>(obj: Record<string, V>, fn: (v: V, k: string) => R): Re
 export function decodeGameData(raw: GameDataRaw) {
   return {
     CLASSES: raw.CLASSES, ROUTE: raw.ROUTE, START: raw.START,
-    GEMS: mapValues<GemRow, Gem>(raw.G, ([name, attr, level]) => ({ name, attr, level })),
+    GEMS: mapValues<GemRow, Gem>(raw.G, ([name, attr, level, icon]) => ({ name, attr, level, icon })),
     QUESTS: mapValues<QuestRaw, Quest>(raw.Q, ({ n, o }) => ({ name: n, offers: mapValues<OfferRow, Offer>(o, ([npc, rewards, vendor]) => ({ npc, rewards, vendor })) })),
     AREAS: mapValues<AreaRow, Area>(raw.A, ([name, act, level, town, townId, recipes]) => ({ name, act, level, town: !!town, townId, recipes })),
     // Etiquetas de RePoE; `allowed`/`excluded` solo existen en los soportes y van en notación polaca inversa.

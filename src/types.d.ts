@@ -4,7 +4,8 @@
 /* ---------- Datos en crudo, como los escribe scripts/gamedata.mts en public/gamedata/ (campos por posición para que ocupen poco) ---------- */
 
 /** Gema: [nombre, atributo (s/d/i/-), nivel requerido] */
-type GemRow = [name: string, attr: string, level: number];
+/** icon: ruta del arte de la gema sin "Art/" ni extensión; "" si RePoE no la conoce. */
+type GemRow = [name: string, attr: string, level: number, icon: string];
 /** RePoE: [etiquetas, tipos, armas, soporte: tipos admitidos, soporte: excluidos] (estos dos en notación polaca inversa) */
 type SkillRow = [tags: string[], types: string[], weapons: string[], allowed: string[], excluded: string[]];
 /** Máscara de bits por clase, en el orden de CLASSES. */
@@ -46,7 +47,7 @@ interface Window { DATA?: Partial<GameDataRaw> }
 
 /* ---------- Datos con nombre, como los usa la app (src/js/data.ts) ---------- */
 
-interface Gem { name: string; attr: string; level: number }
+interface Gem { name: string; attr: string; level: number; icon: string }
 interface Offer { npc: string; rewards: Record<string, ClassMask>; vendor: Record<string, [ClassMask, string]> }
 interface Quest { name: string; offers: Record<string, Offer> }
 interface Area { name: string; act: number; level: number; town: boolean; townId: string | null; recipes: string[] }
