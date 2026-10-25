@@ -5,13 +5,14 @@
  * Va aparte del marcado (act-gems.tsx) porque usa los datos del juego, que la página prerenderizada (en Node) no puede cargar.
  */
 
-import { GEMS, NODES } from "../../js/data";
+import { NODES } from "../../js/data";
+import { isActive, SKILL_KINDS, skillKind } from "../../js/gems";
 import type { GuideData } from "../../js/guide";
 import { Gem } from "../gem/gem";
 import { ToggleGroup } from "../toggle-group/toggle-group";
 import { heatControls } from "../heat-controls/heat-controls";
 import { drawHeat } from "../heatmap/heatmap";
-import { GemLine } from "../gem-line/gem-line";
+import { StageSkills } from "../stage-lines/stage-lines";
 import { onCurrentSection } from "../toc-nav/toc-nav";
 
 const panel = () => document.getElementById("act-gems")!, treePanel = () => document.getElementById("act-tree")!;
@@ -22,19 +23,23 @@ interface ActContentProps { data: GuideData; act: number }
 
 /** Lo que va en el panel de un acto, o null si no hay nada que enseñar. */
 const ActContent: Component<ActContentProps, DocumentFragment | null> = ({ data, act }) => {
-  const stage = data.skills.find(s => s.acts[0] <= act && act <= s.acts[1]);
+  const inAct = (st: StageSkill) => st.acts[0] <= act && act <= st.acts[1];
+  const stage = data.skills.find(inAct), mainId = data.build.main?.id;
+  const others = data.others.flatMap(other => { const st = other.stages.find(inAct); return st ? [{ other, stage: st }] : []; });
   // De cada habilidad de la build, las gemas que ya se tienen al llegar a este acto: las del inicio y las que da la ruta hasta aquí.
   const has = (id: string) => data.plan.start.includes(id) || (data.plan.got.get(id)?.act ?? Infinity) <= act;
-  const groups = data.build.groups.map(ids => ids.filter(has)).filter(ids => ids.length > 0);
-  if (!stage && !groups.length) return null;
+  const firstActive = (ids: string[]) => ids.find(isActive);
+  const rank = (ids: string[]) => { const id = firstActive(ids); return id ? SKILL_KINDS.indexOf(skillKind(id)) : SKILL_KINDS.length; };
+  // Por orden de importancia: supervivencia, daño y comodidad (a igualdad, el de la build).
+  const groups = data.build.groups.map(ids => ids.filter(has)).filter(ids => ids.length > 0).sort((a, b) => rank(a) - rank(b));
+  if (!stage && !others.length && !groups.length) return null;
   return (
     <>
       <b class="act-gems-title">Acto {act}</b>
-      {stage && (
+      {(stage || others.length > 0) && (
         <>
           <span class="act-gems-sub">Leveling sugerido</span>
-          {stage.skill && <GemLine how={stage.own ? "Tu habilidad" : "Habilidad"} ids={[stage.skill]} note={stage.mainAt ? `Cambia a ${GEMS[data.build.main!.id].name} desde nv ${stage.mainAt}` : ""} />}
-          {stage.supports.length > 0 && <GemLine how="Soportes" ids={stage.supports} />}
+          <StageSkills main={stage && mainId ? { skillId: mainId, stage } : null} others={others} />
         </>
       )}
       {groups.length > 0 && <span class="act-gems-sub">Tus habilidades</span>}

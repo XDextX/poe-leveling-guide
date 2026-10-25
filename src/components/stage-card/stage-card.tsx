@@ -1,14 +1,17 @@
 /* Tarjeta de un tramo del leveling sugerido: habilidad, soportes y cuánto del árbol final tendrías. */
 
-import { GEMS } from "../../js/data";
+import type { OtherSkill } from "../../js/guide";
 import { newNotables } from "../../js/stats";
-import { GemLine } from "../gem-line/gem-line";
+import { StageSkills } from "../stage-lines/stage-lines";
 import "./stage-card.css";
 
 interface StageCardProps {
+  /** El tramo (actos y niveles) y, si la build tiene habilidad principal, lo que se sugiere para ella. */
   stage: StageSkill;
-  /** Habilidad principal de la build. */
-  mainId: string;
+  /** Habilidad principal de la build, o null si no se reconoce (entonces solo van las otras). */
+  mainId: string | null;
+  /** Lo sugerido en este tramo para cada una de las otras habilidades de la build. */
+  others: { other: OtherSkill; stage: StageSkill }[];
   /** Árbol de este tramo y el del anterior, para listar los notables nuevos. */
   tree?: TreeStage;
   prev?: TreeStage;
@@ -16,13 +19,13 @@ interface StageCardProps {
 }
 
 /** Tarjeta del tramo: habilidad, soportes y, si hay árbol, cuántos puntos y qué notables nuevos. */
-export const StageCard: Component<StageCardProps, HTMLDivElement> = ({ stage: s, mainId, tree, prev, treesSuggested }) => {
+export const StageCard: Component<StageCardProps, HTMLDivElement> = ({ stage: s, mainId, others, tree, prev, treesSuggested }) => {
   const fresh = newNotables(tree, prev);
   return (
     <div class="stagecard">
       <h3>Actos {s.acts[0]}-{s.acts[1]} <span>· nv {s.from}–{s.to}</span></h3>
-      {s.skill && <GemLine how={s.own ? "Tu habilidad" : "Habilidad"} ids={[s.skill]} note={s.mainAt ? `Cambia a ${GEMS[mainId].name} desde nv ${s.mainAt}` : ""} />}
-      {s.supports.length > 0 && <GemLine how="Soportes" ids={s.supports} note="por orden: con pocos enlaces, usa los primeros" />}
+      <StageSkills main={mainId ? { skillId: mainId, stage: s } : null} others={others} />
+      <p class="note">Hasta {s.links} enlaces con objetos de este tramo (nivel de objeto ≈{s.to}): los soportes van por orden, usa los primeros si tienes menos.</p>
       {tree && (
         <p class="note">
           Árbol: {treesSuggested ? "≈" + tree.points + " puntos, " : ""}{tree.nodes.length} nodos{fresh.length ? ". Nuevos notables: " + fresh.join(", ") : ""}. Míralo en el mapa de calor, más abajo.

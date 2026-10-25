@@ -16,3 +16,4 @@
 .act-gems-sub { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .act-gems-group { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
 .act-gems-note { color: var(--muted); font-size: .72rem; }
+.act-gems .skill-block .line { grid-template-columns: minmax(0, 1fr); }
