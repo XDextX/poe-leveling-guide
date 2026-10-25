@@ -32,7 +32,7 @@ export const HeatPanel: Component<HeatPanelProps, DocumentFragment> = ({ main, k
       {stages.length > 0 && (
         <ToggleGroup className="stages" label="Etapa del árbol" options={[["-1", "Final"], ...stages.map((s, i): [string, string] => [String(i), s.title])]} onPick={v => { stage = +v; draw(); }} />
       )}
-      <ToggleGroup className="kinds" label="Qué mostrar" options={[["both", "Ambos"], ["dmg", "Daño"], ["def", "Defensa"]]} onPick={v => { mode = v; draw(); }} />
+      <ToggleGroup className="kinds" label="Qué mostrar" options={[["both", "Ambos"], ["dmg", "Daño"], ["def", "Defensa"], ["none", "Sin calor"]]} onPick={v => { mode = v; draw(); }} />
       <div class="heat-wrap">{canvas}</div>
       {stageNote}
       <p class="note">

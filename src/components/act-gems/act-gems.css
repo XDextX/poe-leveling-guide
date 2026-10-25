@@ -1,8 +1,10 @@
 /* Gemas del acto en el margen derecho de la guía. Mismo ancho mínimo que el índice (toc-nav.css): donde el índice cabe al lado, esto también. */
-.act-gems { display: none; font-size: .85rem; gap: 8px; }
+.act-gems { display: none; font-size: .85rem; gap: 8px; --side-w: clamp(200px, calc((100vw - 780px) / 2 - 48px), 340px); }
 @media (min-width: 1260px) {
-  .act-gems:not([hidden]) { display: grid; position: fixed; box-sizing: border-box; left: calc(50% + 390px + 32px); top: 32px; width: 200px;
+  .act-gems:not([hidden]) { display: grid; position: fixed; box-sizing: border-box; left: calc(50% + 390px + 32px); top: 32px; width: var(--side-w);
     max-height: calc(100vh - 64px); overflow-y: auto; align-content: start; }
+  /* El árbol va a la izquierda de la guía, bajo el índice y con su borde derecho al de él: act-gems-panel.tsx pone su top según lo que mida el índice. */
+  .act-tree:not([hidden]) { left: calc(50% - 390px - 32px - var(--side-w)); top: 300px; }
 }
 .act-gems-title { font-family: var(--display); color: var(--accent); letter-spacing: .04em; }
 .act-gems .how { min-width: 0; width: 100%; }
@@ -13,3 +15,4 @@
 .act-gems { overflow-x: hidden; }
 .act-gems-sub { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .act-gems-group { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
+.act-gems-note { color: var(--muted); font-size: .72rem; }
