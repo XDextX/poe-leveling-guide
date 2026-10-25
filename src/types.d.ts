@@ -77,7 +77,13 @@ interface GemGroup { how: string; npc?: string; ids: string[]; buy?: boolean }
 interface PlannedStep { act: number; text: string; notes: string[]; gems: GemGroup[]; zone: boolean }
 interface GotAt { act: number; quest: string }
 interface Plan { out: PlannedStep[]; got: Map<string, GotAt>; start: string[]; missing: string[] }
-interface StageSkill { acts: [number, number]; from: number; to: number; skill: string | null; own: boolean; supports: string[]; mainAt: number | null }
+interface StageSkill {
+  acts: [number, number]; from: number; to: number; skill: string | null; own: boolean; supports: string[]; mainAt: number | null;
+  /** Enlaces como máximo en una armadura de pecho de este tramo: skill + soportes caben en esas casillas (nivel de objeto del final del tramo). */
+  links: number;
+  /** La habilidad que había aquí y se quitó porque no cabe en los límites de maldiciones o marcas (solo sale en la nota del tramo). */
+  dropped?: string;
+}
 /** Lo que devuelve un componente: un elemento o un fragmento listo para meter en la página. */
 type View = HTMLElement | DocumentFragment;
 /**

@@ -2,6 +2,8 @@
 
 import { AREAS, CLASSES, CLASS_STARTS, EDGES, GEMS, NODES, SKILLS, START } from "./data";
 import { isSupport } from "./gems";
+import { isHex, isMark } from "./limits";
+import { maxSockets } from "./sockets";
 import { NODE } from "./node-types";
 import { parseRoute, questOffers } from "./route";
 import { statKind } from "./stats";
@@ -43,13 +45,19 @@ const byLikeness = (mainId: string) => (a: string, b: string): number => similar
 // Habilidades que no sirven para matar mientras subes, salvo que la build principal también sea de ese tipo.
 const UTILITY_TAGS = ["aura", "herald", "movement", "travel", "blink", "guard", "warcry", "curse", "mark", "link", "banner", "golem", "stance", "vaal", "minion", "totem", "trap", "mine", "brand", "trigger"];
 
-/** Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden. */
-export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>): StageSkill[] {
+/**
+ * Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden.
+ * secondary: es una habilidad más de la build, no la principal. Esas solo se sustituyen si son una maldición o una marca (por otra
+ * del mismo tipo, que sí hace lo mismo) y solo llevan los soportes que ya tiene la build: un parecido de etiquetas no basta para
+ * inventar un sustituto de un buff o un aura (Blood Rage por un hechizo de fuego).
+ */
+export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, secondary = false): StageSkill[] {
   const avail = availability(cls, defs), mainSkill = SKILLS[main.id], mainTags = new Set(mainSkill.tags);
   const isAttack = mainSkill.types.includes("Attack"), isSpell = mainSkill.types.includes("Spell");
   const skillOk = (id: string): boolean => {
     const { tags, types, weapons } = SKILLS[id];
     if (isSupport(id) || !(id in avail)) return false;
+    if (secondary && (!(isHex(main.id) || isMark(main.id)) || isHex(id) !== isHex(main.id) || isMark(id) !== isMark(main.id))) return false;
     if (types.includes("Attack") !== isAttack || types.includes("Spell") !== isSpell) return false;
     if (tags.some(t => UTILITY_TAGS.includes(t) && !mainTags.has(t))) return false;
     return !(mainSkill.weapons.length && weapons.length && !weapons.some(w => mainSkill.weapons.includes(w)));
@@ -66,9 +74,10 @@ export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>): 
       const ok = (id: string): boolean => SKILLS[id] && id in avail && avail[id] <= last && GEMS[id].level <= to && canSupport(id, skill);
       const fromBuild = main.supports.filter(ok);
       const others = Object.keys(SKILLS).filter(id => isSupport(id) && ok(id) && !fromBuild.includes(id) && !SKILLS[id].tags.includes("vaal")).sort(byLikeness(main.id));
-      supports = [...fromBuild, ...others].slice(0, 4);
+      // La habilidad y sus soportes tienen que caber en las casillas que da el nivel de los objetos de este tramo.
+      supports = (secondary ? fromBuild : [...fromBuild, ...others]).slice(0, maxSockets(to) - 1);
     }
-    out.push({ acts: [first, last], from, to, skill, own, supports, mainAt: !own && avail[main.id] <= last ? Math.max(GEMS[main.id].level, from) : null });
+    out.push({ acts: [first, last], from, to, skill, own, supports, links: maxSockets(to), mainAt: !own && avail[main.id] <= last ? Math.max(GEMS[main.id].level, from) : null });
     prev = skill; from = to;
   }
   return out;
