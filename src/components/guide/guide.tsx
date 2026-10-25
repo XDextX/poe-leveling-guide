@@ -13,14 +13,16 @@ interface GuideProps {
   data: GuideData;
   /** Mostrar también los pasos de la ruta sin gemas ("Actividades de zona"). */
   showZones: boolean;
+  /** Elige otra habilidad para un tramo del leveling sugerido. */
+  onPick?: (stage: number, id: string) => void;
 }
 
 /** Las secciones de la guía; cada una sale solo si la build tiene con qué rellenarla. */
-export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, cls, ascend, skills, others, damage, damageForm, treeStages, treesSuggested, levelingTrees }, showZones }) => (
+export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, cls, ascend, skills, others, damage, damageForm, treeStages, treesSuggested, levelingTrees }, showZones, onPick }) => (
   <>
     <Summary build={build} plan={plan} cls={cls} ascend={ascend} />
     {(plan.got.size > 0 || plan.start.length > 0) && <ProgressSection plan={plan} />}
-    {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} />}
+    {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} onPick={onPick} />}
     {build.items.length > 0 && <GearSection items={build.items} />}
     {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}
     <RouteSections steps={plan.out} start={plan.start} showZones={showZones} />

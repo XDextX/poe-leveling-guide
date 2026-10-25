@@ -10,6 +10,9 @@ export let suggested = new Set<string>();
 /** Cambia las gemas sugeridas; lo llama el arranque al componer cada guía. */
 export function setSuggested(ids: Set<string>): void { suggested = ids; }
 
+/** Clave con que se guardan en el navegador las gemas marcadas y las elecciones de una build vista con una clase. */
+export const buildKey = (cls: string, build: Build): string => "poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|");
+
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 export const doneStore = {
   key: "", ids: new Set<string>(),
@@ -18,7 +21,7 @@ export const doneStore = {
   onChange(fn: () => void): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; },
   /** Carga las marcadas de una build vista con una clase: cada combinación se guarda aparte. */
   load(cls: string, build: Build) {
-    this.key = "poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|");
+    this.key = buildKey(cls, build);
     try { this.ids = new Set<string>(JSON.parse(localStorage.getItem(this.key) ?? "null") || []); } catch { this.ids = new Set<string>(); }
   },
   set(id: string, on: boolean) {

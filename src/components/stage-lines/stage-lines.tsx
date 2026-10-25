@@ -1,6 +1,7 @@
 /* Las líneas de un tramo del leveling sugerido para una habilidad: la habilidad y sus soportes. */
 
 import { GEMS } from "../../js/data";
+import { reasonOf } from "../../js/reasons";
 import { SKILL_KINDS, skillKind } from "../../js/gems";
 import type { SkillKind } from "../../js/gems";
 import type { OtherSkill } from "../../js/guide";
@@ -16,14 +17,23 @@ interface StageLinesProps {
   kind: SkillKind;
   /** Es la habilidad principal de la build. */
   main?: boolean;
+  /** Si se da, un selector deja elegir otra habilidad entre las del tramo; avisa con la que se eligió. */
+  onPick?: (id: string) => void;
 }
 
 const KIND_ES: Record<SkillKind, string> = { survival: "Supervivencia", damage: "Daño", qol: "Comodidad" };
 
 /** Un bloque por habilidad: para qué sirve, la habilidad y sus soportes. <StageLines stage={s} skillId={id} kind="damage" main /> */
-export const StageLines: Component<StageLinesProps, HTMLDivElement> = ({ stage: s, skillId, kind, main = false }) => (
+export const StageLines: Component<StageLinesProps, HTMLDivElement> = ({ stage: s, skillId, kind, main = false, onPick }) => (
   <div class={"skill-block " + kind}>
     <span class="skill-tag">{KIND_ES[kind]}{main ? " · principal" : ""}</span>
+    {onPick && s.options.length > 1 && (
+      <label class="skill-pick">Elegir habilidad{" "}
+        <select onChange={(e: Event) => onPick((e.target as HTMLSelectElement).value)}>
+          {s.options.map(o => <option value={o.id} selected={o.id === s.skill}>{GEMS[o.id].name}{o.id === s.recommended ? " (recomendada)" : ""} · {reasonOf(o.id)}</option>)}
+        </select>
+      </label>
+    )}
     {s.skill && <GemLine how={s.own ? "Tu habilidad" : "Habilidad"} ids={[s.skill]} note={s.mainAt ? `Cambia a ${GEMS[skillId].name} desde nv ${s.mainAt}` : ""} />}
     {s.supports.length > 0 && <GemLine how="Soportes" ids={s.supports} />}
   </div>
@@ -31,7 +41,7 @@ export const StageLines: Component<StageLinesProps, HTMLDivElement> = ({ stage: 
 
 interface StageSkillsProps {
   /** Lo sugerido para la habilidad principal en este tramo, o null si no hay. */
-  main: { skillId: string; stage: StageSkill } | null;
+  main: { skillId: string; stage: StageSkill; onPick?: (id: string) => void } | null;
   /** Lo sugerido para cada una de las otras habilidades de la build en este tramo. */
   others: { other: OtherSkill; stage: StageSkill }[];
 }
@@ -56,7 +66,7 @@ export const StageSkills: Component<StageSkillsProps, DocumentFragment> = ({ mai
   const blocks = SKILL_KINDS.flatMap(kind => {
     const items = others.filter(o => o.other.kind === kind && o.stage.skill);
     return [
-      ...(main && mainKind === kind && (main.stage.skill || main.stage.supports.length) ? [<StageLines stage={main.stage} skillId={main.skillId} kind={kind} main />] : []),
+      ...(main && mainKind === kind && (main.stage.skill || main.stage.supports.length) ? [<StageLines stage={main.stage} skillId={main.skillId} kind={kind} main onPick={main.onPick} />] : []),
       ...(items.length ? [<KindBlock kind={kind} items={items} />] : []),
     ];
   });

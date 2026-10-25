@@ -7,13 +7,16 @@ import type { GuideData } from "../js/guide";
 import { decode, parseBuild } from "../js/pob";
 import { hideProgress, initProgress } from "../components/progress/progress";
 import { initActGems, setActGems } from "../components/act-gems/act-gems-panel";
-import { doneStore, setSuggested } from "../components/gem/gem";
+import { buildKey, doneStore, setSuggested } from "../components/gem/gem";
 import { Guide } from "../components/guide/guide";
 import { setRedrawHeat } from "../components/heatmap/heatmap";
 import { Page } from "../components/page/page";
 import { hideToc, initToc, renderToc } from "../components/toc-nav/toc-nav";
 import { startSession } from "./session";
 import type { FormControls } from "./session";
+
+const pickKey = (cls: string, build: Build): string => buildKey(cls, build) + ":eleccion";
+const loadPicks = (key: string): Record<number, string> => { try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? {}; } catch { return {}; } };
 
 const HOW_TO_COPY = "en Path of Building, Import/Export Build → Generate";
 
@@ -26,6 +29,8 @@ export const App: Component<{}, HTMLElement> = () => {
   let build: Build | null = null;
   /** La guía calculada de esa build y para qué clase y modo: si solo cambia "Actividades de zona", no se recalcula. */
   let computed: { cls: string; leagueStart: boolean; data: GuideData } | null = null;
+  /** Las habilidades que el usuario eligió en cada tramo del leveling, por posición; se guardan por build y clase. */
+  let picks: Record<number, string> = {};
   /** Cuenta las lecturas: si se pulsa "Crear guía" otra vez antes de acabar, solo cuenta la última. */
   let reads = 0;
 
@@ -42,17 +47,30 @@ export const App: Component<{}, HTMLElement> = () => {
   function rerender(): void {
     if (!build) return;
     const opts = options();
-    if (computed?.cls !== opts.cls || computed.leagueStart !== opts.leagueStart) computed = { cls: opts.cls, leagueStart: opts.leagueStart, data: buildGuide(build, opts) };
+    if (computed?.cls !== opts.cls || computed.leagueStart !== opts.leagueStart) {
+      picks = loadPicks(pickKey(opts.cls, build));
+      computed = { cls: opts.cls, leagueStart: opts.leagueStart, data: buildGuide(build, { ...opts, picks }) };
+    }
     const { data } = computed;
     // Estado que leen los componentes de las gemas y del mapa de calor (TreeSection engancha el mapa nuevo).
     setSuggested(data.suggested);
     doneStore.load(opts.cls, build);
     setRedrawHeat(null);
     hideProgress();
-    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} />);
+    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} onPick={pickSkill} />);
     guide.hidden = false;
     setActGems(data);
     renderToc();
+  }
+
+  /** Elige otra habilidad para un tramo: se guarda y se recompone la guía con ella (cambian sus soportes y las gemas que pide la ruta). */
+  function pickSkill(stage: number, id: string): void {
+    if (!build) return;
+    const opts = options();
+    picks = { ...picks, [stage]: id };
+    try { localStorage.setItem(pickKey(opts.cls, build), JSON.stringify(picks)); } catch {}
+    computed = null;
+    rerender();
   }
 
   /** Sin guía (campo vacío o código inválido) tampoco hay índice; se vacía para que la anterior no siga viva. */

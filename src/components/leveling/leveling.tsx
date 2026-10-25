@@ -20,10 +20,12 @@ interface LevelingSectionProps {
   trees: TreeStage[];
   treesSuggested: boolean;
   mainId: string | null;
+  /** Elige otra habilidad para un tramo (su posición y la gema). */
+  onPick?: (stage: number, id: string) => void;
 }
 
 /** Leveling sugerido: por tramo, la habilidad principal y las demás (de más a menos importante: supervivencia, daño, comodidad) con sus soportes y cuánto del árbol final tendrías. */
-export const LevelingSection: Component<LevelingSectionProps, HTMLDetailsElement> = ({ skills, others, damage, form, trees, treesSuggested, mainId }) => (
+export const LevelingSection: Component<LevelingSectionProps, HTMLDetailsElement> = ({ skills, others, damage, form, trees, treesSuggested, mainId, onPick }) => (
   <Section title="Leveling sugerido" className="act leveling" toc={{ id: "leveling", label: "Leveling sugerido" }}>
     <p class="banner">
       <b>Sugerencia automática.</b> Tu build no trae cómo subir de nivel, así que esto lo calcula la app: la habilidad más parecida a la tuya
@@ -33,7 +35,7 @@ export const LevelingSection: Component<LevelingSectionProps, HTMLDetailsElement
     <div class="stagecards">
       {/* Los tramos son los mismos para todas; los da la principal o, si no hay, la primera de las otras. */}
       {(skills.length ? skills : others[0].stages).map((s, i) => (
-        <StageCard stage={s} mainId={skills.length ? mainId : null} others={others.map(other => ({ other, stage: other.stages[i] }))} tree={trees[i]} prev={trees[i - 1]} treesSuggested={treesSuggested} />
+        <StageCard stage={s} mainId={skills.length ? mainId : null} others={others.map(other => ({ other, stage: other.stages[i] }))} onPick={onPick && (id => onPick(i, id))} tree={trees[i]} prev={trees[i - 1]} treesSuggested={treesSuggested} />
       ))}
     </div>
   </Section>
