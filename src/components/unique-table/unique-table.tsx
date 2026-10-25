@@ -1,34 +1,23 @@
-/* Tabla de los únicos de la build, por nivel requerido, con su icono, su ficha y enlaces a la wiki y al comercio. */
+/* Tabla de los únicos de la build, por nivel requerido, con su icono, su ficha, su precio aproximado y enlaces a la wiki y al comercio. */
 
-import { tradeUrl } from "../../js/unique-links";
+import { DEFAULT_LEAGUE, savedLeague } from "../price-bar/league";
+import { PriceBar } from "../price-bar/price-bar";
 import { UniqueRow } from "../unique-row/unique-row";
 import "./unique-table.css";
 
-const LEAGUE_KEY = "poe-gemas:liga", DEFAULT_LEAGUE = "Standard";
-const savedLeague = (): string => { try { return localStorage.getItem(LEAGUE_KEY)?.trim() || DEFAULT_LEAGUE; } catch { return DEFAULT_LEAGUE; } };
-
 interface UniqueTableProps { uniques: Item[] }
 
-/**
- * Tabla de únicos: una <UniqueRow> por objeto. Encima, la liga en que se busca en el comercio (la que escribas se recuerda en este
- * navegador); al cambiarla se actualizan todos los enlaces "Comercio".
- */
+/** Tabla de únicos: una <UniqueRow> por objeto, con la barra de precios y liga encima. */
 export const UniqueTable: Component<UniqueTableProps, DocumentFragment> = ({ uniques }) => {
-  const table = (
-    <table class="uniques">
-      <thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th><th>Buscar</th></tr></thead>
-      <tbody>{uniques.map(item => <UniqueRow item={item} league={savedLeague()} />)}</tbody>
-    </table>
-  ) as HTMLTableElement;
-  const setLeague = (e: Event) => {
-    const league = (e.target as HTMLInputElement).value.trim() || DEFAULT_LEAGUE;
-    try { localStorage.setItem(LEAGUE_KEY, league); } catch {}
-    table.querySelectorAll<HTMLAnchorElement>("a.trade").forEach(a => { a.href = tradeUrl(league, a.dataset.name!, a.dataset.base!); });
-  };
+  const league = savedLeague() ?? DEFAULT_LEAGUE;
+  const rows = uniques.map(item => ({ item, row: <UniqueRow item={item} league={league} /> as HTMLTableRowElement }));
   return (
     <>
-      <label class="league-pick">Liga del comercio <input type="text" value={savedLeague()} placeholder={DEFAULT_LEAGUE} onChange={setLeague} /></label>
-      {table}
+      <PriceBar rows={rows} />
+      <table class="uniques">
+        <thead><tr><th>Objeto</th><th>Hueco</th><th class="n">Desde nv</th><th class="n">Precio</th><th>Buscar</th></tr></thead>
+        <tbody>{rows.map(r => r.row)}</tbody>
+      </table>
     </>
   ) as DocumentFragment;
 };

@@ -12,7 +12,7 @@ interface UniqueRowProps {
   league: string;
 }
 
-/** Fila de un único, con enlaces a su wiki y a su búsqueda en el comercio. La ficha sale al pasar el ratón por el icono o el nombre y, con ratón, sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
+/** Fila de un único, con su precio (que rellena la tabla al pulsar "Ver precios") y enlaces a su wiki y a su búsqueda en el comercio. La ficha sale al pasar el ratón por el icono o el nombre y, con ratón, sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
 export const UniqueRow: Component<UniqueRowProps, HTMLTableRowElement> = ({ item, league }) => {
   const icon = uniqueIcon(item.name);
   const tip = <UniqueTip item={item} icon={icon} /> as HTMLDivElement;
@@ -29,6 +29,7 @@ export const UniqueRow: Component<UniqueRowProps, HTMLTableRowElement> = ({ item
       <td>{label}{tip}</td>
       <td>{slotEs(item.slot)}</td>
       <td class="n">{item.req ? String(item.req) : "—"}</td>
+      <td class="price n">—</td>
       <td class="links">
         <a href={wikiUrl(item.name)} target="_blank" rel="noopener noreferrer" title="Cómo y dónde se consigue, en la wiki de PoE">Wiki</a>
         {" · "}

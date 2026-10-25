@@ -12,5 +12,4 @@ table.uniques { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .uniques .item:hover + .utip, .uniques .item:focus + .utip, .uniques .item:focus-within + .utip { display: block; }
 .uniques .links { white-space: nowrap; font-size: .8rem; color: var(--muted); }
 .uniques .links a { color: var(--accent); }
-.league-pick { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); margin-bottom: 8px; }
-.league-pick input { font: inherit; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; width: 11rem; }
+.uniques .price { white-space: nowrap; font-family: var(--mono); font-size: .8rem; }
