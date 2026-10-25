@@ -61,10 +61,12 @@ export const StageSkills: Component<StageSkillsProps, DocumentFragment> = ({ mai
     ];
   });
   // Lo que se quitó por los límites de maldiciones y marcas: la guía lo dice, para que no parezca que faltan habilidades de la build.
+  const noRoom = [...new Set([...(main ? [main.stage] : []), ...others.map(o => o.stage)].flatMap(st => st.noRoom ? [GEMS[st.noRoom].name] : []))];
   const dropped = [...new Set([...(main ? [main.stage] : []), ...others.map(o => o.stage)].flatMap(st => st.dropped ? [GEMS[st.dropped].name] : []))];
   return (
     <>
       {blocks}
+      {noRoom.length > 0 && <p class="note limit-note">No caben en las casillas de tu equipo en este tramo: {noRoom.join(", ")}. Con objetos de este nivel el pecho, las armas y las demás piezas dan para menos; se irán sumando en los siguientes tramos.</p>}
       {dropped.length > 0 && <p class="note limit-note">No caben a la vez: {dropped.join(", ")}. Solo cabe una maldición a la vez (las marcas cuentan como maldiciones) y una sola marca, hasta que el árbol o el equipo den más maldiciones (Whispers of Doom, Occultist…).</p>}
     </>
   ) as DocumentFragment;

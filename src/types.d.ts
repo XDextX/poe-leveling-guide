@@ -83,6 +83,8 @@ interface StageSkill {
   links: number;
   /** La habilidad que había aquí y se quitó porque no cabe en los límites de maldiciones o marcas (solo sale en la nota del tramo). */
   dropped?: string;
+  /** La habilidad que había aquí y se quitó porque no cabe en las casillas del equipo de este tramo (solo sale en la nota del tramo). */
+  noRoom?: string;
 }
 /** Lo que devuelve un componente: un elemento o un fragmento listo para meter en la página. */
 type View = HTMLElement | DocumentFragment;

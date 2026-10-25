@@ -6,6 +6,7 @@ import { SKILLS } from "./data";
 import { isActive, isSupport, SKILL_KINDS, skillKind } from "./gems";
 import type { SkillKind } from "./gems";
 import { curseLimit, limitSkills } from "./limits";
+import { fitSockets, socketBudget } from "./sockets";
 import { suggestSkills, suggestTrees } from "./suggest";
 
 /** Una habilidad de la build que no es la principal, con su leveling sugerido por tramos (los mismos que los de la principal). */
@@ -57,6 +58,12 @@ export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions
   for (let i = 0; i <= last; i++) {
     const nodes = treesSuggested && treeStages[i] ? treeStages[i].nodes : build.tree.nodes;
     limitSkills([skills[i], ...others.map(o => o.stages[i])].filter(Boolean), curseLimit(nodes, i === last ? build.items : []));
+    // Y en las casillas del equipo: primero la principal con sus soportes y luego las demás, por orden de importancia (ya vienen así).
+    const stage = skills[i] ?? others[0]?.stages[i];
+    fitSockets([
+      ...(skills[i] ? [{ stage: skills[i], size: 1 + skills[i].supports.length }] : []),
+      ...others.map(o => ({ stage: o.stages[i], size: 1 })),
+    ], socketBudget(stage.to));
   }
   // Las de la build y, de sus Vaal y transfiguradas, la gema base: también hay que conseguirla, así que no es "sugerida".
   const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
