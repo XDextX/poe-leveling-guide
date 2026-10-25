@@ -68,9 +68,10 @@ interface TocLinksProps {
 
 /** El contenido del índice: un enlace por destino; los que tienen grupo (los actos) van juntos, como chips, en una fila. */
 const TocLinks: Component<TocLinksProps, DocumentFragment> = ({ targets, onGo }) => {
-  // Una fila por destino suelto y una por grupo, en el sitio de su primer miembro.
+  // Los anidados (data-toc-parent) van bajo su destino; el resto, una fila por destino suelto y una por grupo, en el sitio de su primer miembro.
+  const nested = (el: HTMLElement) => targets.filter(t => t.dataset.tocParent === el.id);
   const rows: { group: string | null; items: HTMLElement[] }[] = [];
-  for (const el of targets) {
+  for (const el of targets.filter(t => !t.dataset.tocParent)) {
     const group = el.dataset.tocGroup ?? null, row = group ? rows.find(r => r.group === group) : undefined;
     if (row) row.items.push(el); else rows.push({ group, items: [el] });
   }
@@ -86,6 +87,7 @@ const TocLinks: Component<TocLinksProps, DocumentFragment> = ({ targets, onGo })
           <li>
             {group && <span class="toc-group">{group}</span>}
             {group ? <span class="toc-chips">{items.map(el => link(el, group))}</span> : link(items[0])}
+            {!group && nested(items[0]).length > 0 && <ol class="toc-sub">{nested(items[0]).map(el => <li>{link(el)}</li>)}</ol>}
           </li>
         ))}
       </ol>

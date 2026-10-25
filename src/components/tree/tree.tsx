@@ -28,7 +28,7 @@ export const TreeSection: Component<TreeSectionProps, HTMLDetailsElement> = ({ t
     <Section title="Árbol de pasivas" className="act tree" toc={{ id: "arbol", label: "Árbol de pasivas" }}>
       <Subhead>Stats del árbol</Subhead>
       <TreeStats tree={tree} mainCount={main.length} ascCount={asc.length} />
-      <Subhead toc={{ id: "mapa-calor", label: "Mapa de calor" }}>Mapa de calor</Subhead>
+      <Subhead toc={{ id: "mapa-calor", label: "Mapa de calor", parent: "arbol" }}>Mapa de calor</Subhead>
       <HeatPanel main={main} keyIds={key} stages={stages} stagesSuggested={stagesSuggested} masteries={tree.masteries} />
       <Subhead>Puntos indispensables</Subhead>
       <p class="note">Las keystones y los notables que tiene cogidos la build; el resto son nodos pequeños o de paso.</p>

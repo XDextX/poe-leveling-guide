@@ -29,5 +29,5 @@ interface SubheadProps {
 
 /** Subtítulo de una sección: <Subhead>Únicos</Subhead>. */
 export const Subhead: Component<SubheadProps, HTMLHeadingElement> = ({ toc, children }) => (
-  <h3 class="sub" id={toc?.id} data-toc={toc?.label} data-toc-group={toc?.group}>{children}</h3>
+  <h3 class="sub" id={toc?.id} data-toc={toc?.label} data-toc-parent={toc?.parent}>{children}</h3>
 ) as HTMLHeadingElement;

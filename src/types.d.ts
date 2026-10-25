@@ -111,4 +111,5 @@ declare namespace JSX {
 interface GuideOptions { cls: string; leagueStart: boolean; showZones: boolean }
 type StatKind = "dmg" | "def" | "other";
 /** Una entrada del índice: destino de una sección marcada con data-toc. */
-interface TocTarget { id: string; label: string; group?: string }
+/** group agrupa entradas como chips; parent (el id de otro destino) la anida bajo él. */
+interface TocTarget { id: string; label: string; group?: string; parent?: string }

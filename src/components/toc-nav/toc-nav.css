@@ -6,6 +6,7 @@
 .toc a:hover { color: var(--fg); }
 .toc a[aria-current] { color: var(--accent); font-weight: 600; }
 .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toc-sub { padding-left: 12px; margin-top: 4px; }
 .toc-group { display: block; color: var(--muted); padding: 2px 4px; }
 .toc-chips { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 4px; }
 .toc a.chip { font-family: var(--mono); font-size: .75rem; min-width: 1.6em; text-align: center; border: 1px solid var(--line); padding: 1px 4px; }
