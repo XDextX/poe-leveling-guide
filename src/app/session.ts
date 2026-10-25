@@ -53,12 +53,14 @@ export async function startSession({ form, guide, run, rerender }: SessionTarget
   // Si había una guía guardada, se vuelve a componer y se deja la vista como estaba.
   let saved: Saved | null = null;
   try { saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null"); } catch {}
-  if (!saved?.code) return;
+  // index.html marca <html class="restoring"> si hay sesión: styles.css oculta la página hasta que la guía está puesta.
+  const done = () => document.documentElement.classList.remove("restoring");
+  if (!saved?.code) return done();
   form.code.value = saved.code;
   form.league.checked = saved.league;
   form.zones.checked = saved.zones;
   await run();
-  if (guide.hidden) return;
+  if (guide.hidden) return done();
   // run() pone la clase de la build; si se estaba viendo otra, se recompone con ella.
   if (saved.cls && form.cls.value !== saved.cls) { form.cls.value = saved.cls; rerender(); }
   for (const d of guide.querySelectorAll<HTMLDetailsElement>("details[id]")) d.open = saved.open.includes(d.id);
@@ -66,5 +68,7 @@ export async function startSession({ form, guide, run, rerender }: SessionTarget
   guide.querySelector<HTMLElement>(`.kinds [data-value="${saved.mode}"]`)?.click();
   // Dos fotogramas: el primero pinta el mapa de calor (que fija su alto), el segundo ya puede desplazarse.
   const top = saved.scroll;
-  requestAnimationFrame(() => requestAnimationFrame(() => scrollTo({ top, behavior: "instant" })));
+  requestAnimationFrame(() => requestAnimationFrame(() => { scrollTo({ top, behavior: "instant" }); done(); }));
+  // En una pestaña en segundo plano no hay fotogramas: la página no debe quedarse oculta esperando uno.
+  setTimeout(done, 1000);
 }

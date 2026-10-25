@@ -47,3 +47,8 @@ button:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-
 .sources a, .note a { color: var(--accent); }
 .note { font-size: .8rem; color: var(--muted); }
 .note pre { white-space: pre-wrap; font-size: .72rem; }
+
+/* Al recargar con una sesión guardada la guía se compone un instante después de pintar la página: se oculta hasta tenerla
+   (index.html marca <html class="restoring"> y session.ts la quita) para que el resto no salte. Si algo fallase, a los 3 s se muestra. */
+html.restoring body { visibility: hidden; animation: reveal 0s 3s forwards; }
+@keyframes reveal { to { visibility: visible; } }
