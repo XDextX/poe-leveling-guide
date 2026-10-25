@@ -4,14 +4,21 @@
  * Los precios se piden al mostrarse y se reutilizan una hora (recargar la página no vuelve a descargarlos).
  */
 
-import { ago, categoriesOf, currentLeague, formatPrice, priceOf } from "../../js/prices";
-import type { Price, Prices } from "../../js/prices";
+import { ago, categoriesOf, currentLeague, formatPrice, priceFor } from "../../js/prices";
+import type { PriceMatch, Prices } from "../../js/prices";
+import { tradeFilters } from "../../js/trade";
 import { tradeUrl } from "../../js/unique-links";
 import { DEFAULT_LEAGUE, saveLeague, savedLeague } from "./league";
 import { loadLeagues, loadPrices } from "./price-source";
+import { loadTradeStats } from "./trade-stats";
 import "./price-bar.css";
 
-const priceTip = (p: Price): string => `Entre ${Math.round(p.min)} y ${Math.round(p.max)} c · unas ${p.daily} ventas al día${p.low ? " · pocos datos, poco fiable" : ""}`;
+/** Qué se sabe del precio: su rango, las ventas, y de qué variante es (o que no se supo cuál y es la más barata). */
+const priceTip = ({ price: p, how, label, options }: PriceMatch): string => [
+  `Entre ${Math.round(p.min)} y ${Math.round(p.max)} c · unas ${p.daily} ventas al día`,
+  p.low ? "pocos datos, poco fiable" : "",
+  how === "variant" ? `variante «${label}»` : how === "cheapest" ? `no se supo qué variante lleva: la más barata de ${options}` : "",
+].filter(Boolean).join(" · ");
 // Cada cuánto se pone al día el "hace N min".
 const AGE_REFRESH_MS = 30000;
 
@@ -38,9 +45,9 @@ export const PriceBar: Component<PriceBarProps, HTMLDivElement> = ({ rows }) => 
   function fillPrices(all: Prices[]): number {
     let found = 0;
     for (const { item, row } of rows) {
-      const price = all.map(prices => priceOf(prices, item.name)).find(Boolean);
-      if (!price) continue;
-      found++; cell(row).textContent = formatPrice(price); cell(row).title = priceTip(price);
+      const match = all.map(prices => priceFor(prices, item)).find(Boolean);
+      if (!match) continue;
+      found++; cell(row).textContent = formatPrice(match.price) + (match.how === "cheapest" ? " *" : ""); cell(row).title = priceTip(match);
     }
     return found;
   }
@@ -64,12 +71,28 @@ export const PriceBar: Component<PriceBarProps, HTMLDivElement> = ({ rows }) => 
     renderStatus();
   }
 
-  /** Pone la liga en los enlaces del comercio y pide los precios de esa liga. */
-  function useLeague(): void {
+  /** Pone en los enlaces del comercio la liga y, si se supo cuáles son, los mods que distinguen la variante de cada único. */
+  function setLinks(): void {
     const l = league();
-    for (const { row } of rows) { const a = row.querySelector<HTMLAnchorElement>("a.trade")!; a.href = tradeUrl(l, a.dataset.name!, a.dataset.base!); }
-    void showPrices(false);
+    for (const { row } of rows) { const a = row.querySelector<HTMLAnchorElement>("a.trade")!; a.href = tradeUrl(l, a.dataset.name!, a.dataset.base!, JSON.parse(a.dataset.stats ?? "[]")); }
   }
+
+  /** Para los únicos con variante, busca en la tabla del comercio los mods que la distinguen y los pone en su enlace. */
+  function filterByVariant(): void {
+    const withVariant = rows.filter(r => r.item.distinct.length);
+    if (!withVariant.length) return;
+    void loadTradeStats().then(table => {
+      for (const { item, row } of withVariant) {
+        const ids = tradeFilters(item.distinct, table), a = row.querySelector<HTMLAnchorElement>("a.trade")!;
+        a.dataset.stats = JSON.stringify(ids);
+        if (ids.length) a.dataset.tip = `Buscarlo en el comercio oficial, en tu liga y con los mods de tu variante o versión (${ids.length})`;
+      }
+      setLinks();
+    });
+  }
+
+  /** Pone la liga en los enlaces del comercio y pide los precios de esa liga. */
+  function useLeague(): void { setLinks(); void showPrices(false); }
 
   leagueSelect.addEventListener("change", () => { saveLeague(league()); useLeague(); });
   // Al mostrarse: la liga guardada o, si no hay, la última de temporada en softcore, y sus precios.
@@ -79,6 +102,7 @@ export const PriceBar: Component<PriceBarProps, HTMLDivElement> = ({ rows }) => 
     if (!names.includes(chosen)) names.unshift(chosen);
     leagueSelect.replaceChildren(...names.map(n => <option value={n} selected={n === chosen}>{n}</option>));
     useLeague();
+    filterByVariant();
   });
   const timer = setInterval(() => { if (leagueSelect.isConnected) renderStatus(); else clearInterval(timer); }, AGE_REFRESH_MS);
 

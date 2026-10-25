@@ -9,25 +9,14 @@ export interface Price { mean: number; min: number; max: number; daily: number; 
 export type Prices = Record<string, Price>;
 
 const toPrice = (r: WatchRow): Price => ({ mean: r.mean, min: r.min, max: r.max, daily: r.daily, divine: r.divine, low: !!r.lowConfidence });
-const VARIANT = /^(.*) \(.+\)$/;
+const VARIANT = /^(.*) \((.+)\)$/;
 
-/**
- * Nombre → precio. Solo cuentan los objetos sin enlaces (los de 5 y 6 enlaces se venden más caros). Un único con variantes aparece
- * como "Nombre (variante)": también se guarda bajo "Nombre", con la variante más barata, por si la build no dice cuál lleva.
- */
+/** Nombre exacto → precio. Solo cuentan los objetos sin enlaces (los de 5 y 6 enlaces se venden más caros); las variantes siguen como "Nombre (variante)". */
 export function reducePrices(rows: WatchRow[]): Prices {
-  const prices: Prices = {}, exact = new Set<string>();
-  for (const r of rows) {
-    if (r.linkCount) continue;
-    prices[r.name] = toPrice(r); exact.add(r.name);
-    const base = VARIANT.exec(r.name)?.[1];
-    if (base && !exact.has(base) && (!prices[base] || r.mean < prices[base].mean)) prices[base] = toPrice(r);
-  }
+  const prices: Prices = {};
+  for (const r of rows) if (!r.linkCount) prices[r.name] = toPrice(r);
   return prices;
 }
-
-/** El precio de un único por el nombre que le da PoB (los mutados, "Foulborn …", tienen el suyo) y, si no, por el limpio. */
-export const priceOf = (prices: Prices, name: string): Price | null => prices[name] ?? prices[plainUniqueName(name)] ?? null;
 
 /** Texto corto del precio: "≈ 30 c" (caos) o "≈ 2,5 div" cuando ya vale un divino o más; con pocos datos, un "?" detrás. */
 export function formatPrice(p: Price): string {
@@ -64,4 +53,35 @@ export function currentLeague(leagues: LeagueInfo[]): string {
 export function ago(at: number, now: number): string {
   const minutes = Math.floor((now - at) / 60000);
   return minutes < 1 ? "hace menos de 1 min" : minutes < 60 ? `hace ${minutes} min` : `hace ${Math.floor(minutes / 60)} h`;
+}
+
+// Palabras de una etiqueta de variante que no distinguen una de otra: la versión ("Pre 3.19.0", "Current"), artículos y tamaños comunes.
+const NOISE = new Set(["current", "pre", "the", "and", "uber"]);
+const tokens = (label: string): Set<string> => new Set((label.toLowerCase().match(/[a-z']{3,}/g) ?? []).filter(w => !NOISE.has(w)));
+
+/** Cómo se llegó al precio: la variante coincidió, es el único precio, o no se supo cuál variante y se tomó la más barata. */
+export type PriceHow = "variant" | "single" | "cheapest";
+/** Un precio con cómo se eligió, y la etiqueta de la variante de poe.watch si se identificó. */
+export interface PriceMatch { price: Price; how: PriceHow; label?: string; options: number }
+
+/**
+ * El precio de un único de la build, teniendo en cuenta su variante. poe.watch las separa como "Nombre (variante)", con etiquetas
+ * propias ("Frenzy Charges") que no son las de PoB ("Frenzy Current"): se comparan por palabras y gana la variante que más comparte,
+ * si hay una sola. Sin variante en la build, sin coincidencia o con empate, se usa el precio del nombre a secas si lo hay y, si no, la
+ * variante más barata, y se avisa (how: "cheapest").
+ */
+export function priceFor(prices: Prices, item: { name: string; variants?: string[] }): PriceMatch | null {
+  const names = [item.name, plainUniqueName(item.name)];
+  const exact = names.map(n => prices[n]).find(Boolean);
+  const variants = Object.entries(prices).flatMap(([key, price]) => {
+    const m = VARIANT.exec(key);
+    return m && names.includes(m[1]) ? [{ label: m[2] ?? "", price }] : [];
+  });
+  if (!variants.length) return exact ? { price: exact, how: "single", options: 1 } : null;
+  const wanted = new Set((item.variants ?? []).flatMap(v => [...tokens(v)]));
+  const scored = variants.map(v => ({ ...v, score: [...tokens(v.label)].filter(t => wanted.has(t)).length })).sort((a, b) => b.score - a.score);
+  if (scored[0].score > 0 && scored[0].score > (scored[1]?.score ?? 0)) return { price: scored[0].price, how: "variant", label: scored[0].label, options: variants.length };
+  if (exact) return { price: exact, how: "single", options: 1 };
+  const cheapest = variants.reduce((best, v) => (v.price.mean < best.price.mean ? v : best));
+  return { price: cheapest.price, how: "cheapest", options: variants.length };
 }
