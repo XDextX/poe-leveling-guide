@@ -48,6 +48,6 @@ describe("curseLimit", () => {
     expect(curseLimit([])).toBe(1);
     const doom = nodeWith(/additional Curse/i);
     expect(curseLimit([doom])).toBe(2);
-    expect(curseLimit([], [{ slot: "Ring 1", rarity: "UNIQUE", name: "x", base: "y", req: 0, mods: ["You can apply an additional Curse"], implicits: 0 }])).toBe(2);
+    expect(curseLimit([], [{ slot: "Ring 1", rarity: "UNIQUE", name: "x", base: "y", req: 0, mods: ["You can apply an additional Curse"], implicits: 0, variants: [], distinct: [] }])).toBe(2);
   });
 });

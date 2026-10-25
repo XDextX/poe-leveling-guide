@@ -20,7 +20,7 @@ describe("damageProfile", () => {
   });
 
   it("las líneas de daño elemental del equipo y del árbol suman al elemento", () => {
-    const item = (mod: string): Item => ({ slot: "Ring 1", rarity: "RARE", name: "x", base: "y", req: 0, mods: [mod], implicits: 0 });
+    const item = (mod: string): Item => ({ slot: "Ring 1", rarity: "RARE", name: "x", base: "y", req: 0, mods: [mod], implicits: 0, variants: [], distinct: [] });
     const p = damageProfile(withMain("Cleave", [], { items: [item("Adds 5 to 9 Cold Damage to Attacks"), item("+30 to maximum Life")] }));
     expect(p.cold).toBe(0.25);
     expect(p.physical).toBe(2);

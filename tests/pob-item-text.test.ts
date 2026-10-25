@@ -11,7 +11,7 @@ describe("parseItemText", () => {
       "+20 to all Attributes", "Regenerate 2 Life per second", "20% increased Rarity of Items found",
     ))).toEqual({
       slot: "Helmet", rarity: "UNIQUE", name: "Demigod's Triumph", base: "Golden Wreath", req: 12,
-      mods: ["+20 to all Attributes", "Regenerate 2 Life per second", "20% increased Rarity of Items found"], implicits: 1,
+      mods: ["+20 to all Attributes", "Regenerate 2 Life per second", "20% increased Rarity of Items found"], implicits: 1, variants: [], distinct: [],
     });
   });
 
@@ -124,3 +124,35 @@ describe("variantes de los únicos", () => {
     });
   });
 });
+
+describe("variantes elegidas", () => {
+  const variants = (...lines: string[]) => parseItemText("Boots", item("Rarity: UNIQUE", "Ralakesh's Impatience", "Riveted Boots", ...lines)).variants;
+
+  it("da la etiqueta de la variante que eligió el autor, y las de las alternativas", () => {
+    expect(variants("Variant: Pre 3.19.0", "Variant: Endurance Current", "Variant: Frenzy Current", "Selected Variant: 3", "Implicits: 0")).toEqual(["Frenzy Current"]);
+    expect(variants("Variant: a", "Variant: b", "Variant: c", "Selected Variant: 1", "Has Alt Variant: true", "Selected Alt Variant: 3", "Implicits: 0")).toEqual(["a", "c"]);
+  });
+
+  it("sin variantes declaradas, ninguna; y sin elegir, la última, como PoB", () => {
+    expect(variants("Implicits: 0")).toEqual([]);
+    expect(variants("Variant: a", "Variant: b", "Implicits: 0")).toEqual(["b"]);
+  });
+});
+
+describe("mods que distinguen la variante", () => {
+  const distinct = (...lines: string[]) => parseItemText("Boots", item("Rarity: UNIQUE", "Ralakesh's Impatience", "Riveted Boots", ...lines)).distinct;
+  const header = ["Variant: Pre 3.19.0", "Variant: Endurance Current", "Variant: Frenzy Current", "Selected Variant: 3", "Implicits: 0"];
+
+  it("son los que valen para algunas variantes, entre ellas la elegida, y no los que valen para todas", () => {
+    expect(distinct(...header, "{variant:1,2,3}Común a todas", "{variant:3}+1 to Maximum Frenzy Charges", "{variant:2,3}Lo de las dos actuales", "{variant:1}Solo la vieja", "Sin etiqueta")).toEqual(["+1 to Maximum Frenzy Charges", "Lo de las dos actuales"]);
+  });
+
+  it("primero los más exclusivos (los de menos variantes), que son los que mejor la distinguen", () => {
+    expect(distinct(...header, "{variant:2,3}De dos", "{variant:3}De una")).toEqual(["De una", "De dos"]);
+  });
+
+  it("sin variantes, ninguno", () => {
+    expect(distinct("Implicits: 0", "+10 to Strength")).toEqual([]);
+  });
+});
+

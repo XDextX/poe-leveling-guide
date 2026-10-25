@@ -91,5 +91,11 @@ export function parseItemText(slot: string, raw: string): Item {
   const imp = L.findIndex(l => /^Implicits:/.test(l)), count = imp < 0 ? 0 : +(/^Implicits:\s*(\d+)/.exec(L[imp])?.[1] ?? 0);
   const implicits = imp < 0 ? [] : clean(L.slice(imp + 1, imp + 1 + count));
   const mods = imp < 0 ? [] : [...implicits, ...clean(L.slice(imp + 1 + count))];
-  return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods, implicits: implicits.length };
+  // Las líneas "Variant: etiqueta" van por orden: la variante N es la N-ésima.
+  const labels = L.filter(l => l.startsWith("Variant: ")).map(l => l.slice(9).trim());
+  const variants = [...new Set(sel.variants.map(n => labels[n - 1]).filter(Boolean))];
+  // Los mods que solo tienen algunas variantes (no todas) y entre ellas la elegida: lo que distingue esta variante de las demás, primero los más exclusivos.
+  const exclusive = (l: string) => readTags(l).variants?.size ?? Infinity;
+  const distinct = imp < 0 ? [] : clean(L.slice(imp + 1).filter(l => { const v = readTags(l).variants; return !!v && v.size < labels.length && sel.variants.some(n => v.has(n)); }).sort((a, b) => exclusive(a) - exclusive(b)));
+  return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods, implicits: implicits.length, variants, distinct };
 }

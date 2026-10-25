@@ -45,7 +45,7 @@ interface GameDataRaw {
 type UniqueRow = [path: string, w: number, h: number];
 /** Texto de la ficha de una gema a nivel 1: [descripción, segundos de lanzamiento, maná, fuerza, destreza, inteligencia que pide, líneas de efecto]. */
 type GemTextRow = [description: string, castTime: number, mana: number, str: number, dex: number, int: number, lines: string[]];
-interface Window { DATA?: Partial<GameDataRaw>; DATA_TEXT?: Record<string, GemTextRow> }
+interface Window { DATA?: Partial<GameDataRaw>; DATA_TEXT?: Record<string, GemTextRow>; DATA_TRADE?: Record<string, string> }
 
 /* ---------- Datos con nombre, como los usa la app (src/js/data.ts) ---------- */
 
@@ -60,7 +60,13 @@ interface TreeNode { x: number; y: number; type: number; name: string; stats: st
 
 type GemKind = "normal" | "vaal" | "transfigured" | "awakened" | "unknown";
 interface BuildGem { name: string; id: string | null; kind: GemKind; base?: string }
-interface Item { slot: string; rarity: string; name: string; base: string; req: number; mods: string[]; implicits: number }
+interface Item {
+  slot: string; rarity: string; name: string; base: string; req: number; mods: string[]; implicits: number;
+  /** Las etiquetas de las variantes que el autor eligió en un único con varias versiones ("Frenzy Current"); vacío si no tiene. */
+  variants: string[];
+  /** Los mods propios de esa variante (los que no valen para todas), para distinguirla en el comercio. */
+  distinct: string[];
+}
 interface TreeStage { title: string; nodes: string[]; level?: number; points?: number }
 interface BuildTree { nodes: string[]; masteries: [node: string, effect: string][]; classId: string | null; stages: TreeStage[] }
 interface MainSkill { id: string; supports: string[] }
