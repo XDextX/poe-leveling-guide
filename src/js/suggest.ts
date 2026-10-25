@@ -2,6 +2,8 @@
 
 import { AREAS, CLASSES, CLASS_STARTS, EDGES, GEMS, NODES, SKILLS, START } from "./data";
 import { isSupport } from "./gems";
+import { elementFit, formFit } from "./damage";
+import type { Damage } from "./damage";
 import { isHex, isMark } from "./limits";
 import { maxSockets } from "./sockets";
 import { NODE } from "./node-types";
@@ -40,18 +42,24 @@ const canSupport = (sup: string, skill: string): boolean => {
   return allowed.length > 0 && rpn(allowed, types) && !(excluded.length && rpn(excluded, types));
 };
 const similarity = (a: string, b: string): number => { const x = new Set(SKILLS[a].tags), y = SKILLS[b].tags; const inter = y.filter(t => x.has(t)).length; return inter / (new Set([...x, ...y]).size || 1); };
-/** Ordena por parecido con la habilidad principal y, a igualdad, por nivel (la más avanzada primero). */
-const byLikeness = (mainId: string) => (a: string, b: string): number => similarity(mainId, b) - similarity(mainId, a) || GEMS[b].level - GEMS[a].level;
+// Cuánto pesa que el elemento de una gema encaje con el daño de la build, y que potencie su forma (veneno, ignite…), frente al parecido de etiquetas.
+const FIT_WEIGHT = 0.5, FORM_WEIGHT = 0.6;
+/** Ordena por parecido con la habilidad principal más cuánto encaja su elemento con el daño de la build y, a igualdad, por nivel (la más avanzada primero). */
+const byLikeness = (mainId: string, damage: Damage) => {
+  const score = (id: string) => similarity(mainId, id) + FIT_WEIGHT * elementFit(id, damage.profile) + FORM_WEIGHT * formFit(id, damage.form);
+  return (a: string, b: string): number => score(b) - score(a) || GEMS[b].level - GEMS[a].level;
+};
 // Habilidades que no sirven para matar mientras subes, salvo que la build principal también sea de ese tipo.
 const UTILITY_TAGS = ["aura", "herald", "movement", "travel", "blink", "guard", "warcry", "curse", "mark", "link", "banner", "golem", "stance", "vaal", "minion", "totem", "trap", "mine", "brand", "trigger"];
 
 /**
  * Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden.
+ * damage: los elementos y la forma de daño de la build, para preferir sustitutas y soportes de sus elementos y que potencien su forma.
  * secondary: es una habilidad más de la build, no la principal. Esas solo se sustituyen si son una maldición o una marca (por otra
  * del mismo tipo, que sí hace lo mismo) y solo llevan los soportes que ya tiene la build: un parecido de etiquetas no basta para
  * inventar un sustituto de un buff o un aura (Blood Rage por un hechizo de fuego).
  */
-export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, secondary = false): StageSkill[] {
+export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, damage: Damage, secondary = false): StageSkill[] {
   const avail = availability(cls, defs), mainSkill = SKILLS[main.id], mainTags = new Set(mainSkill.tags);
   const isAttack = mainSkill.types.includes("Attack"), isSpell = mainSkill.types.includes("Spell");
   const skillOk = (id: string): boolean => {
@@ -68,12 +76,12 @@ export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, s
     const to = actLevel(last), usable = from + 4;
     let skill: string | null = null, own = false;
     if (avail[main.id] <= first && GEMS[main.id].level <= usable) { skill = main.id; own = true; }
-    else skill = Object.keys(SKILLS).filter(id => skillOk(id) && avail[id] <= first && GEMS[id].level <= usable).sort(byLikeness(main.id))[0] || prev;
+    else skill = Object.keys(SKILLS).filter(id => skillOk(id) && avail[id] <= first && GEMS[id].level <= usable).sort(byLikeness(main.id, damage))[0] || prev;
     let supports: string[] = [];
     if (skill) {
       const ok = (id: string): boolean => SKILLS[id] && id in avail && avail[id] <= last && GEMS[id].level <= to && canSupport(id, skill);
       const fromBuild = main.supports.filter(ok);
-      const others = Object.keys(SKILLS).filter(id => isSupport(id) && ok(id) && !fromBuild.includes(id) && !SKILLS[id].tags.includes("vaal")).sort(byLikeness(main.id));
+      const others = Object.keys(SKILLS).filter(id => isSupport(id) && ok(id) && !fromBuild.includes(id) && !SKILLS[id].tags.includes("vaal")).sort(byLikeness(main.id, damage));
       // La habilidad y sus soportes tienen que caber en las casillas que da el nivel de los objetos de este tramo.
       supports = (secondary ? fromBuild : [...fromBuild, ...others]).slice(0, maxSockets(to) - 1);
     }

@@ -5,6 +5,8 @@ import { routeDefs } from "./route";
 import { SKILLS } from "./data";
 import { isActive, isSupport, SKILL_KINDS, skillKind } from "./gems";
 import type { SkillKind } from "./gems";
+import { damageOf, mainElements } from "./damage";
+import type { DamageForm, Element } from "./damage";
 import { curseLimit, limitSkills } from "./limits";
 import { fitSockets, socketBudget } from "./sockets";
 import { suggestSkills, suggestTrees } from "./suggest";
@@ -33,6 +35,10 @@ export interface GuideData {
   ascend: string | null;
   /** Leveling sugerido por tramos (vacío si la habilidad principal no se reconoce). */
   skills: StageSkill[];
+  /** Los elementos de daño de la build en que se apoyan las sugerencias, de más a menos (vacío si no se distingue ninguno). */
+  damage: Element[];
+  /** Si el daño sale sobre todo de los golpes o de un efecto que dura (veneno, ignite, sangrado), según las estadísticas de PoB; null si el código no las trae. */
+  damageForm: DamageForm | null;
   /** Lo mismo para las demás habilidades de la build (auras, heraldos, movimiento…). */
   others: OtherSkill[];
   /** Gemas de leveling sugeridas que no están en la build. */
@@ -49,8 +55,9 @@ export interface GuideData {
 /** Calcula la guía de una build para la clase y el modo (inicio de liga o no) dados. Mostrar las zonas es cosa del dibujo. */
 export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions, "cls" | "leagueStart">): GuideData {
   const defs = routeDefs(build, leagueStart, { library: true });
-  const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, defs) : [];
-  const others = otherSkills(build).map((skill): OtherSkill => ({ skill, kind: skillKind(skill.id), stages: suggestSkills(skill, cls, defs, true) }));
+  const damage = damageOf(build);
+  const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, defs, damage) : [];
+  const others = otherSkills(build).map((skill): OtherSkill => ({ skill, kind: skillKind(skill.id), stages: suggestSkills(skill, cls, defs, damage, true) }));
   const treesSuggested = build.tree.stages.length === 0;
   const treeStages = !treesSuggested ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
   // En cada tramo, lo sugerido tiene que caber en los límites del juego (una maldición, marcas incluidas, y una sola marca, salvo que el árbol o el equipo den más maldiciones).
@@ -69,7 +76,7 @@ export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions
   const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
   const suggested = new Set([...skills, ...others.flatMap(o => o.stages)].flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id && !own.has(id)));
   return {
-    build, skills, others, suggested, treeStages, treesSuggested,
+    build, skills, others, damage: mainElements(damage.profile), damageForm: damage.form, suggested, treeStages, treesSuggested,
     levelingTrees: treesSuggested ? treeStages : [],
     cls, ascend: cls === build.cls && build.ascend && build.ascend !== "None" ? build.ascend : null,
     plan: plan(build, cls, leagueStart, [...suggested]),
