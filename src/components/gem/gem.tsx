@@ -2,6 +2,7 @@
 
 import { cost, shortCurrency } from "../../js/cost";
 import { GEMS } from "../../js/data";
+import { hideGemTip, moveGemTip, showGemTip } from "../gem-tip/gem-tip";
 import { gemIcon } from "../item-icon/item-icon";
 import "./gem.css";
 
@@ -69,7 +70,7 @@ export const Gem: Component<GemProps, HTMLLabelElement> = ({ id, withCost }) => 
     });
   };
   return (
-    <label class={"gem" + (isDone ? " done" : "")} data-id={id}>
+    <label class={"gem" + (isDone ? " done" : "")} data-id={id} onMouseenter={(e: MouseEvent) => showGemTip(id, e)} onMousemove={moveGemTip} onMouseleave={hideGemTip}>
       <input type="checkbox" checked={isDone} onChange={toggle} />
       <i class={attr} />
       {icon && <span class="gem-ico"><img src={gemIcon(icon)} alt="" loading="lazy" onLoad={layerIcon} onError={hideIcon} /></span>}

@@ -1,0 +1,10 @@
+/* Ficha de gema flotante, con el aspecto de las demás fichas (nodo del árbol, único). */
+.gem-tip { position: fixed; z-index: 30; max-width: min(340px, 90vw); box-sizing: border-box; padding: 8px 10px; pointer-events: none; font-size: 13px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px #0004; }
+.gem-tip p { margin: 3px 0 0; }
+.gem-tip-head { font-size: 14px; }
+.gem-tip-head.s b { color: var(--str); } .gem-tip-head.d b { color: var(--dex); } .gem-tip-head.i b { color: var(--int); }
+.gem-tip-tags { color: var(--muted); font-size: 12px; }
+.gem-tip-req { color: var(--muted); }
+.gem-tip-desc { font-style: italic; }
+.gem-tip-line { color: var(--accent); }
