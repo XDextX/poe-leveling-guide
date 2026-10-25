@@ -5,6 +5,7 @@ import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
 import type { GuideData } from "../js/guide";
 import { decode, parseBuild } from "../js/pob";
+import { initActGems, setActGems } from "../components/act-gems/act-gems-panel";
 import { doneStore, setSuggested } from "../components/gem/gem";
 import { Guide } from "../components/guide/guide";
 import { setRedrawHeat } from "../components/heatmap/heatmap";
@@ -48,6 +49,7 @@ export const App: Component<{}, HTMLElement> = () => {
     setRedrawHeat(null);
     guide.replaceChildren(<Guide data={data} showZones={opts.showZones} />);
     guide.hidden = false;
+    setActGems(data);
     renderToc();
   }
 
@@ -56,6 +58,7 @@ export const App: Component<{}, HTMLElement> = () => {
     setRedrawHeat(null);
     guide.replaceChildren();
     guide.hidden = true;
+    setActGems(null);
     hideToc();
   }
 
@@ -90,6 +93,7 @@ export const App: Component<{}, HTMLElement> = () => {
   // Lo que necesita la página ya en el documento (como un useEffect): main.tsx la monta justo al volver de aquí.
   queueMicrotask(() => {
     initToc();
+    initActGems();
     void startSession({ form, guide, run, rerender });
   });
   return page;

@@ -4,6 +4,7 @@
  * Por eso Page y los componentes que usa no pueden tocar el DOM ni la ventana al crearse: solo devolver JSX.
  */
 
+import { ActGems } from "../act-gems/act-gems";
 import { About } from "../about/about";
 import { BuildForm } from "../build-form/build-form";
 import { Header } from "../header/header";
@@ -25,6 +26,7 @@ export const Page: Component<PageProps, HTMLElement> = ({ classes, date, license
     <Header />
     <BuildForm classes={classes} onBuild={onBuild} onOptionsChange={onOptionsChange} />
     <TocNav />
+    <ActGems />
     <div id="out" class="panel" hidden />
     <About />
     <Sources date={date} license={license} />

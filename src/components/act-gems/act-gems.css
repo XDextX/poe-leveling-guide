@@ -1,0 +1,9 @@
+/* Gemas del acto en el margen derecho de la guía. Mismo ancho mínimo que el índice (toc-nav.css): donde el índice cabe al lado, esto también. */
+.act-gems { display: none; font-size: .85rem; gap: 8px; }
+@media (min-width: 1260px) {
+  .act-gems:not([hidden]) { display: grid; position: fixed; box-sizing: border-box; left: calc(50% + 390px + 32px); top: 32px; width: 200px;
+    max-height: calc(100vh - 64px); overflow-y: auto; align-content: start; }
+}
+.act-gems-title { font-family: var(--display); color: var(--accent); letter-spacing: .04em; }
+.act-gems .how { min-width: 0; width: 100%; }
+.act-gems .line { gap: 2px 8px; }
