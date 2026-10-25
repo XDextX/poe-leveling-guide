@@ -50,13 +50,29 @@ function prerender(): Plugin {
   };
 }
 
+/**
+ * En dev, Vite mete el CSS desde JavaScript: al recargar se ve un momento la página sin estilos. Se oculta el cuerpo hasta que
+ * main.tsx (con su CSS) se ha ejecutado; el script va después del suyo y los módulos se ejecutan en orden. En el build no hace
+ * falta: el CSS ya va dentro del <head> del único index.html.
+ */
+function hideUnstyledInDev(): Plugin {
+  return {
+    name: "hide-unstyled-in-dev",
+    apply: "serve",
+    transformIndexHtml: () => [
+      { tag: "style", attrs: { id: "unstyled" }, children: "body { visibility: hidden }", injectTo: "head-prepend" },
+      { tag: "script", attrs: { type: "module" }, children: 'document.getElementById("unstyled")?.remove();', injectTo: "body" },
+    ],
+  };
+}
+
 export default defineConfig({
   ...shared,
   // Rutas relativas: la web vive en una subcarpeta de GitHub Pages y también se abre con doble clic.
   base: "./",
   // La fecha y la licencia las necesita la app para volver a crear <Sources> en el navegador.
   define: { PAGE_DATE: JSON.stringify(date), PAGE_LICENSE: JSON.stringify(license) },
-  plugins: [prerender(), viteSingleFile()],
+  plugins: [prerender(), hideUnstyledInDev(), viteSingleFile()],
   build: { outDir: "dist", emptyOutDir: true },
   // npm test (Vitest): la lógica de src/js/ en Node, con los mismos imports y JSX que la app. tests/setup.ts pone los
   // datos del juego en window.DATA, como hacen gamedata/*.js en el navegador.
