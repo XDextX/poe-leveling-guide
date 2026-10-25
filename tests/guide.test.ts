@@ -33,3 +33,14 @@ describe("buildGuide", () => {
     expect(data).toMatchObject({ treeStages: [], treesSuggested: true, levelingTrees: [] });
   });
 });
+
+describe("plan de la ruta", () => {
+  it("marca como zona los pasos que cambian de zona, y solo esos", () => {
+    const { out } = buildGuide(build(), { cls: "Marauder", leagueStart: true }).plan;
+    const zones = out.filter(s => s.zone);
+    expect(zones.length).toBeGreaterThan(5);
+    // "Waypoint ➞ X" y "➞ X" cambian de zona; "Busca y mata a Hillock" no.
+    expect(zones.some(s => /^➞ /.test(s.text.replace(/<[^>]*>/g, "")) || s.text.includes('class="wp"'))).toBe(true);
+    expect(out.find(s => s.text.includes("Hillock"))?.zone).toBe(false);
+  });
+});

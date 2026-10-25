@@ -70,7 +70,8 @@ interface Build {
 
 interface RouteStep { act: number; line: string; notes: string[] }
 interface GemGroup { how: string; npc?: string; ids: string[]; buy?: boolean }
-interface PlannedStep { act: number; text: string; notes: string[]; gems: GemGroup[] }
+/** zone: el paso lleva a otra zona (entrar, waypoint, logout o portal de vuelta), así que abre un bloque de la ruta. */
+interface PlannedStep { act: number; text: string; notes: string[]; gems: GemGroup[]; zone: boolean }
 interface GotAt { act: number; quest: string }
 interface Plan { out: PlannedStep[]; got: Map<string, GotAt>; start: string[]; missing: string[] }
 interface StageSkill { acts: [number, number]; from: number; to: number; skill: string | null; own: boolean; supports: string[]; mainAt: number | null }

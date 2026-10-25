@@ -4,6 +4,9 @@ import { CLASSES, START } from "./data";
 import { esc, parseRoute, questOffers, renderLine, routeDefs } from "./route";
 import type { RouteCtx } from "./route";
 
+/** Líneas de la ruta que cambian de zona; {portal|set} (poner el portal) y {waypoint} sin destino (cogerlo) no. */
+const ENTERS_ZONE = /^(?:➞ )?\{(?:enter|logout)[|}]|^\{waypoint\|[^}]|^\{portal\|(?!set)/i;
+
 /**
  * Recorre la ruta: pinta cada paso y, en cada entrega de misión, elige una recompensa y compra lo que ya esté a la venta.
  * Devuelve el HTML por paso y qué gemas se consiguieron dónde.
@@ -32,7 +35,7 @@ function walk(steps: RouteStep[], cls: string, want: string[]): { out: PlannedSt
       }
       return `<span class="questname">${esc(found.quest.name)}</span>${npcs.size ? ` · ${esc([...npcs].join(", "))}` : ""}`;
     };
-    return { act: step.act, text: renderLine(step.line, ctx), notes: step.notes, gems };
+    return { act: step.act, text: renderLine(step.line, ctx), notes: step.notes, gems, zone: ENTERS_ZONE.test(step.line) };
   });
   return { out, got };
 }
