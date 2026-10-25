@@ -52,3 +52,6 @@ button:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-
    (index.html marca <html class="restoring"> y session.ts la quita) para que el resto no salte. Si algo fallase, a los 3 s se muestra. */
 html.restoring body { visibility: hidden; animation: reveal 0s 3s forwards; }
 @keyframes reveal { to { visibility: visible; } }
+
+/* Barras de desplazamiento finas y con los colores del tema: el acento apagado sobre el fondo, en la página y en los paneles. */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 45%, var(--bg)) transparent; }
