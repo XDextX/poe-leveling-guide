@@ -29,6 +29,8 @@ export function costText(ids: string[]): string {
   return Object.entries(total).map(([c, n]) => `${n}× ${c}`).join(", ");
 }
 
+const hideIcon = (e: Event) => { (e.target as HTMLImageElement).hidden = true; };
+
 interface GemProps {
   id: string;
   /** Muestra lo que cuesta en el vendedor. */
@@ -52,7 +54,7 @@ export const Gem: Component<GemProps, HTMLLabelElement> = ({ id, withCost }) => 
     <label class={"gem" + (isDone ? " done" : "")} data-id={id}>
       <input type="checkbox" checked={isDone} onChange={toggle} />
       <i class={attr} />
-      {icon && <img class="gem-ico" src={gemIcon(icon)} alt="" width="24" height="24" loading="lazy" />}
+      {icon && <img class="gem-ico" src={gemIcon(icon)} alt="" width="24" height="24" loading="lazy" onError={hideIcon} />}
       <span>{name}</span>
       <small>{`nv ${level}${withCost ? " · " + shortCost(level) : ""}`}</small>
       {suggested.has(id) && <em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>}
