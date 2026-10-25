@@ -60,3 +60,9 @@ const SLOT_ES: Record<string, string> = { "Weapon 1": "Arma", "Weapon 2": "Mano 
   "Body Armour": "Armadura", Helmet: "Casco", Gloves: "Guantes", Boots: "Botas", Belt: "Cinturón", "Ring 1": "Anillo", "Ring 2": "Anillo",
   Amulet: "Amuleto", Jewel: "Joya del árbol" };
 export const slotEs = (s: string): string => SLOT_ES[s] || (s.startsWith("Flask") ? "Frasco" : s.includes("Abyssal") ? "Joya abisal" : s);
+
+/** Nombres de las keystones y notables que un árbol tiene y el anterior no (todos, si no hay anterior). */
+export const newNotables = (tree: TreeStage | undefined, prev?: TreeStage): string[] => {
+  const had = new Set(prev?.nodes ?? []);
+  return (tree?.nodes ?? []).filter(id => !had.has(id) && (NODES[id].type === NODE.NOTABLE || NODES[id].type === NODE.KEYSTONE)).map(id => NODES[id].name);
+};

@@ -1,7 +1,7 @@
 /* Tarjeta de un tramo del leveling sugerido: habilidad, soportes y cuánto del árbol final tendrías. */
 
-import { GEMS, NODES } from "../../js/data";
-import { NODE } from "../../js/node-types";
+import { GEMS } from "../../js/data";
+import { newNotables } from "../../js/stats";
 import { GemLine } from "../gem-line/gem-line";
 import "./stage-card.css";
 
@@ -17,8 +17,7 @@ interface StageCardProps {
 
 /** Tarjeta del tramo: habilidad, soportes y, si hay árbol, cuántos puntos y qué notables nuevos. */
 export const StageCard: Component<StageCardProps, HTMLDivElement> = ({ stage: s, mainId, tree, prev, treesSuggested }) => {
-  const had = new Set(prev?.nodes ?? []);
-  const fresh = (tree?.nodes ?? []).filter(id => !had.has(id) && (NODES[id].type === NODE.NOTABLE || NODES[id].type === NODE.KEYSTONE)).map(id => NODES[id].name);
+  const fresh = newNotables(tree, prev);
   return (
     <div class="stagecard">
       <h3>Actos {s.acts[0]}-{s.acts[1]} <span>· nv {s.from}–{s.to}</span></h3>
