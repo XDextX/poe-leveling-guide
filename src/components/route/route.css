@@ -12,3 +12,9 @@ ol.route { list-style: none; margin: 0; padding: 0; }
 .wp { color: var(--wp); font-weight: 600; }
 .tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; }
 .dir { font-family: var(--mono); color: var(--accent); }
+
+/* Bloque de zona: la línea "➞ Zona" se pliega y esconde sus pasos. */
+.route > li.zone { padding: 8px 0 8px 12px; display: block; }
+.zone > details > summary { cursor: pointer; list-style: revert; }
+.zone-steps { margin: 4px 0 0 4px; }
+.route > li.zone-notes { border-left-color: transparent; padding-block: 0; }
