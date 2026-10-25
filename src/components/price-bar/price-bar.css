@@ -1,0 +1,9 @@
+/* Barra de precios sobre la tabla de únicos: la liga, el botón de actualizar y el estado. */
+.league-pick { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); margin-bottom: 8px; }
+.league-pick select { font: inherit; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+.price-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
+.price-bar .league-pick { margin: 0; }
+.price-btn { font: inherit; font-size: .8rem; color: var(--accent); background: none; border: 1px solid var(--accent); border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+.price-btn:hover:not(:disabled) { background: var(--soft); }
+.price-btn:disabled { opacity: .6; cursor: progress; }
+.price-status { font-size: .75rem; color: var(--muted); }
