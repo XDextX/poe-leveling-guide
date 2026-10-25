@@ -13,12 +13,19 @@ export function setSuggested(ids: Set<string>): void { suggested = ids; }
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 export const doneStore = {
   key: "", ids: new Set<string>(),
+  listeners: new Set<() => void>(),
+  /** Avisa cada vez que se marca o desmarca una gema; devuelve cómo dejar de recibir avisos. */
+  onChange(fn: () => void): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; },
   /** Carga las marcadas de una build vista con una clase: cada combinación se guarda aparte. */
   load(cls: string, build: Build) {
     this.key = "poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|");
     try { this.ids = new Set<string>(JSON.parse(localStorage.getItem(this.key) ?? "null") || []); } catch { this.ids = new Set<string>(); }
   },
-  set(id: string, on: boolean) { on ? this.ids.add(id) : this.ids.delete(id); try { localStorage.setItem(this.key, JSON.stringify([...this.ids])); } catch {} },
+  set(id: string, on: boolean) {
+    on ? this.ids.add(id) : this.ids.delete(id);
+    try { localStorage.setItem(this.key, JSON.stringify([...this.ids])); } catch {}
+    this.listeners.forEach(fn => fn());
+  },
 };
 
 const shortCost = (level: number): string => shortCurrency(cost(level));
