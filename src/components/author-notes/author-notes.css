@@ -1,0 +1,2 @@
+/* Notas del autor: texto plano que respeta saltos de línea y sangrías, con scroll propio si son largas. */
+.notes-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--body); font-size: .88rem; line-height: 1.5; max-height: 28rem; overflow-y: auto; }

@@ -1,5 +1,6 @@
 /* La guía entera de una build: resumen, leveling sugerido, equipo, árbol, ruta y gemas por otras vías. */
 
+import { AuthorNotes } from "../author-notes/author-notes";
 import { GearSection } from "../gear/gear";
 import { LevelingSection } from "../leveling/leveling";
 import { ProgressSection } from "../progress/progress";
@@ -7,6 +8,7 @@ import { OtherWays } from "../other-ways/other-ways";
 import { RouteSections } from "../route/route";
 import { Summary } from "../summary/summary";
 import { TreeSection } from "../tree/tree";
+import { mentionsLeveling } from "../../js/pob/notes";
 import type { GuideData } from "../../js/guide";
 
 interface GuideProps {
@@ -21,8 +23,9 @@ interface GuideProps {
 export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, cls, ascend, skills, others, damage, damageForm, treeStages, treesSuggested, levelingTrees }, showZones, onPick }) => (
   <>
     <Summary build={build} plan={plan} cls={cls} ascend={ascend} />
+    {build.notes && <AuthorNotes notes={build.notes} />}
     {(plan.got.size > 0 || plan.start.length > 0) && <ProgressSection plan={plan} />}
-    {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} onPick={onPick} />}
+    {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} onPick={onPick} authorLeveling={mentionsLeveling(build.notes)} />}
     {build.items.length > 0 && <GearSection items={build.items} />}
     {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}
     <RouteSections steps={plan.out} start={plan.start} showZones={showZones} />
