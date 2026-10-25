@@ -54,7 +54,7 @@ export const RouteSections: Component<RouteSectionsProps, DocumentFragment> = ({
               {act === 1 && start.length > 0 && (
                 <li class="has-gems"><div class="text">Al empezar</div><GemsBlock groups={[{ how: "Ya la tienes", ids: start }]} /></li>
               )}
-              {blocks(own.filter(s => showZones || s.gems.length)).map(block => block.length === 1 && !block[0].zone ? <StepItem step={block[0]} /> : (
+              {blocks(own.filter(s => showZones || s.gems.length)).map(block => block.length === 1 && !block[0].notes.length && !block[0].gems.length ? <StepItem step={block[0]} /> : (
                 <li class="zone">
                   <details open>
                     <summary class="text" html={block[0].text} />
