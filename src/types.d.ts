@@ -83,6 +83,10 @@ interface StageSkill {
   acts: [number, number]; from: number; to: number; skill: string | null; own: boolean; supports: string[]; mainAt: number | null;
   /** Enlaces como máximo en una armadura de pecho de este tramo: skill + soportes caben en esas casillas (nivel de objeto del final del tramo). */
   links: number;
+  /** Habilidades entre las que se puede elegir en este tramo (la elegida y las mejores alternativas, con su puntuación); vacío si la habilidad es la de la build. */
+  options: { id: string; score: number }[];
+  /** La que recomienda la app en este tramo, aunque se haya elegido otra; null si no hay sustituta. */
+  recommended: string | null;
   /** La habilidad que había aquí y se quitó porque no cabe en los límites de maldiciones o marcas (solo sale en la nota del tramo). */
   dropped?: string;
   /** La habilidad que había aquí y se quitó porque no cabe en las casillas del equipo de este tramo (solo sale en la nota del tramo). */

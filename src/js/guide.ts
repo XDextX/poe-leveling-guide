@@ -53,10 +53,10 @@ export interface GuideData {
 }
 
 /** Calcula la guía de una build para la clase y el modo (inicio de liga o no) dados. Mostrar las zonas es cosa del dibujo. */
-export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions, "cls" | "leagueStart">): GuideData {
+export function buildGuide(build: Build, { cls, leagueStart, picks }: Pick<GuideOptions, "cls" | "leagueStart"> & { picks?: Record<number, string> }): GuideData {
   const defs = routeDefs(build, leagueStart, { library: true });
   const damage = damageOf(build);
-  const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, defs, damage) : [];
+  const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, defs, damage, false, picks) : [];
   const others = otherSkills(build).map((skill): OtherSkill => ({ skill, kind: skillKind(skill.id), stages: suggestSkills(skill, cls, defs, damage, true) }));
   const treesSuggested = build.tree.stages.length === 0;
   const treeStages = !treesSuggested ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];

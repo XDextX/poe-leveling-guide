@@ -12,7 +12,7 @@ it("el equipo da más casillas con el nivel: solo el pecho y las armas a dos man
 });
 
 it("fitSockets reparte las casillas por orden y vacía lo que ya no cabe, anotando qué era", () => {
-  const stage = (skill: string): StageSkill => ({ acts: [1, 2], from: 1, to: 10, skill, own: true, supports: [], mainAt: null, links: 6 });
+  const stage = (skill: string): StageSkill => ({ acts: [1, 2], from: 1, to: 10, skill, own: true, supports: [], mainAt: null, links: 6, options: [], recommended: null });
   const [a, b, c, d] = ["Cleave", "Flame Dash", "Determination", "Clarity"].map(gemId).map(stage);
   fitSockets([{ stage: a, size: 3 }, { stage: b, size: 1 }, { stage: c, size: 1 }, { stage: d, size: 1 }], 5);
   expect([a.skill, b.skill, c.skill, d.skill]).toEqual([gemId("Cleave"), gemId("Flame Dash"), gemId("Determination"), null]);

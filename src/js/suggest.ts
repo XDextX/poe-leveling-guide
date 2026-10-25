@@ -45,21 +45,25 @@ const similarity = (a: string, b: string): number => { const x = new Set(SKILLS[
 // Cuánto pesa que el elemento de una gema encaje con el daño de la build, y que potencie su forma (veneno, ignite…), frente al parecido de etiquetas.
 const FIT_WEIGHT = 0.5, FORM_WEIGHT = 0.6;
 /** Ordena por parecido con la habilidad principal más cuánto encaja su elemento con el daño de la build y, a igualdad, por nivel (la más avanzada primero). */
+const scoreOf = (mainId: string, damage: Damage) => (id: string): number => similarity(mainId, id) + FIT_WEIGHT * elementFit(id, damage.profile) + FORM_WEIGHT * formFit(id, damage.form);
 const byLikeness = (mainId: string, damage: Damage) => {
-  const score = (id: string) => similarity(mainId, id) + FIT_WEIGHT * elementFit(id, damage.profile) + FORM_WEIGHT * formFit(id, damage.form);
+  const score = scoreOf(mainId, damage);
   return (a: string, b: string): number => score(b) - score(a) || GEMS[b].level - GEMS[a].level;
 };
+// Cuántas habilidades se ofrecen para elegir en un tramo: la recomendada y las mejores alternativas.
+const OPTIONS = 3;
 // Habilidades que no sirven para matar mientras subes, salvo que la build principal también sea de ese tipo.
 const UTILITY_TAGS = ["aura", "herald", "movement", "travel", "blink", "guard", "warcry", "curse", "mark", "link", "banner", "golem", "stance", "vaal", "minion", "totem", "trap", "mine", "brand", "trigger"];
 
 /**
  * Por cada tramo de la campaña: nivel, habilidad sugerida (o la de la build) y soportes compatibles, por orden.
  * damage: los elementos y la forma de daño de la build, para preferir sustitutas y soportes de sus elementos y que potencien su forma.
+ * picks: la habilidad que el usuario eligió en cada tramo (por su posición); se respeta si se puede usar en ese tramo.
  * secondary: es una habilidad más de la build, no la principal. Esas solo se sustituyen si son una maldición o una marca (por otra
  * del mismo tipo, que sí hace lo mismo) y solo llevan los soportes que ya tiene la build: un parecido de etiquetas no basta para
  * inventar un sustituto de un buff o un aura (Blood Rage por un hechizo de fuego).
  */
-export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, damage: Damage, secondary = false): StageSkill[] {
+export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, damage: Damage, secondary = false, picks: Record<number, string> = {}): StageSkill[] {
   const avail = availability(cls, defs), mainSkill = SKILLS[main.id], mainTags = new Set(mainSkill.tags);
   const isAttack = mainSkill.types.includes("Attack"), isSpell = mainSkill.types.includes("Spell");
   const skillOk = (id: string): boolean => {
@@ -72,11 +76,19 @@ export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, d
   };
   const out: StageSkill[] = [];
   let from = 1, prev: string | null = null;
-  for (const [first, last] of STAGES) {
+  const score = scoreOf(main.id, damage);
+  for (const [i, [first, last]] of STAGES.entries()) {
     const to = actLevel(last), usable = from + 4;
-    let skill: string | null = null, own = false;
+    let skill: string | null = null, own = false, ranked: string[] = [];
     if (avail[main.id] <= first && GEMS[main.id].level <= usable) { skill = main.id; own = true; }
-    else skill = Object.keys(SKILLS).filter(id => skillOk(id) && avail[id] <= first && GEMS[id].level <= usable).sort(byLikeness(main.id, damage))[0] || prev;
+    else {
+      ranked = Object.keys(SKILLS).filter(id => skillOk(id) && avail[id] <= first && GEMS[id].level <= usable).sort(byLikeness(main.id, damage));
+      const pick = picks[i];
+      skill = pick && ranked.includes(pick) ? pick : ranked[0] ?? prev;
+    }
+    // Las que se ofrecen: las mejores y, si se eligió una peor, la elegida en primer lugar.
+    const top = skill && ranked.includes(skill) && !ranked.slice(0, OPTIONS).includes(skill) ? [skill, ...ranked.slice(0, OPTIONS - 1)] : ranked.slice(0, OPTIONS);
+    const options = top.map(id => ({ id, score: +score(id).toFixed(2) }));
     let supports: string[] = [];
     if (skill) {
       const ok = (id: string): boolean => SKILLS[id] && id in avail && avail[id] <= last && GEMS[id].level <= to && canSupport(id, skill);
@@ -85,7 +97,7 @@ export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, d
       // La habilidad y sus soportes tienen que caber en las casillas que da el nivel de los objetos de este tramo.
       supports = (secondary ? fromBuild : [...fromBuild, ...others]).slice(0, maxSockets(to) - 1);
     }
-    out.push({ acts: [first, last], from, to, skill, own, supports, links: maxSockets(to), mainAt: !own && avail[main.id] <= last ? Math.max(GEMS[main.id].level, from) : null });
+    out.push({ acts: [first, last], from, to, skill, own, supports, options, recommended: ranked[0] ?? null, links: maxSockets(to), mainAt: !own && avail[main.id] <= last ? Math.max(GEMS[main.id].level, from) : null });
     prev = skill; from = to;
   }
   return out;

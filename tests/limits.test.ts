@@ -3,7 +3,7 @@ import { NODES } from "../src/js/data";
 import { curseLimit, limitSkills } from "../src/js/limits";
 import { gemId } from "./helpers";
 
-const stage = (skill: string | null, own = false): StageSkill => ({ acts: [1, 2], from: 1, to: 10, skill, own, supports: skill ? [gemId("Pierce Support")] : [], mainAt: null, links: 6 });
+const stage = (skill: string | null, own = false): StageSkill => ({ acts: [1, 2], from: 1, to: 10, skill, own, supports: skill ? [gemId("Pierce Support")] : [], mainAt: null, links: 6, options: [], recommended: null });
 const ids = (...st: StageSkill[]) => st.map(s => s.skill);
 const [despair, enfeeble, sniper, assassin, cleave] = ["Despair", "Enfeeble", "Sniper's Mark", "Assassin's Mark", "Cleave"].map(gemId);
 
