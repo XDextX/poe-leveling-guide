@@ -33,7 +33,8 @@ export const UniqueRow: Component<UniqueRowProps, HTMLTableRowElement> = ({ item
       <td class="links">
         <a href={wikiUrl(item.name)} target="_blank" rel="noopener noreferrer" title="Cómo y dónde se consigue, en la wiki de PoE">Wiki</a>
         {" · "}
-        <a class="trade" href={tradeUrl(league, item.name, item.base)} data-name={item.name} data-base={item.base} target="_blank" rel="noopener noreferrer" title="Buscarlo en el comercio oficial, en tu liga">Comercio</a>
+        <a class="trade icon-btn" href={tradeUrl(league, item.name, item.base)} data-name={item.name} data-base={item.base} target="_blank" rel="noopener noreferrer"
+          aria-label="Buscarlo en el comercio oficial" data-tip="Buscarlo en el comercio oficial, en tu liga"><span class="icon-scales" aria-hidden="true" /></a>
       </td>
     </tr>
   ) as HTMLTableRowElement;
