@@ -47,12 +47,21 @@ export function parseGems(doc: Document): BuildGem[] {
   return gems;
 }
 
+/** Los grupos de gemas del conjunto de habilidades activo, tal como vienen en PoB. */
+const activeGroups = (doc: Document): Element[] => {
+  const set = doc.querySelector(`Skills > SkillSet[id="${doc.querySelector("Skills")?.getAttribute("activeSkillSet")}"]`) || doc.querySelector("Skills > SkillSet") || doc.querySelector("Skills");
+  return [...(set?.querySelectorAll(":scope > Skill") || [])];
+};
+const groupIds = (group: Element | undefined): string[] => [...(group?.querySelectorAll("Gem") || [])].map(gemIdOf).filter((id): id is string => !!id);
+
+/** Los grupos de gemas del conjunto activo, cada uno con los ids que conocemos en su orden (los vacíos no cuentan). */
+export function skillGroups(doc: Document): string[][] { return activeGroups(doc).map(groupIds).filter(ids => ids.length > 0); }
+
 /** Habilidad principal: la primera gema activa del grupo que Path of Building marca como principal, con sus soportes. */
 export function mainSkill(doc: Document): MainSkill | null {
-  const set = doc.querySelector(`Skills > SkillSet[id="${doc.querySelector("Skills")?.getAttribute("activeSkillSet")}"]`) || doc.querySelector("Skills > SkillSet") || doc.querySelector("Skills");
-  const groups = [...(set?.querySelectorAll(":scope > Skill") || [])];
+  const groups = activeGroups(doc);
   const group = groups[(Number(doc.querySelector("Build")?.getAttribute("mainSocketGroup")) || 1) - 1] || groups[0];
-  const ids = [...(group?.querySelectorAll("Gem") || [])].map(gemIdOf).filter((id): id is string => !!id);
+  const ids = groupIds(group);
   const active = ids.find(isActive);
   return active ? { id: active, supports: ids.filter(id => id !== active && isSupport(id)) } : null;
 }

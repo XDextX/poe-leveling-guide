@@ -65,6 +65,8 @@ interface MainSkill { id: string; supports: string[] }
 interface Build {
   cls: string | null; ascend: string | null; bandit: string;
   gems: BuildGem[]; items: Item[]; tree: BuildTree; main: MainSkill | null;
+  /** Los grupos de gemas del conjunto activo (ids de las que conocemos, en su orden), uno por habilidad de la build. */
+  groups: string[][];
 }
 
 /* ---------- Ruta, plan y sugerencias ---------- */

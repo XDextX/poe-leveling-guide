@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { mainSkill, parseGems } from "../src/js/pob/gems";
+import { mainSkill, parseGems, skillGroups } from "../src/js/pob/gems";
 import { gemId } from "./helpers";
 
 /** El XML de una build de PoB, solo con sus habilidades. */
@@ -42,5 +42,13 @@ describe("mainSkill", () => {
 
   it("sin habilidad activa en el grupo no hay principal", () => {
     expect(mainSkill(skills(`<Skill>${gem("Melee Physical Damage")}</Skill>`))).toBeNull();
+  });
+});
+
+describe("skillGroups", () => {
+  it("da un grupo por habilidad del conjunto activo, con las gemas que conocemos y en su orden", () => {
+    const doc = skills(`<SkillSet id="1"><Skill>${gem("Cleave")}${gem("Melee Splash")}${gem("Gema Inventada")}</Skill><Skill>${gem("Gema Inventada")}</Skill><Skill>${gem("Ground Slam")}</Skill></SkillSet>
+      <SkillSet id="2"><Skill>${gem("Frostbolt")}</Skill></SkillSet>`);
+    expect(skillGroups(doc)).toEqual([[gemId("Cleave"), gemId("Melee Splash Support")], [gemId("Ground Slam")]]);
   });
 });
