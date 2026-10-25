@@ -36,6 +36,14 @@ window.DATA_TEXT = ${JSON.stringify(text)};
   return path.join("public", "gamedata", "gemtext.js");
 }
 
+/** Escribe public/gamedata/tradestats.js (texto de mod → identificador del comercio), que la página carga solo cuando hace falta. */
+export function writeTradeStats(root: string, table: Record<string, string>, date: string): string {
+  fs.writeFileSync(path.join(root, DIR, "tradestats.js"), `// Generado por scripts/gamedata.mts con datos descargados el ${date}. No editar a mano.
+window.DATA_TRADE = ${JSON.stringify(table)};
+`);
+  return path.join("public", "gamedata", "tradestats.js");
+}
+
 /** Fecha de descarga y licencia de exile-leveling guardadas en public/gamedata/. */
 export function readGameDataMeta(root: string): { date: string; license: string } {
   const dir = path.join(root, DIR);

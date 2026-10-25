@@ -13,13 +13,14 @@ const FILES: [url: string, file: string][] = [
   ["https://repoe-fork.github.io/gems.min.json", "repoe-gems.json"],
   ["https://repoe-fork.github.io/uniques.min.json", "repoe-uniques.json"],
   ["https://repoe-fork.github.io/base_items.min.json", "repoe-base-items.json"],
+  ["https://www.pathofexile.com/api/trade/data/stats", "trade-stats.json"],
 ];
 
 try {
   fs.mkdirSync(path.join(dataDir, "routes"), { recursive: true });
   for (const [i, [url, file]] of FILES.entries()) {
     if (i) await new Promise(r => setTimeout(r, 1000));
-    const res = await fetch(url, { headers: { "User-Agent": "poe-leveling-guide" } });
+    const res = await fetch(url, { headers: { "User-Agent": "poe-leveling-guide (https://github.com/XDextX/poe-leveling-guide)", Accept: "application/json" } });
     if (!res.ok) throw new Error(`${url} respondió ${res.status}`);
     fs.writeFileSync(path.join(dataDir, file), await res.text());
     console.log(`(${i + 1}/${FILES.length}) ${file}`);

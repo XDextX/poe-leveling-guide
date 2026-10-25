@@ -25,6 +25,12 @@ describe("tradeUrl", () => {
     expect(q).toEqual({ query: { name: "Kaom's Heart", type: "Glorious Plate", status: { option: "online" } } });
   });
 
+  it("con identificadores de mods, la búsqueda lleva el filtro que separa una variante de otra", () => {
+    const { q } = parse(tradeUrl("Standard", "Ralakesh's Impatience", "Riveted Boots", ["explicit.stat_1", "explicit.stat_2"]));
+    expect(q.query.stats).toEqual([{ type: "and", filters: [{ id: "explicit.stat_1" }, { id: "explicit.stat_2" }] }]);
+    expect(parse(tradeUrl("Standard", "X", "Y")).q.query.stats).toBeUndefined();
+  });
+
   it("codifica las ligas con espacios y la semilla de una Timeless Jewel no entra en la búsqueda", () => {
     const { path, q } = parse(tradeUrl("Hardcore Allflame", "Brutal Restraint 4948; 34.179; Wind Dancer", "Timeless Jewel"));
     expect(path).toBe("/trade/search/Hardcore Allflame");
