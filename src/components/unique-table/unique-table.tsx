@@ -8,10 +8,10 @@ import "./unique-table.css";
 
 interface UniqueTableProps { uniques: Item[] }
 
-/** Tabla de únicos. Con ratón la ficha sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
+/** Tabla de únicos. La ficha sale al pasar el ratón por el icono o el nombre. Con ratón sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
 export const UniqueTable: Component<UniqueTableProps, HTMLTableElement> = ({ uniques }) => {
   const follow = (e: MouseEvent) => {
-    const tip = (e.target as Element).closest("tr")?.querySelector<HTMLElement>(".utip"); if (!tip) return;
+    const tip = (e.target as Element).closest(".item")?.nextElementSibling as HTMLElement | null | undefined; if (!tip) return;
     tip.style.position = "fixed";
     placeTip(tip, e.clientX, e.clientY, innerWidth, innerHeight, 16);
   };
