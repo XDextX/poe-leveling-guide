@@ -20,17 +20,20 @@ function walk(steps: RouteStep[], cls: string, want: string[]): { out: PlannedSt
       const found = questOffers(args);
       if (!found) return esc(args[0]);
       const npcs = new Set();
-      for (const { npc, rewards, vendor } of found.offers) {
+      const at: GotAt = { act: step.act, quest: found.quest.name };
+      const sold = (id: string): boolean => found.offers.some(({ vendor }) => !!vendor[id] && (vendor[id][0] & bit) !== 0);
+      // Primero las recompensas de todas las ofertas (una misión puede tener varias, como Mercy Mission: una de frascos y otra de gemas)
+      // y después las compras: si no, el vendedor de la primera oferta compraría gemas que se podían llevar gratis de la segunda.
+      for (const { npc, rewards } of found.offers) {
         if (npc) npcs.add(npc);
-        const open = want.filter(id => !got.has(id));
-        const sold = (id: string): boolean => !!vendor[id] && (vendor[id][0] & bit) !== 0;
-        const canReward = open.filter(id => (rewards[id] & bit) !== 0);
-        // Mejor gastar la recompensa gratuita en una gema que este mismo vendedor no venda.
-        const reward = canReward.find(id => !sold(id)) || canReward[0] || null;
-        const buys: Record<string, string[]> = {};
-        for (const id of open) if (id !== reward && sold(id)) (buys[vendor[id][1]] ??= []).push(id);
-        const at: GotAt = { act: step.act, quest: found.quest.name };
+        const canReward = want.filter(id => !got.has(id) && (rewards[id] & bit) !== 0);
+        // Mejor gastar la recompensa gratuita en una gema que ese vendedor no venda.
+        const reward = canReward.find(id => !sold(id)) || canReward[0];
         if (reward) { got.set(reward, at); gems.push({ how: "Recompensa", npc, ids: [reward] }); }
+      }
+      for (const { vendor } of found.offers) {
+        const buys: Record<string, string[]> = {};
+        for (const id of want) if (!got.has(id) && vendor[id] && (vendor[id][0] & bit) !== 0) (buys[vendor[id][1]] ??= []).push(id);
         for (const [who, ids] of Object.entries(buys)) { ids.forEach(id => got.set(id, at)); gems.push({ how: "Comprar a " + who, ids, buy: true }); }
       }
       return `<span class="questname">${esc(found.quest.name)}</span>${npcs.size ? ` · ${esc([...npcs].join(", "))}` : ""}`;

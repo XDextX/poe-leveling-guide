@@ -44,3 +44,20 @@ describe("plan de la ruta", () => {
     expect(out.find(s => s.text.includes("Hillock"))?.zone).toBe(false);
   });
 });
+
+describe("recompensas y compras de una misión", () => {
+  // Mercy Mission tiene dos ofertas de Nessa: una de frascos y otra de gemas de soporte; la segunda es gratis y la primera las vende.
+  it("lleva gratis una gema que se ofrece de recompensa y compra solo las demás", () => {
+    const prolif = gemId("Elemental Proliferation Support"), pierce = gemId("Pierce Support");
+    const { out } = buildGuide(build({
+      cls: "Shadow",
+      gems: [{ name: "Elemental Proliferation Support", id: prolif, kind: "normal" }, { name: "Pierce Support", id: pierce, kind: "normal" }],
+    }), { cls: "Shadow", leagueStart: true }).plan;
+    const groups = out.find(s => s.text.includes("Mercy Mission"))!.gems;
+    expect(groups.filter(g => g.how === "Recompensa")).toHaveLength(1);
+    const reward = groups.find(g => g.how === "Recompensa")!.ids[0];
+    expect([prolif, pierce]).toContain(reward);
+    // La otra no es de recompensa: se compra a Nessa.
+    expect(groups.find(g => g.buy)?.ids).toEqual([reward === prolif ? pierce : prolif]);
+  });
+});
