@@ -1,0 +1,24 @@
+/* "Mi avance": selector de acto, barra de progreso y la fila de conteos por acto. */
+.prog-pick { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.prog-pick select { font: inherit; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+.prog-total { margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.prog-total progress { flex: 1 1 160px; height: 10px; accent-color: var(--accent); }
+.prog-acts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--muted); }
+.prog-acts .now { color: var(--accent); font-weight: 600; }
+.prog-acts .late { color: var(--kill); }
+.progress .line { margin-bottom: 6px; }
+
+/* El resumen corto: en pantalla estrecha un panel que abre el botón "Avance" (como el índice); en ancha va en la columna derecha, siempre a la vista. */
+.progress-mini { display: none; font-size: .85rem; gap: 6px; box-sizing: border-box; position: fixed; z-index: 20; max-height: 65vh; overflow-y: auto;
+  left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 8px 28px rgb(0 0 0 / .35); }
+.progress-mini.open:not([hidden]) { display: grid; }
+.toc-toggle.prog-toggle { right: calc(max(16px, env(safe-area-inset-right, 0px)) + 92px); }
+.prog-late { color: var(--kill); }
+.prog-detail { font: inherit; font-size: .8rem; color: var(--accent); background: none; border: 1px solid var(--accent); border-radius: 6px; padding: 3px 8px; cursor: pointer; justify-self: start; }
+.prog-detail:hover { background: var(--soft); }
+.progress-mini .prog-total { margin: 0; }
+.progress-mini .prog-pick { margin: 0; }
+@media (min-width: 1260px) {
+  .progress-mini:not([hidden]) { display: grid; position: static; box-shadow: none; max-height: none; }
+  .prog-toggle { display: none; }
+}

@@ -2,6 +2,7 @@
 
 import { GearSection } from "../gear/gear";
 import { LevelingSection } from "../leveling/leveling";
+import { ProgressSection } from "../progress/progress";
 import { OtherWays } from "../other-ways/other-ways";
 import { RouteSections } from "../route/route";
 import { Summary } from "../summary/summary";
@@ -18,6 +19,7 @@ interface GuideProps {
 export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, cls, ascend, skills, others, treeStages, treesSuggested, levelingTrees }, showZones }) => (
   <>
     <Summary build={build} plan={plan} cls={cls} ascend={ascend} />
+    {(plan.got.size > 0 || plan.start.length > 0) && <ProgressSection plan={plan} />}
     {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} />}
     {build.items.length > 0 && <GearSection items={build.items} />}
     {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}

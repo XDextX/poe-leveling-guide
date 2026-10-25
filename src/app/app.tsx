@@ -5,6 +5,7 @@ import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
 import type { GuideData } from "../js/guide";
 import { decode, parseBuild } from "../js/pob";
+import { hideProgress, initProgress } from "../components/progress/progress";
 import { initActGems, setActGems } from "../components/act-gems/act-gems-panel";
 import { doneStore, setSuggested } from "../components/gem/gem";
 import { Guide } from "../components/guide/guide";
@@ -47,6 +48,7 @@ export const App: Component<{}, HTMLElement> = () => {
     setSuggested(data.suggested);
     doneStore.load(opts.cls, build);
     setRedrawHeat(null);
+    hideProgress();
     guide.replaceChildren(<Guide data={data} showZones={opts.showZones} />);
     guide.hidden = false;
     setActGems(data);
@@ -59,6 +61,7 @@ export const App: Component<{}, HTMLElement> = () => {
     guide.replaceChildren();
     guide.hidden = true;
     setActGems(null);
+    hideProgress();
     hideToc();
   }
 
@@ -94,6 +97,7 @@ export const App: Component<{}, HTMLElement> = () => {
   queueMicrotask(() => {
     initToc();
     initActGems();
+    initProgress();
     void startSession({ form, guide, run, rerender });
   });
   return page;
