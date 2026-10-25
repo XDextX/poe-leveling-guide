@@ -12,6 +12,8 @@
  *   coincide con la elegida para ese grupo, y uno con {version:N} solo si N es la versión elegida.
  */
 interface Selection {
+  /** Las etiquetas de las líneas "Variant: …", por orden: la variante N es la N-ésima. */
+  labels: string[];
   /** Variante elegida y alternativas activas; vacío si el objeto no declara variantes (entonces no se descarta nada). */
   variants: number[];
   usesGroups: boolean;
@@ -24,16 +26,24 @@ const ALT_NAMES = ["Alt Variant", "Alt Variant Two", "Alt Variant Three", "Alt V
 
 /** Lee de las líneas de cabecera qué variantes, versión y grupos están elegidos. */
 function readSelection(L: string[]): Selection {
-  const header = (name: string): number | undefined => { for (const l of L) { const m = new RegExp(`^${name}: (\\d+)`).exec(l); if (m) return +m[1]; } };
+  const has = (name: string) => L.some(l => l.startsWith(name + ": "));
+  /** El número de la primera cabecera "Nombre: N", o undefined si no está o no es un número. */
+  const header = (name: string): number | undefined => {
+    const line = L.find(l => l.startsWith(name + ": "));
+    const n = parseInt(line?.slice(name.length + 2) ?? "", 10);
+    return Number.isNaN(n) ? undefined : n;
+  };
+  const labels = L.filter(l => l.startsWith("Variant: ")).map(l => l.slice(9).trim());
   // Si el autor no eligió, PoB usa la última variante de la lista ("Variant: …" una por línea).
-  const last = L.filter(l => l.startsWith("Variant: ")).length || undefined;
-  const alts = ALT_NAMES.filter(name => L.some(l => l.startsWith(`Has ${name}:`))).map(name => header(`Selected ${name}`) ?? last);
+  const last = labels.length || undefined;
+  const alts = ALT_NAMES.filter(name => has(`Has ${name}`)).map(name => header(`Selected ${name}`) ?? last);
   const groups = new Map<number, number>();
   for (const l of L) { const m = /^Selected Variant Group: (\d+)\s*=\s*(\d+)$/.exec(l); if (m) groups.set(+m[1], +m[2]); }
   return {
+    labels,
     variants: [header("Selected Variant") ?? last, ...alts].filter((v): v is number => v !== undefined),
     // También lo es un objeto cuyas líneas llevan {group:} o {version:}, aunque no diga qué eligió.
-    usesGroups: groups.size > 0 || L.some(l => /^Selected Version: /.test(l) || /\{(?:group|version):/.test(l)),
+    usesGroups: groups.size > 0 || has("Selected Version") || L.some(l => /\{(?:group|version):/.test(l)),
     version: header("Selected Version"), groups,
   };
 }
@@ -80,22 +90,38 @@ function modText(line: string, sel: Selection): string | null {
   return t || null;
 }
 
-/** Texto de un objeto de PoB y el hueco en que va → { slot, rarity, name, base, req, mods, implicits }; los primeros `implicits` mods son los implícitos. */
+/** Las líneas de mod de un objeto: las implícitas ("Implicits: N" dice cuántas de las siguientes lo son) y el resto, hasta el final. */
+function modLines(L: string[]): { implicit: string[]; rest: string[] } {
+  const i = L.findIndex(l => /^Implicits:/.test(l));
+  if (i < 0) return { implicit: [], rest: [] };
+  const count = +(/^Implicits:\s*(\d+)/.exec(L[i])?.[1] ?? 0), lines = L.slice(i + 1);
+  return { implicit: lines.slice(0, count), rest: lines.slice(count) };
+}
+
+/**
+ * Las líneas que solo valen para algunas variantes (no todas) y entre ellas la elegida: lo que distingue esta variante de las
+ * demás. Primero las más exclusivas (las de menos variantes), que son las que mejor la distinguen.
+ */
+function distinctLines(lines: string[], sel: Selection): string[] {
+  const variantsOf = (l: string) => readTags(l).variants;
+  return lines
+    .filter(l => { const v = variantsOf(l); return !!v && v.size < sel.labels.length && sel.variants.some(n => v.has(n)); })
+    .sort((a, b) => variantsOf(a)!.size - variantsOf(b)!.size);
+}
+
+/** Texto de un objeto de PoB y el hueco en que va → un Item: sus mods (los primeros `implicits` son los implícitos), la variante elegida y los mods que la distinguen. */
 export function parseItemText(slot: string, raw: string): Item {
   const L = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
   const rarity = (L[0] || "").replace("Rarity: ", "");
   const named = rarity === "RARE" || rarity === "UNIQUE";
   const sel = readSelection(L);
   const clean = (lines: string[]) => lines.map(l => modText(l, sel)).filter((t): t is string => !!t);
-  // "Implicits: N" dice cuántas de las líneas siguientes son implícitos; el resto, hasta el final, son los mods.
-  const imp = L.findIndex(l => /^Implicits:/.test(l)), count = imp < 0 ? 0 : +(/^Implicits:\s*(\d+)/.exec(L[imp])?.[1] ?? 0);
-  const implicits = imp < 0 ? [] : clean(L.slice(imp + 1, imp + 1 + count));
-  const mods = imp < 0 ? [] : [...implicits, ...clean(L.slice(imp + 1 + count))];
-  // Las líneas "Variant: etiqueta" van por orden: la variante N es la N-ésima.
-  const labels = L.filter(l => l.startsWith("Variant: ")).map(l => l.slice(9).trim());
-  const variants = [...new Set(sel.variants.map(n => labels[n - 1]).filter(Boolean))];
-  // Los mods que solo tienen algunas variantes (no todas) y entre ellas la elegida: lo que distingue esta variante de las demás, primero los más exclusivos.
-  const exclusive = (l: string) => readTags(l).variants?.size ?? Infinity;
-  const distinct = imp < 0 ? [] : clean(L.slice(imp + 1).filter(l => { const v = readTags(l).variants; return !!v && v.size < labels.length && sel.variants.some(n => v.has(n)); }).sort((a, b) => exclusive(a) - exclusive(b)));
-  return { slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0, mods, implicits: implicits.length, variants, distinct };
+  const { implicit, rest } = modLines(L);
+  const implicits = clean(implicit);
+  return {
+    slot, rarity, name: L[1] || "", base: named ? L[2] || "" : L[1] || "", req: +(raw.match(/LevelReq: (\d+)/) || [])[1] || 0,
+    mods: [...implicits, ...clean(rest)], implicits: implicits.length,
+    variants: [...new Set(sel.variants.map(n => sel.labels[n - 1]).filter(Boolean))],
+    distinct: clean(distinctLines([...implicit, ...rest], sel)),
+  };
 }
