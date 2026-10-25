@@ -2,13 +2,18 @@
 
 import { slotEs } from "../../js/stats";
 import { followCursor } from "../float-tip/float-tip";
+import { tradeUrl, wikiUrl } from "../../js/unique-links";
 import { uniqueIcon } from "../item-icon/item-icon";
 import { UniqueTip } from "../unique-tip/unique-tip";
 
-interface UniqueRowProps { item: Item }
+interface UniqueRowProps {
+  item: Item;
+  /** Liga en que se busca en el comercio. */
+  league: string;
+}
 
-/** Fila de un único. La ficha sale al pasar el ratón por el icono o el nombre y, con ratón, sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
-export const UniqueRow: Component<UniqueRowProps, HTMLTableRowElement> = ({ item }) => {
+/** Fila de un único, con enlaces a su wiki y a su búsqueda en el comercio. La ficha sale al pasar el ratón por el icono o el nombre y, con ratón, sigue al cursor; al tocar o con el teclado se queda bajo el objeto. */
+export const UniqueRow: Component<UniqueRowProps, HTMLTableRowElement> = ({ item, league }) => {
   const icon = uniqueIcon(item.name);
   const tip = <UniqueTip item={item} icon={icon} /> as HTMLDivElement;
   const label = (
@@ -24,6 +29,11 @@ export const UniqueRow: Component<UniqueRowProps, HTMLTableRowElement> = ({ item
       <td>{label}{tip}</td>
       <td>{slotEs(item.slot)}</td>
       <td class="n">{item.req ? String(item.req) : "—"}</td>
+      <td class="links">
+        <a href={wikiUrl(item.name)} target="_blank" rel="noopener noreferrer" title="Cómo y dónde se consigue, en la wiki de PoE">Wiki</a>
+        {" · "}
+        <a class="trade" href={tradeUrl(league, item.name, item.base)} data-name={item.name} data-base={item.base} target="_blank" rel="noopener noreferrer" title="Buscarlo en el comercio oficial, en tu liga">Comercio</a>
+      </td>
     </tr>
   ) as HTMLTableRowElement;
 };
