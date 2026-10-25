@@ -11,3 +11,5 @@
 .act-gems .gem { display: flex; flex-wrap: wrap; max-width: 100%; }
 .act-gems .gem span { min-width: 0; overflow-wrap: anywhere; }
 .act-gems { overflow-x: hidden; }
+.act-gems-sub { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.act-gems-group { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
