@@ -74,6 +74,16 @@ describe("damageForm y formFit", () => {
     expect(formFit(gemId("Unbound Ailments Support"), null)).toBe(0);
   });
 
+  it("las gemas que envenenan, igniten o sangran lo dicen en sus etiquetas, no solo por su nombre", () => {
+    const poison = damageForm({ TotalDPS: 1, WithPoisonDPS: 100 }), ignite = damageForm({ TotalDPS: 1, WithIgniteDPS: 100 }), bleed = damageForm({ TotalDPS: 1, WithBleedDPS: 100 });
+    // Cobra Lash no está en ninguna lista de nombres: envenena porque sus estadísticas lo dicen.
+    expect(formFit(gemId("Cobra Lash"), poison)).toBe(1);
+    expect(formFit(gemId("Cobra Lash"), ignite)).toBe(0);
+    expect(formFit(gemId("Lacerate"), bleed)).toBe(1);
+    expect(formFit(gemId("Lacerate"), poison)).toBe(0);
+    expect(formFit(gemId("Wild Strike"), ignite)).toBe(1);
+  });
+
   it("para una build de veneno, la guía lo dice y sugiere soportes que lo potencian antes que los de golpes", () => {
     const b = withMain("Cleave", [], { stats: poison, groups: [[gemId("Cleave")]] });
     const g = buildGuide(b, { cls: "Marauder", leagueStart: true });

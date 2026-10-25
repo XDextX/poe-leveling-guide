@@ -73,7 +73,8 @@ export function damageForm(stats: Record<string, number>): DamageForm | null {
   return { kind, share: parts[kind] / total };
 }
 
-// Gemas que potencian cada efecto, por nombre: las etiquetas de RePoE no dicen si un soporte escala el veneno o el ignite.
+// Gemas que potencian cada efecto, por nombre, como respaldo: las etiquetas "poison", "ignite" y "bleed" que genera gamedata salen de las
+// estadísticas de cada gema, pero a un soporte que solo escala los efectos en general (Cruelty, Unbound Ailments) no le tocan.
 const AILMENT_ALL = "Cruelty|Unbound Ailments|Deadly Ailments|Swift Affliction|Withering";
 const FORM_RE: Record<FormKind, RegExp | null> = {
   hit: null,
@@ -82,10 +83,11 @@ const FORM_RE: Record<FormKind, RegExp | null> = {
   bleed: new RegExp(`Bleed|Impale|Maim|${AILMENT_ALL}`),
 };
 
-/** 1 si la gema potencia la forma de daño de la build (soportes de veneno para una build de veneno…), 0 si no. */
+/** 1 si la gema provoca o potencia la forma de daño de la build (su etiqueta, o su nombre en la lista de respaldo), 0 si no. */
 export function formFit(id: string, form: DamageForm | null): number {
-  const re = form && FORM_RE[form.kind];
-  return re && re.test(GEMS[id]?.name ?? "") ? 1 : 0;
+  if (!form || form.kind === "hit") return 0;
+  const re = FORM_RE[form.kind];
+  return SKILLS[id]?.tags.includes(form.kind) || (re?.test(GEMS[id]?.name ?? "") ?? false) ? 1 : 0;
 }
 
 /** El daño de una build: sus elementos y su forma. */
