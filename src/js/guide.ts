@@ -3,7 +3,26 @@
 import { plan } from "./plan";
 import { routeDefs } from "./route";
 import { SKILLS } from "./data";
+import { isActive, isSupport, SKILL_KINDS, skillKind } from "./gems";
+import type { SkillKind } from "./gems";
+import { curseLimit, limitSkills } from "./limits";
 import { suggestSkills, suggestTrees } from "./suggest";
+
+/** Una habilidad de la build que no es la principal, con su leveling sugerido por tramos (los mismos que los de la principal). */
+export interface OtherSkill { skill: MainSkill; kind: SkillKind; stages: StageSkill[] }
+
+/**
+ * Las habilidades de la build que no son la principal: cada gema activa de cada grupo, con los soportes del grupo, por orden de
+ * importancia (supervivencia, daño, comodidad). Un grupo puede llevar varias activas (aura y movimiento, por ejemplo).
+ */
+function otherSkills(build: Build): MainSkill[] {
+  const out: MainSkill[] = [];
+  for (const ids of build.groups) {
+    const supports = ids.filter(isSupport);
+    for (const id of ids.filter(isActive)) if (id !== build.main?.id && !out.some(o => o.id === id)) out.push({ id, supports });
+  }
+  return out.sort((a, b) => SKILL_KINDS.indexOf(skillKind(a.id)) - SKILL_KINDS.indexOf(skillKind(b.id)));
+}
 
 /** Todo lo que necesita <Guide> para dibujar la guía de una build. */
 export interface GuideData {
@@ -13,6 +32,8 @@ export interface GuideData {
   ascend: string | null;
   /** Leveling sugerido por tramos (vacío si la habilidad principal no se reconoce). */
   skills: StageSkill[];
+  /** Lo mismo para las demás habilidades de la build (auras, heraldos, movimiento…). */
+  others: OtherSkill[];
   /** Gemas de leveling sugeridas que no están en la build. */
   suggested: Set<string>;
   /** Árboles por etapas para el mapa de calor: los de la build si los trae o, si no, sugeridos. */
@@ -26,14 +47,22 @@ export interface GuideData {
 
 /** Calcula la guía de una build para la clase y el modo (inicio de liga o no) dados. Mostrar las zonas es cosa del dibujo. */
 export function buildGuide(build: Build, { cls, leagueStart }: Pick<GuideOptions, "cls" | "leagueStart">): GuideData {
-  const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, routeDefs(build, leagueStart, { library: true })) : [];
-  // Las de la build y, de sus Vaal y transfiguradas, la gema base: también hay que conseguirla, así que no es "sugerida".
-  const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
-  const suggested = new Set(skills.flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id && !own.has(id)));
+  const defs = routeDefs(build, leagueStart, { library: true });
+  const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, defs) : [];
+  const others = otherSkills(build).map((skill): OtherSkill => ({ skill, kind: skillKind(skill.id), stages: suggestSkills(skill, cls, defs, true) }));
   const treesSuggested = build.tree.stages.length === 0;
   const treeStages = !treesSuggested ? build.tree.stages : build.tree.classId ? suggestTrees(build.tree, build.bandit === "None") : [];
+  // En cada tramo, lo sugerido tiene que caber en los límites del juego (una maldición, marcas incluidas, y una sola marca, salvo que el árbol o el equipo den más maldiciones).
+  const last = Math.max(skills.length, ...others.map(o => o.stages.length)) - 1;
+  for (let i = 0; i <= last; i++) {
+    const nodes = treesSuggested && treeStages[i] ? treeStages[i].nodes : build.tree.nodes;
+    limitSkills([skills[i], ...others.map(o => o.stages[i])].filter(Boolean), curseLimit(nodes, i === last ? build.items : []));
+  }
+  // Las de la build y, de sus Vaal y transfiguradas, la gema base: también hay que conseguirla, así que no es "sugerida".
+  const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
+  const suggested = new Set([...skills, ...others.flatMap(o => o.stages)].flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id && !own.has(id)));
   return {
-    build, skills, suggested, treeStages, treesSuggested,
+    build, skills, others, suggested, treeStages, treesSuggested,
     levelingTrees: treesSuggested ? treeStages : [],
     cls, ascend: cls === build.cls && build.ascend && build.ascend !== "None" ? build.ascend : null,
     plan: plan(build, cls, leagueStart, [...suggested]),

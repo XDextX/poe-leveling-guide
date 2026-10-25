@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildGuide } from "../src/js/guide";
+import { isHex, isMark } from "../src/js/limits";
 import { build, gemId } from "./helpers";
 
 describe("buildGuide", () => {
@@ -59,5 +60,63 @@ describe("recompensas y compras de una misión", () => {
     expect([prolif, pierce]).toContain(reward);
     // La otra no es de recompensa: se compra a Nessa.
     expect(groups.find(g => g.buy)?.ids).toEqual([reward === prolif ? pierce : prolif]);
+  });
+});
+
+describe("leveling de las otras habilidades", () => {
+  const cleave = gemId("Cleave");
+  const data = () => buildGuide(build({
+    gems: [cleave, "Flame Dash", "Determination", "Herald of Ice"].map(n => ({ name: n === cleave ? "Cleave" : n, id: n === cleave ? cleave : gemId(n), kind: "normal" as const })),
+    main: { id: cleave, supports: [] },
+    groups: [[cleave], [gemId("Flame Dash")], [gemId("Determination")], [gemId("Herald of Ice")]],
+  }), { cls: "Marauder", leagueStart: true });
+
+  it("da un leveling por cada habilidad que no es la principal, de supervivencia a comodidad", () => {
+    const { others } = data();
+    expect(others.map(o => o.kind)).toEqual(["survival", "damage", "qol"]);
+    expect(others.map(o => o.skill.id)).toEqual([gemId("Determination"), gemId("Herald of Ice"), gemId("Flame Dash")]);
+    expect(others.every(o => o.stages.length === 4)).toBe(true);
+  });
+
+  it("solo sustituye las maldiciones y las marcas, y por otra del mismo tipo; el resto sale cuando se consigue y si no, nada", () => {
+    for (const o of data().others) for (const st of o.stages) expect([null, o.skill.id]).toContain(st.skill);
+    const despair = gemId("Despair"), assassin = gemId("Assassin's Mark");
+    const g = buildGuide(build({
+      gems: [{ name: "Assassin's Mark", id: assassin, kind: "normal" }, { name: "Despair", id: despair, kind: "normal" }],
+      main: { id: cleave, supports: [] },
+      groups: [[cleave], [assassin], [despair]],
+    }), { cls: "Marauder", leagueStart: true });
+    const first = Object.fromEntries(g.others.map(o => [o.skill.id, o.stages[0].skill]));
+    // En los primeros actos, lo que no se consigue aún se cambia por una marca o una maldición (según el tipo), nunca por otra cosa.
+    const a = first[assassin], d = first[despair];
+    expect(a === null || isMark(a)).toBe(true);
+    expect(d === null || (isHex(d) && !isMark(d))).toBe(true);
+  });
+
+  it("cada gema activa de un grupo es una habilidad aparte, con los soportes del grupo", () => {
+    const flesh = gemId("Flesh and Stone"), dash = gemId("Flame Dash"), pierce = gemId("Pierce Support");
+    const { others } = buildGuide(build({
+      gems: [], main: { id: cleave, supports: [] },
+      groups: [[cleave], [flesh, dash, pierce]],
+    }), { cls: "Marauder", leagueStart: true });
+    expect(others.map(o => o.skill.id)).toEqual([flesh, dash]);
+    expect(others.every(o => o.skill.supports.includes(pierce))).toBe(true);
+  });
+
+  it("cuenta las sugeridas de las otras en las gemas que la guía busca en la ruta", () => {
+    const d = data();
+    const fromOthers = d.others.flatMap(o => o.stages).flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id);
+    expect(fromOthers.every(id => d.suggested.has(id) || d.build.gems.some(g => g.id === id))).toBe(true);
+  });
+});
+
+describe("casillas por nivel de objeto", () => {
+  it("los soportes sugeridos caben en los enlaces del tramo: skill + soportes ≤ links", () => {
+    const cleave = gemId("Cleave");
+    const { skills } = buildGuide(build({ main: { id: cleave, supports: [] }, groups: [[cleave]] }), { cls: "Marauder", leagueStart: true });
+    expect(skills.length).toBeGreaterThan(0);
+    for (const st of skills) expect(1 + st.supports.length).toBeLessThanOrEqual(st.links);
+    // Los objetos de los primeros actos tienen pocas casillas; los del final, seis.
+    expect(skills[0].links).toBeLessThan(skills.at(-1)!.links);
   });
 });
