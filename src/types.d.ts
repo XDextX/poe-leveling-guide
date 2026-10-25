@@ -43,7 +43,9 @@ interface GameDataRaw {
 }
 /** Único: [ruta del icono bajo web.poecdn.com/image/Art/, ancho y alto en casillas] */
 type UniqueRow = [path: string, w: number, h: number];
-interface Window { DATA?: Partial<GameDataRaw> }
+/** Texto de la ficha de una gema a nivel 1: [descripción, segundos de lanzamiento, maná, fuerza, destreza, inteligencia que pide, líneas de efecto]. */
+type GemTextRow = [description: string, castTime: number, mana: number, str: number, dex: number, int: number, lines: string[]];
+interface Window { DATA?: Partial<GameDataRaw>; DATA_TEXT?: Record<string, GemTextRow> }
 
 /* ---------- Datos con nombre, como los usa la app (src/js/data.ts) ---------- */
 

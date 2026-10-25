@@ -5,13 +5,20 @@ import { shortGemId } from "./common.mts";
 export interface SourceGem { id: string; name: string; primary_attribute?: string; required_level: number }
 /** Lo que leemos de gems.min.json de RePoE. */
 export interface RepoeGem {
-  /** Estadísticas de la gema (ids como "base_chance_to_poison_on_hit_%"), fijas y del nivel 1; el resto de su forma no se lee. */
-  static?: unknown;
-  per_level?: Record<string, unknown>;
+  /** Estadísticas fijas de la gema (ids como "base_chance_to_poison_on_hit_%") y su texto. */
+  static?: { stat_text?: Record<string, string> };
+  per_level?: Record<string, RepoeLevel>;
   base_item?: { id: string; release_state: string };
   tags?: string[];
-  active_skill?: { types?: string[]; weapon_restrictions?: string[] };
-  support_gem?: { allowed_types?: string[]; excluded_types?: string[] };
+  cast_time?: number;
+  active_skill?: { types?: string[]; weapon_restrictions?: string[]; description?: string };
+  support_gem?: { allowed_types?: string[]; excluded_types?: string[]; support_text?: string };
+}
+/** Lo que RePoE guarda de un nivel de gema. */
+export interface RepoeLevel {
+  costs?: Record<string, number>;
+  stat_requirements?: { str?: number; dex?: number; int?: number };
+  stat_text?: Record<string, string>;
 }
 
 /** Lo que leemos de base_items.min.json de RePoE: solo el arte del objeto. */
@@ -67,4 +74,20 @@ export function reduceSkills(repoe: Record<string, RepoeGem>, G: Record<string, 
       v.support_gem?.allowed_types || [], v.support_gem?.excluded_types || []];
   }
   return K;
+}
+
+/**
+ * El texto de la ficha de cada gema (descripción, tiempo de lanzamiento, coste de maná, atributos que pide y líneas de efecto, todo a
+ * nivel 1), por id. Va en un archivo aparte que la página carga solo al pasar el ratón por una gema, porque pesa bastante.
+ */
+export function reduceGemText(repoe: Record<string, RepoeGem>, G: Record<string, GemRow>): Record<string, GemTextRow> {
+  const T: Record<string, GemTextRow> = {};
+  for (const v of Object.values(repoe)) {
+    const id = v.base_item && shortGemId(v.base_item.id);
+    if (!id || !G[id] || v.base_item?.release_state !== "released" || T[id]) continue;
+    const lvl = v.per_level?.["1"], req = lvl?.stat_requirements ?? {};
+    const lines = [...new Set([...Object.values(v.static?.stat_text ?? {}), ...Object.values(lvl?.stat_text ?? {})])];
+    T[id] = [v.active_skill?.description ?? v.support_gem?.support_text ?? "", (v.cast_time ?? 0) / 1000, lvl?.costs?.Mana ?? 0, req.str ?? 0, req.dex ?? 0, req.int ?? 0, lines];
+  }
+  return T;
 }

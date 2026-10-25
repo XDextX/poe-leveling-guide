@@ -27,6 +27,15 @@ export function writeGameData(root: string, data: GameDataRaw, date: string, lic
   return gameDataFiles().map(f => path.join("public", f));
 }
 
+/** Escribe public/gamedata/gemtext.js, que la página carga solo cuando hace falta (la primera vez que se pasa el ratón por una gema). */
+export function writeGemText(root: string, text: Record<string, GemTextRow>, date: string): string {
+  const file = path.join(root, DIR, "gemtext.js");
+  fs.writeFileSync(file, `// Generado por scripts/gamedata.mts con datos descargados el ${date}. No editar a mano.
+window.DATA_TEXT = ${JSON.stringify(text)};
+`);
+  return path.join("public", "gamedata", "gemtext.js");
+}
+
 /** Fecha de descarga y licencia de exile-leveling guardadas en public/gamedata/. */
 export function readGameDataMeta(root: string): { date: string; license: string } {
   const dir = path.join(root, DIR);
