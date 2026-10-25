@@ -21,7 +21,13 @@ export const Section: Component<SectionProps, HTMLDetailsElement> = ({ title, cl
   </details>
 ) as HTMLDetailsElement;
 
-interface SubheadProps { children: JSX.Child }
+interface SubheadProps {
+  /** Si se da, el subtítulo también es destino del índice. */
+  toc?: TocTarget;
+  children: JSX.Child;
+}
 
 /** Subtítulo de una sección: <Subhead>Únicos</Subhead>. */
-export const Subhead: Component<SubheadProps, HTMLHeadingElement> = ({ children }) => <h3 class="sub">{children}</h3> as HTMLHeadingElement;
+export const Subhead: Component<SubheadProps, HTMLHeadingElement> = ({ toc, children }) => (
+  <h3 class="sub" id={toc?.id} data-toc={toc?.label} data-toc-group={toc?.group}>{children}</h3>
+) as HTMLHeadingElement;

@@ -34,9 +34,9 @@ function setTocOpen(open: boolean): void {
   tocButton().setAttribute("aria-expanded", String(open));
 }
 
-/** Lleva a una sección: la despliega si estaba plegada y se desplaza hasta ella (sin animar si el sistema pide reducir movimiento). */
+/** Lleva a una sección o subtítulo: despliega la sección (o la que lo contiene) si estaba plegada y se desplaza hasta él (sin animar si el sistema pide reducir movimiento). */
 function goTo(target: HTMLElement): void {
-  if (target instanceof HTMLDetailsElement) target.open = true;
+  for (let d = target.closest("details"); d; d = d.parentElement?.closest("details") ?? null) d.open = true;
   tocPinned = target;
   if (!tocBeside()) setTocOpen(false);
   const from = scrollY;
