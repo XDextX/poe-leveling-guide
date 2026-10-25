@@ -29,7 +29,15 @@ export function costText(ids: string[]): string {
   return Object.entries(total).map(([c, n]) => `${n}× ${c}`).join(", ");
 }
 
-const hideIcon = (e: Event) => { (e.target as HTMLImageElement).hidden = true; };
+const hideIcon = (e: Event) => { (e.target as HTMLImageElement).parentElement!.hidden = true; };
+// El CDN sirve las gemas de habilidad como capas lado a lado en una tira (decoración | vacío | gema de color), no como un
+// cuadrado: se superponen con dos fondos en la misma caja. Las de soporte ya son un cuadrado y se quedan como <img>.
+const layerIcon = (e: Event) => {
+  const img = e.target as HTMLImageElement;
+  if (img.naturalWidth <= img.naturalHeight) return;
+  img.parentElement!.style.backgroundImage = `url(${img.src}), url(${img.src})`;
+  img.parentElement!.classList.add("layered");
+};
 
 interface GemProps {
   id: string;
@@ -54,7 +62,7 @@ export const Gem: Component<GemProps, HTMLLabelElement> = ({ id, withCost }) => 
     <label class={"gem" + (isDone ? " done" : "")} data-id={id}>
       <input type="checkbox" checked={isDone} onChange={toggle} />
       <i class={attr} />
-      {icon && <img class="gem-ico" src={gemIcon(icon)} alt="" width="24" height="24" loading="lazy" onError={hideIcon} />}
+      {icon && <span class="gem-ico"><img src={gemIcon(icon)} alt="" loading="lazy" onLoad={layerIcon} onError={hideIcon} /></span>}
       <span>{name}</span>
       <small>{`nv ${level}${withCost ? " · " + shortCost(level) : ""}`}</small>
       {suggested.has(id) && <em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>}

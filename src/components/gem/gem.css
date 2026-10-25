@@ -6,5 +6,8 @@
 .gem.done span { text-decoration: line-through; color: var(--muted); }
 .gem small { color: var(--muted); font-family: var(--mono); font-size: .7rem; }
 em.sug { font-style: normal; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); border: 1px dashed var(--accent); border-radius: 4px; padding: 0 4px; }
-/* Las gemas de habilidad vienen en una tira de 143×48 (icono de la habilidad y la gema a la derecha): se recorta a la gema. */
-.gem .gem-ico { width: 24px; height: 24px; object-fit: cover; object-position: right; flex: none; }
+.gem .gem-ico { display: inline-block; width: 24px; height: 24px; flex: none; }
+.gem-ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* Gemas de habilidad: tira de tres cuadrados; la decoración (el primero) va encima de la gema de color (el último). */
+.gem-ico.layered { background-repeat: no-repeat; background-size: 300% 100%; background-position: left, right; }
+.gem-ico.layered img { display: none; }
