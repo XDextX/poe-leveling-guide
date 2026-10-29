@@ -48,7 +48,8 @@ const ProgressMini: Component<MiniProps, DocumentFragment> = ({ plan, act, onPic
   const late = pendingGems(plan, doneStore.ids, 1, act - 1).reduce((n, g) => n + g.ids.length, 0);
   return (
     <>
-      <label class="prog-pick"><b>Mi avance</b> · acto{" "}
+      <b class="prog-title">Mi avance</b>
+      <label class="prog-pick">Estoy en el acto{" "}
         <select onChange={onPick}>{Array.from({ length: ACTS }, (_, i) => <option value={String(i + 1)} selected={i + 1 === act}>{i + 1}</option>)}</select>
       </label>
       <p class="prog-total"><b>{done}</b>/<b>{total}</b> gemas <progress value={done} max={total} /></p>

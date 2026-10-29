@@ -22,3 +22,4 @@
   .progress-mini:not([hidden]) { display: grid; position: static; box-shadow: none; max-height: none; }
   .prog-toggle { display: none; }
 }
+.prog-title { font-family: var(--display); color: var(--accent); letter-spacing: .04em; }
