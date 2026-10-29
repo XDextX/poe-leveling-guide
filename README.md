@@ -1,5 +1,25 @@
 # PoE Leveling Guide
 
+**[Live demo → xdextx.github.io/poe-leveling-guide](https://xdextx.github.io/poe-leveling-guide/)** · The app's interface is in Spanish · [Leer en español](#español)
+
+![Leveling suggestions per campaign stage, the table of contents and the progress panel](docs/screenshot-leveling.png)
+
+A leveling guide for **Path of Exile 1**, generated from a **Path of Building** export code. Paste your build and get the campaign route zone by zone, with the gems of your build at the exact quest where you can get them, a suggested leveling setup for each stage of the campaign, an interactive passive-tree heat map and a table of your unique items with approximate market prices. Everything runs in the browser: the build is decoded locally and never uploaded.
+
+What is interesting in the code:
+
+- **A parser for an external format.** The export code is zlib-compressed XML. It is decoded into gems, socket groups, items, the passive tree, the author's notes and the stats Path of Building itself calculated. Item text follows PoB's own rules for variants, versions and rolled ranges (`src/js/pob/`).
+- **A data pipeline.** Public game data (exile-leveling, RePoE, GGG's skill-tree export, the trade site's mod list) is downloaded, reduced to small static files and committed, so building the site needs no network and no server.
+- **Rule-based suggestions.** The leveling setup respects game rules: socket counts by item level, one curse at a time, skills grouped by survival, damage and quality of life, and damage form (hit, poison, ignite, bleed) read from the stats in the PoB code. Pure functions, with tests (`src/js/`, `tests/`).
+- **Interactive visualization.** A canvas heat map of the passive tree with pan, zoom and node tooltips; tooltips for gems and unique items; a progress tracker and a side panel that follows what you are reading.
+- **Plain, dependency-light front end.** Strict TypeScript, a tiny custom JSX runtime (no React), components with typed props, a layer rule enforced by a script (logic never touches the DOM), [Vite](https://vite.dev) with static prerendering into a single `index.html` that also works opened from disk, [Vitest](https://vitest.dev) tests, and GitHub Actions that type-check, test and publish to GitHub Pages.
+
+![The gear table: unique items with icons, approximate prices and links to the wiki and the trade site](docs/screenshot-gear.png)
+
+---
+
+## Español
+
 Guía de campaña para **Path of Exile 1** a partir de tu build de Path of Building: la ruta zona por zona, con las gemas de tu build en el momento exacto en que puedes conseguirlas.
 
 Es una página HTML con sus datos al lado, en `gamedata/`. Funciona sin conexión y sin instalar nada: tu build se lee en el navegador y no se envía a ningún sitio.
@@ -63,6 +83,7 @@ npm run update-data
 ```
 index.html            plantilla de Vite con tres huecos (el <head>, la página prerenderizada y los <script> de los datos) y src/main.tsx
 vite.config.ts        build y servidor de desarrollo; su plugin "prerender" rellena los huecos de index.html
+docs/                 las capturas que enseña este README
 public/               lo que se copia tal cual a dist/
   gamedata/           los datos del juego reducidos (gems.js, campaign.js, tree.js, items.js), su fecha y la licencia de exile-leveling
   favicon.ico         el icono (16 a 256 px); dentro de la app va en SVG
