@@ -1,0 +1,4 @@
+.update-banner { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 12px;
+  max-width: calc(100vw - 32px); padding: 10px 14px; background: var(--card); color: var(--fg); border: 1px solid var(--accent);
+  border-radius: 8px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.35); font-size: 0.9rem; }
+.update-banner button { padding: 4px 12px; }
