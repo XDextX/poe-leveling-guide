@@ -8,6 +8,7 @@ import path from "node:path";
 import { createServer, defineConfig, type Plugin, type UserConfig, type ViteDevServer } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { SITE, jsonLd, sitemap } from "./scripts/lib/site.mts";
+import { serviceWorker } from "./scripts/lib/sw.mts";
 import { gameDataFiles, readGameData, readGameDataMeta } from "./scripts/lib/gamedata.mts";
 
 const root = import.meta.dirname;
@@ -46,6 +47,9 @@ function prerender(): Plugin {
     },
     generateBundle() {
       this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(date) });
+      // Sin conexión (PWA): la página, los datos del juego y los iconos; lo demás se guarda al pedirlo.
+      const files = ["./", ...gameDataFiles(), "manifest.webmanifest", "icon-192.png", "icon-512.png", "favicon.ico"];
+      this.emitFile({ type: "asset", fileName: "sw.js", source: serviceWorker(date + "-" + Date.now().toString(36), files) });
     },
   };
 }

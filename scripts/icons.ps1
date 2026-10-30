@@ -1,5 +1,5 @@
 ﻿# Genera las imágenes de la app a partir del mismo dibujo que src/icon.svg (pergamino con pluma, coordenadas sobre 256):
-#   favicon.ico (16 a 256 px), apple-touch-icon.png (180 px) y social-card.png (1200x630, para Open Graph).
+#   favicon.ico (16 a 256 px), apple-touch-icon.png (180 px), icon-192.png e icon-512.png (manifest de la PWA) y social-card.png (1200x630, para Open Graph).
 # Uso (Windows, PowerShell 5.1 o superior): powershell -File scripts/icons.ps1
 Add-Type -AssemblyName System.Drawing
 $root = Split-Path -Parent $PSScriptRoot
@@ -61,6 +61,9 @@ foreach ($png in $pngs) { $bw.Write([byte[]]$png) }
 # apple-touch-icon.png: iOS recorta las esquinas él mismo, así que va a sangre (sin fondo redondeado transparente).
 $bmp, $g = New-Canvas 180 180; $g.Clear((Col $paper)); Draw-Icon $g (180 / 256) 0 0; $g.Dispose()
 $bmp.Save((Join-Path $root 'public/apple-touch-icon.png'), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
+
+# icon-192.png e icon-512.png: los iconos del manifest.webmanifest (el icono con esquinas redondeadas sobre fondo transparente).
+foreach ($size in 192, 512) { $bmp, $g = New-Canvas $size $size; Draw-Icon $g ($size / 256) 0 0; $g.Dispose(); $bmp.Save((Join-Path $root "public/icon-$size.png"), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose() }
 
 # social-card.png: 1200x630, lo que muestran Discord, WhatsApp, Reddit o X al compartir el enlace.
 $bmp, $g = New-Canvas 1200 630; $g.Clear((Col $night))

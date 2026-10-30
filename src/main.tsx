@@ -7,3 +7,6 @@ import "./app/guard";
 import { App } from "./app/app";
 
 document.querySelector("main")!.replaceWith(<App />);
+
+// PWA: instalable y disponible sin conexión. Solo en el build servido por http(s): en dev dejaría datos viejos en caché.
+if (import.meta.env.PROD && "serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js");
