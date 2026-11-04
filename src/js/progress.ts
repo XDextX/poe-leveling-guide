@@ -5,9 +5,9 @@ export interface ActProgress { act: number; total: number; done: number }
 /** Gemas pendientes que se consiguen en un mismo sitio (misión o inicio) de un acto. */
 export interface PendingGroup { act: number; quest: string; ids: string[] }
 
-/** Todas las gemas que da la ruta, con el acto y la misión en que se consiguen; las del inicio cuentan en el acto 1. */
+/** Todas las gemas que da la ruta, con el acto y la misión en que se consiguen; plan() ya pone las del inicio en `got` (acto 1, "Inicio"). */
 function sources(plan: Plan): { id: string; act: number; quest: string }[] {
-  return [...plan.start.map(id => ({ id, act: 1, quest: "Al empezar" })), ...[...plan.got].map(([id, { act, quest }]) => ({ id, act, quest }))];
+  return [...plan.got].map(([id, { act, quest }]) => ({ id, act, quest }));
 }
 
 /** Por acto, cuántas de sus gemas están marcadas como conseguidas; solo los actos que dan alguna. */

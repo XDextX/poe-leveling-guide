@@ -11,8 +11,11 @@ export let suggested = new Set<string>();
 /** Cambia las gemas sugeridas; lo llama el arranque al componer cada guía. */
 export function setSuggested(ids: Set<string>): void { suggested = ids; }
 
-/** Clave con que se guardan en el navegador las gemas marcadas y las elecciones de una build vista con una clase. */
-export const buildKey = (cls: string, build: Build): string => "poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|");
+/**
+ * Clave con que se guardan en el navegador las gemas marcadas y las elecciones de una build vista con una clase. Va por la
+ * habilidad principal y no por todas las gemas: volver a pegar la build con una gema más o menos no debe perder el avance.
+ */
+export const buildKey = (cls: string, build: Build): string => "poe-gemas:" + cls + ":" + (build.main?.id ?? build.gems[0]?.name ?? "");
 
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 export const doneStore = {
