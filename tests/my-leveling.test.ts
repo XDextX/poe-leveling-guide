@@ -43,7 +43,7 @@ describe("defaultLeveling", () => {
     const cleave = gemId("Cleave"), melee = gemId("Melee Physical Damage Support"), vaal = gemId("Vaal Cleave");
     const sug = (skill: string | null, supports: string[], to: number) => ({ acts: [1, 2], from: 1, to, skill, own: true, supports, mainAt: null, links: 4, options: [], recommended: null }) as StageSkill;
     const got = defaultLeveling({ skills: [sug(cleave, [melee], 12)], others: [{ skill: { id: vaal, supports: [] }, kind: "damage", stages: [sug(vaal, [], 12)] }], levelingTrees: [{ title: "t", nodes: [], points: 20 }], treesSuggested: true });
-    expect(got).toEqual([{ to: 12, skill: cleave, supports: [melee], others: [vaal], points: 20, note: "" }]);
+    expect(got).toEqual([{ to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [] }], points: 20, note: "" }]);
   });
 });
 
@@ -53,6 +53,12 @@ describe("warnings", () => {
     expect(warnings(stage(60, { skill: cleave, supports: [melee] }))).toEqual([]);
     expect(warnings(stage(12, { skill: cleave, supports: [melee, melee, melee, melee] })).some(w => w.includes("soportes"))).toBe(true);
     expect(warnings(stage(1, { skill: cleave, supports: [melee] })).some(w => w.includes("pide nivel"))).toBe(true);
+  });
+
+  it("avisa también de los soportes de las otras habilidades", () => {
+    const melee = gemId("Melee Physical Damage Support"), fireball = gemId("Fireball"), flame = gemId("Flame Dash");
+    expect(warnings(stage(60, { others: [{ skill: fireball, supports: [melee] }] })).some(w => w.includes("no puede apoyar"))).toBe(true);
+    expect(warnings(stage(60, { others: [{ skill: flame, supports: [] }] }))).toEqual([]);
   });
 
   it("un soporte que no apoya a la habilidad, una habilidad que no lo es y soportes sin habilidad", () => {
@@ -70,6 +76,12 @@ describe("sanitizeLeveling", () => {
     expect(sanitizeLeveling([{ to: 12, skill: cleave, supports: [cleave, "nada", "constructor"], others: ["__proto__"], points: 5.4, note: "x" }]))
       .toEqual([{ to: 12, skill: cleave, supports: [cleave], others: [], points: 5, note: "x" }]);
     expect(sanitizeLeveling([{ to: 12, skill: "constructor", supports: [], others: [], points: null, note: 3 }])).toEqual([{ to: 12, skill: null, supports: [], others: [], points: null, note: "" }]);
+  });
+
+  it("entiende las otras habilidades guardadas antes como un id suelto, y con sus soportes", () => {
+    const melee = gemId("Melee Physical Damage Support"), vaal = gemId("Vaal Cleave");
+    const got = sanitizeLeveling([{ to: 12, skill: null, supports: [], others: [vaal, { skill: cleave, supports: [melee, "nada"] }, { skill: "constructor", supports: [] }, null], points: 0, note: "" }]);
+    expect(got?.[0].others).toEqual([{ skill: vaal, supports: [] }, { skill: cleave, supports: [melee] }]);
   });
 
   it("descarta lo que no es una lista de tramos con niveles que suben", () => {

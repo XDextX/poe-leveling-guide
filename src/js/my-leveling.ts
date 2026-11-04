@@ -17,7 +17,7 @@ export function defaultLeveling({ skills, others, levelingTrees, treesSuggested 
   const base = skills.length ? skills : others[0]?.stages ?? [];
   return base.map((s, i) => ({
     to: s.to, skill: skills[i]?.skill ?? null, supports: [...(skills[i]?.supports ?? [])],
-    others: others.map(o => o.stages[i]?.skill).filter((id): id is string => !!id),
+    others: others.flatMap(o => o.stages[i]?.skill ? [{ skill: o.stages[i].skill!, supports: [] }] : []),
     points: treesSuggested ? levelingTrees[i]?.points ?? null : null, note: "",
   }));
 }
@@ -35,7 +35,7 @@ export function setTo(stages: MyStage[], i: number, to: number): MyStage[] {
 export function splitStage(stages: MyStage[], i: number): MyStage[] {
   const from = fromOf(stages, i), mid = from + Math.floor((stages[i].to - from) / 2);
   if (mid >= stages[i].to) return stages;
-  const first = { ...stages[i], to: mid, supports: [...stages[i].supports], others: [...stages[i].others] };
+  const first = { ...stages[i], to: mid, supports: [...stages[i].supports], others: stages[i].others.map(o => ({ ...o, supports: [...o.supports] })) };
   return [...stages.slice(0, i), first, ...stages.slice(i)];
 }
 
@@ -58,7 +58,10 @@ export function warnings({ skill, supports, others, to }: MyStage): string[] {
     const room = maxSockets(to) - 1;
     if (supports.length > room) out.push(`Con objetos de nivel ≈${to} caben ${room} soportes, y hay ${supports.length}.`);
   } else if (supports.length) out.push("Hay soportes pero ninguna habilidad.");
-  others.forEach(level);
+  for (const other of others) {
+    level(other.skill);
+    for (const id of other.supports) { level(id); if (!canSupport(id, other.skill)) out.push(`${GEMS[id].name} no puede apoyar a ${GEMS[other.skill].name}.`); }
+  }
   return out;
 }
 
@@ -71,6 +74,13 @@ export function stageNodes(build: Build, stages: MyStage[], treesSuggested: bool
 
 const isId = (id: unknown): id is string => typeof id === "string" && Object.hasOwn(GEMS, id);
 
+const uniqueIds = (v: unknown): string[] => Array.isArray(v) ? [...new Set(v.filter(isId))] : [];
+/** Una otra habilidad guardada, comprobada: antes era solo el id de la gema, y se sigue entendiendo. */
+const otherOf = (o: unknown): MyOther[] => {
+  const r = typeof o === "string" ? { skill: o, supports: [] } : (o as Partial<MyOther> | null);
+  return isId(r?.skill) ? [{ skill: r.skill, supports: uniqueIds(r.supports) }] : [];
+};
+
 /**
  * Los tramos que se leyeron del navegador o de un código, comprobados: lo que no es un tramo válido se descarta y los ids de gema
  * que ya no existen (otra versión de los datos) se quitan. undefined si no queda ningún tramo o los niveles no suben.
@@ -79,9 +89,12 @@ export function sanitizeLeveling(raw: unknown): MyStage[] | undefined {
   if (!Array.isArray(raw) || !raw.length || raw.length > 50) return undefined;
   const out: MyStage[] = [];
   for (const r of raw as Record<string, unknown>[]) {
-    const to = Number(r?.to), ids = (v: unknown): string[] => Array.isArray(v) ? [...new Set(v.filter(isId))] : [];
+    const to = Number(r?.to);
     if (!Number.isInteger(to) || to < 1 || to > MAX_LEVEL || (out.length && to <= out[out.length - 1].to)) return undefined;
-    out.push({ to, skill: isId(r.skill) ? r.skill : null, supports: ids(r.supports), others: ids(r.others), points: r.points === null ? null : Math.max(0, Math.round(Number(r.points)) || 0), note: typeof r.note === "string" ? r.note.slice(0, 300) : "" });
+    out.push({
+      to, skill: isId(r.skill) ? r.skill : null, supports: uniqueIds(r.supports), others: Array.isArray(r.others) ? r.others.flatMap(otherOf) : [],
+      points: r.points === null ? null : Math.max(0, Math.round(Number(r.points)) || 0), note: typeof r.note === "string" ? r.note.slice(0, 300) : "",
+    });
   }
   return out;
 }

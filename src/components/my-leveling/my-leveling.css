@@ -21,7 +21,9 @@
 .my-stage input { min-height: 32px; box-sizing: border-box; font: inherit; font-weight: 400; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; min-width: 0; }
 .my-stage input.level { width: 4.5em; }
 .my-stage .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.my-stage .chip { display: inline-flex; align-items: center; gap: 0; padding: 0 0 0 10px; border: 1px solid var(--line); border-radius: 12px; font-size: .8rem; font-weight: 400; color: var(--fg); background: var(--card); }
+.my-stage .chip { display: inline-flex; align-items: center; gap: 0; padding: 0 0 0 8px; border: 1px solid var(--line); border-radius: 12px; font-size: .8rem; font-weight: 400; color: var(--fg); background: var(--card); }
 .my-stage .chip button { min-width: 32px; min-height: 32px; border: 0; background: none; padding: 0 4px; color: var(--muted); font-size: 1.1rem; line-height: 1; }
 .my-stage .warn { margin: 0; padding-left: 18px; font-size: .8rem; color: var(--kill); }
 .my-stage .hint { margin: 0; font-size: .78rem; color: var(--muted); }
+.my-stage .chip .gem-ico { margin-right: 6px; }
+.my-stage .other { display: grid; gap: 4px; padding: 6px 8px; border-left: 3px solid var(--none); }

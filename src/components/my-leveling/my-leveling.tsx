@@ -1,9 +1,11 @@
 /* Mi leveling: el jugador edita los tramos que la guía le sugiere y se lleva el resultado como Loadouts de Path of Building. */
 
-import { GEMS } from "../../js/data";
+import { GEMS, SKILLS } from "../../js/data";
 import { clearLeveling, defaultLeveling, fromOf, mergeStage, setPoints, setTo, splitStage, warnings } from "../../js/my-leveling";
 import type { GuideData } from "../../js/guide";
 import { isActive, isSupport } from "../../js/gems";
+import { GemIcon } from "../gem/gem";
+import { focusQuietly, GemPicker } from "../gem-picker/gem-picker";
 import { Section } from "../section/section";
 import "./my-leveling.css";
 
@@ -21,10 +23,9 @@ interface MyLevelingProps {
   onExport: (stages: MyStage[], kind: "code" | "xml") => Promise<string>;
 }
 
-// Nombre en minúsculas → id de las gemas de habilidad y de soporte, para escribirlas en los campos con lista.
-const byName = (ok: (id: string) => boolean): Map<string, string> => new Map(Object.keys(GEMS).filter(ok).map(id => [GEMS[id].name.toLowerCase(), id]));
-const ACTIVE = byName(isActive), SUPPORT = byName(isSupport);
-const names = (m: Map<string, string>): string[] => [...m.values()].map(id => GEMS[id].name).sort();
+// Los datos traen gemas sin uso o sin traducir ("[UNUSED] Quick Block", "[DNT] …") y soportes sin datos de habilidad (no se sabe a qué apoyan): no se ofrecen.
+const offered = Object.keys(GEMS).filter(id => !GEMS[id].name.startsWith("[") && Object.hasOwn(SKILLS, id));
+const ACTIVE = offered.filter(isActive), SUPPORT = offered.filter(isSupport);
 
 /** Un control de un tramo al que se devuelve el foco al redibujar: la posición del tramo y el campo (su data-field). */
 interface Focus { stage: number; field: string }
@@ -48,23 +49,12 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
   // Un cambio de un campo llega al salir de él: se dibuja después de que el foco llegue al siguiente, para devolverlo allí y no robarlo.
   const later = (fn: () => void) => setTimeout(fn, 0);
 
-  /** Un campo de gema con lista: al elegir una llama a `pick` con su id (o "" si se vacía); si el nombre no existe lo dice bajo el campo. */
-  const gemInput = (m: Map<string, string>, listId: string, field: string, label: string, pick: (id: string) => void, value: string) => {
-    const error = <span class="field-error" role="alert" /> as HTMLElement, errorId = `my-err-${Math.random().toString(36).slice(2)}`;
-    error.id = errorId;
-    const input = <input type="text" list={listId} value={value} placeholder="Nombre de la gema" aria-label={label} data-field={field}
-      onChange={() => {
-        const text = input.value.trim(), id = m.get(text.toLowerCase());
-        if (!text || id) { later(() => pick(id ?? "")); return; }
-        input.setAttribute("aria-invalid", "true"); input.setAttribute("aria-describedby", errorId);
-        error.textContent = `No conozco una gema llamada «${text}».`;
-      }} /> as HTMLInputElement;
-    return <span class="gem-field">{input}{error}</span>;
-  };
-
-  const chips = (ids: string[], remove: (id: string) => void) => (
-    <div class="chips">{ids.map(id => <span class="chip">{GEMS[id].name}<button type="button" aria-label={"Quitar " + GEMS[id].name} onClick={() => remove(id)}>×</button></span>)}</div>
+  /** Una gema como etiqueta con su dibujo y una × para quitarla; `field` identifica la × para devolverle el foco al redibujar. */
+  const chip = (id: string, field: string, remove: () => void) => (
+    <span class="chip"><GemIcon id={id} />{GEMS[id].name}<button type="button" data-field={field} aria-label={"Quitar " + GEMS[id].name} onClick={remove}>×</button></span>
   );
+  // El cambio llega al salir del campo: se aplica después de que el foco llegue al siguiente, para devolverlo allí y no robarlo.
+  const pick = (fn: (id: string) => void) => (id: string) => later(() => fn(id));
 
   function stageCard(s: MyStage, i: number): HTMLElement {
     const from = fromOf(stages, i), last = i === stages.length - 1, problems = warnings(s), n = i + 1;
@@ -78,16 +68,28 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
             {!last && <button type="button" data-field="merge" onClick={() => discard(mergeStage(stages, i), `Tramos ${n} y ${n + 1} unidos: se conservó el contenido del tramo ${n + 1} y se descartó el del ${n}.`, { stage: i, field: "merge" })}>Unir con el siguiente</button>}
           </span>
         </div>
-        <label class="field">Habilidad {gemInput(ACTIVE, "my-actives", "skill", `Habilidad del tramo ${n}`, id => edit(i, { skill: id || null }), s.skill ? GEMS[s.skill].name : "")}</label>
+        <div class="field" role="group" aria-label={`Habilidad del tramo ${n}`}>
+          <span class="field-label">Habilidad</span>
+          <GemPicker ids={ACTIVE} value={s.skill} label={`Habilidad del tramo ${n}`} field="skill" onPick={pick(id => edit(i, { skill: id || null }))} />
+        </div>
         <div class="field" role="group" aria-label={`Soportes del tramo ${n}`}>
           <span class="field-label">Soportes (los primeros, si tienes menos enlaces)</span>
-          {chips(s.supports, id => { want = { stage: i, field: "support" }; edit(i, { supports: s.supports.filter(x => x !== id) }); })}
-          {gemInput(SUPPORT, "my-supports", "support", `Añadir soporte al tramo ${n}`, id => { want = { stage: i, field: "support" }; if (id && !s.supports.includes(id)) edit(i, { supports: [...s.supports, id] }); }, "")}
+          <div class="chips">{s.supports.map((id, j) => chip(id, `support-x-${j}`, () => { want = { stage: i, field: "support" }; edit(i, { supports: s.supports.filter(x => x !== id) }); }))}</div>
+          <GemPicker ids={SUPPORT} clearOnPick label={`Añadir soporte al tramo ${n}`} field="support" onPick={pick(id => { want = { stage: i, field: "support" }; if (id && !s.supports.includes(id)) edit(i, { supports: [...s.supports, id] }); })} />
         </div>
         <div class="field" role="group" aria-label={`Otras habilidades del tramo ${n}`}>
-          <span class="field-label">Otras habilidades (auras, movimiento…)</span>
-          {chips(s.others, id => { want = { stage: i, field: "other" }; edit(i, { others: s.others.filter(x => x !== id) }); })}
-          {gemInput(ACTIVE, "my-actives", "other", `Añadir habilidad al tramo ${n}`, id => { want = { stage: i, field: "other" }; if (id && !s.others.includes(id)) edit(i, { others: [...s.others, id] }); }, "")}
+          <span class="field-label">Otras habilidades (auras, movimiento…), cada una con sus soportes</span>
+          {s.others.map((o, k) => (
+            <div class="other">
+              <div class="chips">
+                {chip(o.skill, `other-x-${k}`, () => { want = { stage: i, field: "other" }; edit(i, { others: s.others.filter((_, j) => j !== k) }); })}
+                {o.supports.map((id, j) => chip(id, `other-support-${k}-x-${j}`, () => { want = { stage: i, field: `other-support-${k}` }; edit(i, { others: s.others.map((x, j) => j === k ? { ...x, supports: x.supports.filter(y => y !== id) } : x) }); }))}
+              </div>
+              <GemPicker ids={SUPPORT} clearOnPick label={`Añadir soporte a ${GEMS[o.skill].name} (tramo ${n})`} field={`other-support-${k}`}
+                onPick={pick(id => { want = { stage: i, field: `other-support-${k}` }; if (id && !o.supports.includes(id)) edit(i, { others: s.others.map((x, j) => j === k ? { ...x, supports: [...x.supports, id] } : x) }); })} />
+            </div>
+          ))}
+          <GemPicker ids={ACTIVE} clearOnPick label={`Añadir habilidad al tramo ${n}`} field="other" onPick={pick(id => { want = { stage: i, field: "other" }; if (id && !s.others.some(o => o.skill === id)) edit(i, { others: [...s.others, { skill: id, supports: [] }] }); })} />
         </div>
         {s.points === null
           ? <p class="hint">Árbol: el de tu build para este tramo (la app no lo puede cambiar).</p>
@@ -105,7 +107,8 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
     const target = want ?? (card && cur?.dataset.field ? { stage: [...list.children].indexOf(card), field: cur.dataset.field } : null);
     want = null;
     list.replaceChildren(...stages.map(stageCard));
-    if (target) (list.children[Math.min(target.stage, stages.length - 1)] as HTMLElement | undefined)?.querySelector<HTMLElement>(`[data-field="${target.field}"]`)?.focus();
+    const field = target && (list.children[Math.min(target.stage, stages.length - 1)] as HTMLElement | undefined)?.querySelector<HTMLElement>(`[data-field="${target.field}"]`);
+    if (field) focusQuietly(() => field.focus());
   }
 
   /** Entrega el código o el XML: copia el código al portapapeles (o lo muestra para copiarlo) y descarga el XML como archivo. */
@@ -133,8 +136,6 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
   return (
     <Section title="Mi leveling" className="act leveling my-leveling" toc={{ id: "my-leveling", label: "Mi leveling" }} open={false}>
       <p class="banner">Edita los tramos del leveling a tu manera: la habilidad y sus soportes, otras habilidades, cuántos puntos del árbol gastas y una nota. Luego llévatelo a Path of Building: cada tramo es un <b>Loadout</b> con su árbol y sus gemas.</p>
-      <datalist id="my-actives">{names(ACTIVE).map(n => <option value={n} />)}</datalist>
-      <datalist id="my-supports">{names(SUPPORT).map(n => <option value={n} />)}</datalist>
       <div class="toolbar">
         <button type="button" class="primary" onClick={() => void give("code")}>Copiar código para PoB</button>
         <button type="button" onClick={() => void give("xml")}>Descargar .xml</button>

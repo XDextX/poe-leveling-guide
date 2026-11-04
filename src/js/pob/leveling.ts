@@ -105,7 +105,7 @@ export function exportLoadouts(xml: string, stages: LoadoutStage[]): string {
     tree.append(t);
     const set = el(doc, "SkillSet", { id: String(nextSkill + i), title });
     set.append(groupElement(doc, s.skill ? [s.skill, ...s.supports] : [], MAIN_LABEL));
-    s.others.forEach(id => set.append(groupElement(doc, [id])));
+    s.others.forEach(o => set.append(groupElement(doc, [o.skill, ...o.supports])));
     skills.append(set);
   });
 
@@ -143,7 +143,7 @@ export function parseLoadouts(doc: Document, idOf: (gem: Element) => string | nu
     const mainIds = ids(main), skill = mainIds.find(isActive) ?? null;
     return {
       to: Number(m![3]), skill, supports: skill ? mainIds.filter(id => id !== skill && isSupport(id)) : [],
-      others: all.filter(g => g !== main).map(g => ids(g).find(isActive)).filter((id): id is string => !!id),
+      others: all.filter(g => g !== main).flatMap((g): MyOther[] => { const gem = ids(g), other = gem.find(isActive); return other ? [{ skill: other, supports: gem.filter(id => id !== other && isSupport(id)) }] : []; }),
       points: (s.getAttribute("nodes") || "").split(",").filter(Boolean).length, note: noteLines.get(`Leveling ${m![1]} (nv ${m![2]}-${m![3]})`) ?? "",
     };
   });

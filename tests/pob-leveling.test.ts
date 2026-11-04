@@ -12,7 +12,7 @@ const XML = `<PathOfBuilding><Build className="Marauder" mainSocketGroup="1"/>
   <Items activeItemSet="1"><ItemSet id="1" title="Default"/><ItemSet id="2" title="Otro"/></Items>
   <Notes>Notas del autor</Notes></PathOfBuilding>`;
 const stages = [
-  { from: 1, to: 12, skill: cleave, supports: [melee], others: [vaal], nodes: [], note: "usa Cleave" },
+  { from: 1, to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [melee] }], nodes: [], note: "usa Cleave" },
   { from: 13, to: 28, skill: null, supports: [], others: [], nodes: [], note: "" },
 ];
 
@@ -32,7 +32,7 @@ describe("exportLoadouts", () => {
 
   it("escribe la habilidad con sus soportes en un grupo y cada otra habilidad en el suyo", () => {
     const groups = [...doc.querySelectorAll("SkillSet")[1].querySelectorAll(":scope > Skill")].map(g => [...g.querySelectorAll("Gem")].map(x => x.getAttribute("nameSpec")));
-    expect(groups).toEqual([["Cleave", "Melee Physical Damage"], ["Vaal Cleave"]]);
+    expect(groups).toEqual([["Cleave", "Melee Physical Damage"], ["Vaal Cleave", "Melee Physical Damage"]]);
   });
 
   it("deja las notas del autor y añade las de los tramos, sin duplicarlas al repetir la exportación", () => {
@@ -43,7 +43,7 @@ describe("exportLoadouts", () => {
   it("al leer el código exportado vuelven los tramos y las notas del autor quedan sin el bloque", async () => {
     const back = parseBuild(await decode(await encode(out)));
     expect(back.leveling).toEqual([
-      { to: 12, skill: cleave, supports: [melee], others: [vaal], points: 0, note: "usa Cleave" },
+      { to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [melee] }], points: 0, note: "usa Cleave" },
       { to: 28, skill: null, supports: [], others: [], points: 0, note: "" },
     ]);
     expect(back.notes).toBe("Notas del autor");
@@ -86,8 +86,8 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
   });
 
   it("un tramo sin habilidad principal vuelve sin ella aunque tenga otras habilidades", () => {
-    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [vaal], nodes: [], note: "" }]);
-    expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [vaal], points: 0, note: "" }]);
+    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
+    expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], points: 0, note: "" }]);
   });
 
   it("si PoB dejó activo un tramo, el árbol final es el primero que no lo es", () => {
@@ -97,7 +97,7 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
   });
 
   it("si PoB dejó activo el conjunto de habilidades de un tramo, la habilidad principal sigue siendo la del autor", () => {
-    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [vaal], nodes: [], note: "" }]);
+    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
     const build = parseBuild(out.replace('activeSkillSet="1"', 'activeSkillSet="2"'));
     expect(build.main?.id).toBe(cleave);
     expect(build.groups).toEqual([[cleave, melee]]);
