@@ -1,7 +1,7 @@
 /* Mi leveling: el jugador edita los tramos que la guía le sugiere y se lleva el resultado como Loadouts de Path of Building. */
 
 import { GEMS, SKILLS } from "../../js/data";
-import { clearLeveling, defaultLeveling, fromOf, mergeStage, setPoints, setTo, splitStage, warnings } from "../../js/my-leveling";
+import { clearLeveling, defaultLeveling, fromOf, mergeStage, setPoints, setTo, slotLines, splitStage, warnings } from "../../js/my-leveling";
 import type { GuideData } from "../../js/guide";
 import { isActive, isSupport } from "../../js/gems";
 import { GemIcon } from "../gem/gem";
@@ -91,6 +91,11 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
           ))}
           <GemPicker ids={ACTIVE} clearOnPick label={`Añadir habilidad al tramo ${n}`} field="other" onPick={pick(id => { want = { stage: i, field: "other" }; if (id && !s.others.some(o => o.skill === id)) edit(i, { others: [...s.others, { skill: id, supports: [] }] }); })} />
         </div>
+        {slotLines(s).length > 0 && (
+          <div class="hint">En el equipo (objetos de nivel ≈{s.to}); así se escriben los grupos en PoB:
+            <ul class="slots">{slotLines(s).map(line => <li>{line}</li>)}</ul>
+          </div>
+        )}
         {s.points === null
           ? <p class="hint">Árbol: el de tu build para este tramo (la app no lo puede cambiar).</p>
           : <label class="field">Puntos del árbol al acabar el tramo <input class="level" type="number" min="0" value={s.points} data-field="points" aria-label={`Puntos del árbol del tramo ${n}`} onChange={(e: Event) => { const v = +(e.target as HTMLInputElement).value; later(() => change(setPoints(stages, i, v))); }} /></label>}

@@ -32,3 +32,35 @@ export function fitSockets(entries: { stage: StageSkill; size: number }[], budge
     stage.noRoom = stage.skill; stage.skill = null; stage.supports = [];
   }
 }
+
+/** Las piezas del equipo que llevan gemas, con el nombre que les da PoB (el atributo slot de un grupo) y sus casillas según el nivel de objeto. */
+const SLOTS: { name: string; es: string; sockets: (itemLevel: number) => number }[] = [
+  { name: "Body Armour", es: "Pecho", sockets: maxSockets },
+  { name: "Helmet", es: "Casco", sockets: l => Math.min(4, maxSockets(l)) },
+  { name: "Gloves", es: "Guantes", sockets: l => Math.min(4, maxSockets(l)) },
+  { name: "Boots", es: "Botas", sockets: l => Math.min(4, maxSockets(l)) },
+  // Las armas cuentan como de una mano (3 casillas): la guía no sabe cuál lleva el jugador (una a dos manos daría más en el mejor caso).
+  { name: "Weapon 1", es: "Arma 1", sockets: l => Math.min(3, maxSockets(l)) },
+  { name: "Weapon 2", es: "Arma 2", sockets: l => Math.min(3, maxSockets(l)) },
+];
+/** Las casillas máximas de cada pieza del equipo con ese nivel de objeto, por el nombre de PoB. */
+export const slotCapacities = (itemLevel: number): [slot: string, sockets: number][] => SLOTS.map(s => [s.name, s.sockets(itemLevel)]);
+/** El nombre en español de una pieza (la que da PoB en slot). */
+export const slotName = (slot: string): string => SLOTS.find(s => s.name === slot)?.es ?? slot;
+
+/**
+ * Reparte grupos de gemas (cada uno con su número de casillas enlazadas) entre las piezas del equipo con ese nivel de objeto. El
+ * primero (la habilidad principal) elige antes y se queda con el pecho, que es la pieza con más enlaces; los demás van de mayor a
+ * menor a la primera pieza donde quepan. Devuelve la pieza de cada grupo (el nombre de PoB) o null si no cabe (o si el grupo está vacío).
+ */
+export function assignSlots(sizes: number[], itemLevel: number): (string | null)[] {
+  const left = new Map(SLOTS.map(s => [s.name, s.sockets(itemLevel)]));
+  const out: (string | null)[] = sizes.map(() => null);
+  const order = sizes.map((_, i) => i).sort((a, b) => (a === 0 ? -1 : b === 0 ? 1 : sizes[b] - sizes[a] || a - b));
+  for (const i of order) {
+    if (sizes[i] <= 0) continue;
+    const slot = SLOTS.find(s => left.get(s.name)! >= sizes[i]);
+    if (slot) { out[i] = slot.name; left.set(slot.name, left.get(slot.name)! - sizes[i]); }
+  }
+  return out;
+}

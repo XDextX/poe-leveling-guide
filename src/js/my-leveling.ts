@@ -4,7 +4,7 @@ import { GEMS } from "./data";
 import type { GuideData } from "./guide";
 import { canSupport, growTrees } from "./suggest";
 import { isActive } from "./gems";
-import { maxSockets } from "./sockets";
+import { assignSlots, maxSockets, slotCapacities, slotName } from "./sockets";
 
 /** Nivel máximo del juego: hasta aquí llega el último tramo. */
 export const MAX_LEVEL = 100;
@@ -62,8 +62,53 @@ export function warnings({ skill, supports, others, to }: MyStage): string[] {
     level(other.skill);
     for (const id of other.supports) { level(id); if (!canSupport(id, other.skill)) out.push(`${GEMS[id].name} no puede apoyar a ${GEMS[other.skill].name}.`); }
   }
+  // Los grupos de otras habilidades que no caben en ninguna pieza: el aviso dice la causa (demasiado grandes o sin sitio).
+  const slots = slotsOf({ skill, supports, others, to }), caps = slotCapacities(to).map(([, n]) => n), biggest = Math.max(...caps), biggestOutsideChest = Math.max(...caps.slice(1));
+  others.forEach((o, k) => {
+    if (slots[k + 1]) return;
+    const size = 1 + o.supports.length, name = `${GEMS[o.skill].name}${o.supports.length ? ` con ${o.supports.length} soporte${o.supports.length === 1 ? "" : "s"}` : ""}`;
+    if (size > biggest) out.push(`${name} necesita ${size} enlazadas; con objetos de nivel ≈${to} ninguna pieza pasa de ${biggest}. Quita ${size - biggest} soporte${size - biggest === 1 ? "" : "s"} o pásalo a un tramo de más nivel.`);
+    else if (size > biggestOutsideChest) out.push(`${name} necesita ${size} enlazadas; con objetos de nivel ≈${to} ninguna pieza (salvo el pecho, que ya está ocupado) pasa de ${biggestOutsideChest}. Quita ${size - biggestOutsideChest} soporte${size - biggestOutsideChest === 1 ? "" : "s"} o pásalo a un tramo de más nivel.`);
+    else out.push(`No queda sitio para ${GEMS[o.skill].name}: los demás grupos ocupan el equipo. Quita otra habilidad o algún soporte.`);
+  });
   return out;
 }
+
+/** Los grupos de gemas de un tramo (la principal primero, con sus soportes; luego cada otra habilidad) con las casillas que ocupan. */
+export const groupsOf = ({ skill, supports, others }: Pick<MyStage, "skill" | "supports" | "others">): { ids: string[]; label: string; supports: number }[] => [
+  { ids: skill ? [skill, ...supports] : [], label: skill ? GEMS[skill].name : "", supports: skill ? supports.length : 0 },
+  ...others.map(o => ({ ids: [o.skill, ...o.supports], label: GEMS[o.skill].name, supports: o.supports.length })),
+];
+
+/** En qué pieza del equipo cae cada grupo de groupsOf (el nombre de PoB) o null si no cabe, con los objetos del nivel `to`. */
+export const slotsOf = (stage: Pick<MyStage, "skill" | "supports" | "others" | "to">): (string | null)[] =>
+  assignSlots(groupsOf(stage).map(g => g.ids.length), stage.to);
+
+/** Un grupo de gemas tal como se escribe en PoB: la pieza del equipo (null si no cabe), sus gemas y las habilidades que lleva (con sus soportes). */
+export interface SlotGroup { slot: string | null; ids: string[]; parts: { label: string; supports: number }[]; main: boolean }
+
+/**
+ * Los grupos de un tramo por pieza del equipo: la habilidad principal con sus soportes va aparte (sus soportes son solo suyos), y
+ * las otras habilidades que caen en la misma pieza van juntas en un grupo (sus gemas comparten enlaces, como en un casco de 4
+ * casillas); las que no caben en ninguna pieza siguen cada una por su cuenta. Los grupos vacíos no salen.
+ */
+export function slotGroups(stage: Pick<MyStage, "skill" | "supports" | "others" | "to">): SlotGroup[] {
+  const slots = slotsOf(stage), out: SlotGroup[] = [];
+  groupsOf(stage).forEach((g, k) => {
+    if (!g.ids.length) return;
+    const part = { label: g.label, supports: g.supports }, same = k > 0 && slots[k] ? out.find(o => !o.main && o.slot === slots[k]) : undefined;
+    if (same) { same.ids.push(...g.ids); same.parts.push(part); }
+    else out.push({ slot: slots[k], ids: [...g.ids], parts: [part], main: k === 0 });
+  });
+  return out;
+}
+
+/** El reparto en el equipo, una pieza por línea: "Pecho — Lacerate + 4 soportes (5 enlazadas)", "Casco — Pride, Leap Slam". */
+export const slotLines = (stage: Pick<MyStage, "skill" | "supports" | "others" | "to">): string[] =>
+  slotGroups(stage).filter(g => g.slot).map(g => {
+    const names = g.parts.map(p => p.label + (p.supports ? ` + ${p.supports} soporte${p.supports === 1 ? "" : "s"}` : "")).join(", ");
+    return `${slotName(g.slot!)} — ${names}${g.ids.length > g.parts.length ? ` (${g.ids.length} enlazadas)` : ""}`;
+  });
 
 /** Los nodos de árbol de cada tramo: los que salen de sus puntos (si el árbol es sugerido) o los árboles del autor, por posición. */
 export function stageNodes(build: Build, stages: MyStage[], treesSuggested: boolean): string[][] {

@@ -6,6 +6,7 @@
 
 import { GEMS } from "../data";
 import { isActive, isSupport } from "../gems";
+import { slotGroups } from "../my-leveling";
 
 /** Un tramo listo para escribir: sus niveles, sus gemas, sus nodos de árbol y su nota. */
 export interface LoadoutStage extends Omit<MyStage, "points"> { from: number; nodes: string[] }
@@ -48,8 +49,8 @@ function gemElement(doc: Document, id: string): Element {
 }
 
 /** Un grupo de gemas (<Skill>) con las gemas dadas. */
-function groupElement(doc: Document, ids: string[], label = ""): Element {
-  const g = el(doc, "Skill", { enabled: "true", slot: "", label, mainActiveSkill: "1", includeInFullDPS: "false" });
+function groupElement(doc: Document, ids: string[], label = "", slot = ""): Element {
+  const g = el(doc, "Skill", { enabled: "true", slot, label, mainActiveSkill: "1", includeInFullDPS: "false" });
   ids.forEach(id => g.append(gemElement(doc, id)));
   return g;
 }
@@ -104,8 +105,11 @@ export function exportLoadouts(xml: string, stages: LoadoutStage[]): string {
     t.setAttribute("title", title); t.setAttribute("nodes", s.nodes.join(",")); t.setAttribute("masteryEffects", "");
     tree.append(t);
     const set = el(doc, "SkillSet", { id: String(nextSkill + i), title });
-    set.append(groupElement(doc, s.skill ? [s.skill, ...s.supports] : [], MAIN_LABEL));
-    s.others.forEach(o => set.append(groupElement(doc, [o.skill, ...o.supports])));
+    // Cada grupo va en una pieza del equipo donde caben sus enlaces con los objetos de ese nivel (la principal, en el pecho) y las
+    // otras habilidades de una misma pieza, juntas en un grupo. El grupo principal se escribe siempre, aunque esté vacío.
+    const groups = slotGroups(s), main = groups.find(g => g.main);
+    set.append(groupElement(doc, main?.ids ?? [], MAIN_LABEL, main?.slot ?? ""));
+    groups.filter(g => !g.main).forEach(g => set.append(groupElement(doc, g.ids, "", g.slot ?? "")));
     skills.append(set);
   });
 
@@ -143,7 +147,11 @@ export function parseLoadouts(doc: Document, idOf: (gem: Element) => string | nu
     const mainIds = ids(main), skill = mainIds.find(isActive) ?? null;
     return {
       to: Number(m![3]), skill, supports: skill ? mainIds.filter(id => id !== skill && isSupport(id)) : [],
-      others: all.filter(g => g !== main).flatMap((g): MyOther[] => { const gem = ids(g), other = gem.find(isActive); return other ? [{ skill: other, supports: gem.filter(id => id !== other && isSupport(id)) }] : []; }),
+      // Un grupo con varias habilidades (las de una misma pieza del equipo) da una "otra" por cada una; sus soportes, a la primera.
+      others: all.filter(g => g !== main).flatMap((g): MyOther[] => {
+        const gem = ids(g), actives = gem.filter(isActive), supports = gem.filter(id => !isActive(id) && isSupport(id));
+        return actives.map((skill, k) => ({ skill, supports: k === 0 ? supports : [] }));
+      }),
       points: (s.getAttribute("nodes") || "").split(",").filter(Boolean).length, note: noteLines.get(`Leveling ${m![1]} (nv ${m![2]}-${m![3]})`) ?? "",
     };
   });

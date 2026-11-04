@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { fitSockets, maxSockets, socketBudget } from "../src/js/sockets";
+import { assignSlots, fitSockets, maxSockets, slotName, socketBudget } from "../src/js/sockets";
 import { gemId } from "./helpers";
 
 it("las casillas máximas suben con el nivel del objeto: 4 desde el 25, 5 desde el 35 y 6 desde el 50", () => {
@@ -18,4 +18,27 @@ it("fitSockets reparte las casillas por orden y vacía lo que ya no cabe, anotan
   expect([a.skill, b.skill, c.skill, d.skill]).toEqual([gemId("Cleave"), gemId("Flame Dash"), gemId("Determination"), null]);
   expect(d.noRoom).toBe(gemId("Clarity"));
   expect(a.noRoom).toBeUndefined();
+});
+
+it("assignSlots pone la habilidad principal en el pecho y reparte los demás grupos por las piezas donde caben", () => {
+  // Con objetos de nivel 50 el pecho da 6 y casco, guantes y botas 4: la principal de 6 al pecho, un grupo de 4 al casco, uno de 4 a los guantes.
+  expect(assignSlots([6, 4, 4, 1], 50)).toEqual(["Body Armour", "Helmet", "Gloves", "Boots"]);
+  // La principal, aunque sea pequeña, elige primero el pecho; un grupo grande no se lo quita.
+  expect(assignSlots([2, 6], 50)).toEqual(["Body Armour", null]);
+});
+
+it("assignSlots: las armas dan 3 enlaces como máximo, aunque el pecho dé más", () => {
+  // Nivel 50: pecho 6, casco, guantes y botas 4, armas 3. El séptimo grupo, de 4, no cabe en una arma.
+  expect(assignSlots([6, 4, 4, 4, 3, 3, 4], 50)).toEqual(["Body Armour", "Helmet", "Gloves", "Boots", "Weapon 1", "Weapon 2", null]);
+});
+
+it("assignSlots deja sin pieza lo que no cabe y no cuenta los grupos vacíos", () => {
+  // Nivel 1: pecho 3, casco, guantes y botas 3, y dos armas de 3. Un grupo de 4 no cabe en ninguna.
+  expect(assignSlots([4, 3], 1)).toEqual([null, "Body Armour"]);
+  expect(assignSlots([0, 1], 1)).toEqual([null, "Body Armour"]);
+  expect(assignSlots([3, 3, 3, 3, 3, 3, 3], 1)).toEqual(["Body Armour", "Helmet", "Gloves", "Boots", "Weapon 1", "Weapon 2", null]);
+});
+
+it("slotName traduce las piezas de PoB", () => {
+  expect([slotName("Body Armour"), slotName("Weapon 2"), slotName("Otra")]).toEqual(["Pecho", "Arma 2", "Otra"]);
 });

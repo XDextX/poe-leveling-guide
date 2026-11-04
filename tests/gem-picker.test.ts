@@ -80,6 +80,20 @@ describe("GemPicker", () => {
     expect(list.getAttribute("tabindex")).toBe("-1");
   });
 
+  it("si lo escrito es exactamente el nombre de una gema, esa fila es la activa y Enter la elige (no otra que la contenga)", () => {
+    const melee = gemId("Melee Physical Damage Support"), awakened = Object.keys(GEMS).find(id => GEMS[id].name === "Awakened Melee Physical Damage Support")!;
+    expect(awakened).toBeDefined();
+    const onPick = vi.fn();
+    const box = GemPicker({ ids: [awakened, melee], value: null, label: "Soporte", field: "support", onPick, clearOnPick: true });
+    document.body.replaceChildren(box);
+    const input = box.querySelector("input")!;
+    input.value = "Melee Physical Damage Support";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect([...box.querySelectorAll("li")].map(li => (li as HTMLElement).dataset.id)).toEqual([awakened, melee]);
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    expect(onPick).toHaveBeenCalledWith(melee);
+  });
+
   it("al escribir filtra por lo escrito", () => {
     const { input, rows } = setup();
     input.value = GEMS[current].name.slice(0, 4).toLowerCase();

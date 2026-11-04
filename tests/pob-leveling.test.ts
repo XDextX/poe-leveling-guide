@@ -85,6 +85,22 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
     expect(d.querySelector("Skills > SkillSet")?.querySelectorAll("Gem")).toHaveLength(2);
   });
 
+  it("escribe cada grupo en una pieza del equipo donde caben sus enlaces, la principal en el pecho", () => {
+    const d = parse(exportLoadouts(XML, [{ from: 1, to: 60, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [] }, { skill: vaal, supports: [melee, melee, melee, melee, melee] }], nodes: [], note: "" }]));
+    const groups = [...d.querySelectorAll("SkillSet")[1].querySelectorAll(":scope > Skill")].map(g => [g.getAttribute("label"), g.getAttribute("slot"), g.querySelectorAll("Gem").length]);
+    // Nivel 60: el pecho da 6 casillas y casco, guantes y botas 4. La principal (2) va al pecho, la otra de 1 al hueco que queda en
+    // el pecho, y la de 6 no cabe en ninguna pieza: queda sin slot.
+    expect(groups).toEqual([["Principal", "Body Armour", 2], ["", "Body Armour", 1], ["", "", 6]]);
+  });
+
+  it("las otras habilidades de una misma pieza se escriben juntas en un grupo, y al volver se separan de nuevo", () => {
+    const herald = gemId("Herald of Ash"), dash = gemId("Flame Dash");
+    const out = exportLoadouts(XML, [{ from: 1, to: 40, skill: cleave, supports: [melee, melee, melee, melee], others: [{ skill: herald, supports: [] }, { skill: dash, supports: [] }], nodes: [], note: "" }]);
+    const groups = [...parse(out).querySelectorAll("SkillSet")[1].querySelectorAll(":scope > Skill")].map(g => [g.getAttribute("slot"), g.querySelectorAll("Gem").length]);
+    expect(groups).toEqual([["Body Armour", 5], ["Helmet", 2]]);
+    expect(parseBuild(out).leveling).toEqual([{ to: 40, skill: cleave, supports: [melee, melee, melee, melee], others: [{ skill: herald, supports: [] }, { skill: dash, supports: [] }], points: 0, note: "" }]);
+  });
+
   it("un tramo sin habilidad principal vuelve sin ella aunque tenga otras habilidades", () => {
     const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
     expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], points: 0, note: "" }]);

@@ -25,5 +25,6 @@
 .my-stage .chip button { min-width: 32px; min-height: 32px; border: 0; background: none; padding: 0 4px; color: var(--muted); font-size: 1.1rem; line-height: 1; }
 .my-stage .warn { margin: 0; padding-left: 18px; font-size: .8rem; color: var(--kill); }
 .my-stage .hint { margin: 0; font-size: .78rem; color: var(--muted); }
+.my-stage .slots { margin: 2px 0 0; padding-left: 18px; color: var(--fg); }
 .my-stage .chip .gem-ico { margin-right: 6px; }
 .my-stage .other { display: grid; gap: 4px; padding: 6px 8px; border-left: 3px solid var(--none); }

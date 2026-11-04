@@ -54,7 +54,9 @@ export const GemPicker: Component<GemPickerProps, HTMLSpanElement> = ({ ids, val
       <li role="option" id={`${listId}-${i}`} aria-selected="false" data-id={id} onMousedown={(e: Event) => { e.preventDefault(); choose(id); }}><GemIcon id={id} /><span class="name">{GEMS[id].name}</span><small>nv {GEMS[id].level}</small></li>
     ) as HTMLElement));
     // Con el texto sin tocar la fila activa es la gema actual (si hay), no la primera: Enter no debe cambiarla sin querer.
-    active = pristine ? (value ? found.indexOf(value) : -1) : found.length ? 0 : -1;
+    // Y al escribir, la que se llama exactamente como lo escrito si la hay (si no, "Melee Physical Damage Support" elegiría "Awakened …"), si no la primera.
+    const q = input.value.trim().toLowerCase(), exact = found.findIndex(id => GEMS[id].name.toLowerCase() === q);
+    active = pristine ? (value ? found.indexOf(value) : -1) : exact >= 0 ? exact : found.length ? 0 : -1;
     list.hidden = !found.length; input.setAttribute("aria-expanded", String(!list.hidden)); mark();
   };
   function choose(id: string): void {
