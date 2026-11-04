@@ -1,8 +1,6 @@
 // Pruebas de mutación (Stryker): cambia el código de src/js/ de pequeñas formas (un > por un >=, un true por un false…) y comprueba
 // que alguna prueba falla; los mutantes que sobreviven son código que las pruebas no vigilan.
 // Todo: npm run mutate   ·   Solo unos archivos: npm run mutate -- --mutate "src/js/pob/leveling.ts"
-import os from "node:os";
-
 export default {
   testRunner: "vitest",
   plugins: ["@stryker-mutator/vitest-runner"],
@@ -13,8 +11,8 @@ export default {
   // Guarda el resultado y solo repite lo que cambió desde la última ejecución.
   incremental: true,
   incrementalFile: "reports/stryker-incremental.json",
-  // La mitad de los núcleos: deja la máquina usable mientras corre.
-  concurrency: Math.max(1, Math.floor(os.cpus().length / 2)),
+  // Dos procesos: cada uno carga vitest y la lógica entera, y con seis se acabó la memoria del equipo (compartido con otras sesiones).
+  concurrency: 2,
   // Stryker reescribe el tsconfig.json con la API de JavaScript de TypeScript 5 (parseConfigFileTextToJson), que TypeScript 7 ya no tiene.
   // Vitest no comprueba tipos, así que se apunta a un archivo que no existe y Stryker se salta ese paso.
   tsconfigFile: "sin-tsconfig.json",
