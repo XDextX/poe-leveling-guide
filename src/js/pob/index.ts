@@ -1,13 +1,16 @@
 /* Lectura del código de exportación de Path of Building: clase, gemas, habilidad principal, equipo y árbol. */
 
 import { userError } from "../errors";
-import { mainSkill, parseGems, skillGroups } from "./gems";
+import { gemIdOf, mainSkill, parseGems, skillGroups } from "./gems";
+import { parseLoadouts } from "./leveling";
 import { parseItems } from "./items";
 import { parseNotes } from "./notes";
 import { parseStats } from "./stats";
 import { parseTree } from "./tree";
 
 export { decode } from "./decode";
+export { encode } from "./encode";
+export { exportLoadouts } from "./leveling";
 
 /** XML de PoB → la build: clase, ascendencia, bandidos, gemas sin repetir, equipo, árbol y habilidad principal. */
 export function parseBuild(xml: string): Build {
@@ -15,5 +18,5 @@ export function parseBuild(xml: string): Build {
   if (doc.querySelector("parsererror") || !doc.querySelector("PathOfBuilding")) throw userError("no es un código de Path of Building");
   const b = doc.querySelector("Build");
   return { cls: b?.getAttribute("className") ?? null, ascend: b?.getAttribute("ascendClassName") ?? null, bandit: b?.getAttribute("bandit") || "None",
-    gems: parseGems(doc), items: parseItems(doc), tree: parseTree(doc), main: mainSkill(doc), groups: skillGroups(doc), notes: parseNotes(doc), stats: parseStats(doc) };
+    gems: parseGems(doc), items: parseItems(doc), tree: parseTree(doc), main: mainSkill(doc), groups: skillGroups(doc), notes: parseNotes(doc), stats: parseStats(doc), leveling: parseLoadouts(doc, gemIdOf) };
 }

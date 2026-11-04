@@ -1,6 +1,7 @@
 /* El árbol de pasivas de la build: el activo y, si el autor los incluyó, los demás como etapas. */
 
 import { NODES } from "../data";
+import { isStageTitle } from "./leveling";
 
 /** El <Spec> (árbol) que la build tiene activo y todos los demás. */
 export function treeSpecs(doc: Document): { active: Element | undefined; all: Element[] } {
@@ -18,6 +19,7 @@ export function parseTree(doc: Document): BuildTree {
   if (!spec) return { nodes: [], masteries: [], classId: null, stages: [] };
   const nodesOf = (s: Element) => (s.getAttribute("nodes") || "").split(",").filter(id => NODES[id]);
   const masteries = [...(spec.getAttribute("masteryEffects") || "").matchAll(/\{(\d+),(\d+)\}/g)].map((m): [string, string] => [m[1], m[2]]);
-  const stages = all.length > 1 ? all.filter(s => s !== spec).map((s, i) => ({ title: s.getAttribute("title") || `Árbol ${i + 1}`, nodes: nodesOf(s) })) : [];
+  // Los árboles de "Mi leveling" que escribe la app (Loadouts de PoB) no son los del autor.
+  const stages = all.filter(s => s !== spec && !isStageTitle(s.getAttribute("title"))).map((s, i) => ({ title: s.getAttribute("title") || `Árbol ${i + 1}`, nodes: nodesOf(s) }));
   return { nodes: nodesOf(spec), masteries, classId: spec.getAttribute("classId"), stages };
 }

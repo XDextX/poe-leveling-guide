@@ -70,6 +70,8 @@ interface Item {
 interface TreeStage { title: string; nodes: string[]; level?: number; points?: number }
 interface BuildTree { nodes: string[]; masteries: [node: string, effect: string][]; classId: string | null; stages: TreeStage[] }
 interface MainSkill { id: string; supports: string[] }
+/** Un tramo de "Mi leveling": hasta qué nivel llega (empieza donde acaba el anterior), la habilidad con sus soportes, otras habilidades, puntos de árbol gastados y una nota. */
+interface MyStage { to: number; skill: string | null; supports: string[]; others: string[]; points: number | null; note: string }
 interface Build {
   cls: string | null; ascend: string | null; bandit: string;
   gems: BuildGem[]; items: Item[]; tree: BuildTree; main: MainSkill | null;
@@ -79,6 +81,8 @@ interface Build {
   notes: string;
   /** Las estadísticas que Path of Building calculó y guardó en el código (TotalDPS, PoisonDPS, Life…); vacío si el código no las trae. */
   stats: Record<string, number>;
+  /** El leveling propio que el código trae como Loadouts de PoB (ver pob/leveling.ts); ausente si no trae ninguno. */
+  leveling?: MyStage[];
 }
 
 /* ---------- Ruta, plan y sugerencias ---------- */

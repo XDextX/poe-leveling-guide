@@ -13,7 +13,7 @@ for (const [id, g] of Object.entries(GEMS)) {
 }
 
 /** Id de la gema de un <Gem>: su gemId si lo conocemos y, si no, su nombre. */
-function gemIdOf(el: Element): string | null {
+export function gemIdOf(el: Element): string | null {
   const id = (el.getAttribute("gemId") || "").replace("Metadata/Items/Gems/", "");
   return GEMS[id] ? id : byName.get((el.getAttribute("nameSpec") || "").trim().toLowerCase()) || null;
 }
