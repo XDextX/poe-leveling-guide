@@ -37,7 +37,7 @@ function rpn(expr: string[], types: string[]): boolean {
   }
   return st.some(Boolean);
 }
-const canSupport = (sup: string, skill: string): boolean => {
+export const canSupport = (sup: string, skill: string): boolean => {
   const { allowed, excluded } = SKILLS[sup], types = SKILLS[skill].types;
   return allowed.length > 0 && rpn(allowed, types) && !(excluded.length && rpn(excluded, types));
 };
@@ -113,10 +113,10 @@ for (let i = 0; i < EDGES.length; i += 2) {
 
 /** Valor de un nodo para el árbol de leveling en el tramo `si`: la defensa pesa más al principio. */
 function levelingValue(id: string, si: number): number {
-  const n = NODES[id], defW = [1.5, 1.3, 1.1, 1][si];
+  const n = NODES[id], defW = [1.5, 1.3, 1.1, 1][Math.min(si, 3)];
   // Las keystones definen la build final pero suelen tener un coste (Perfect Agony quita el daño extra de los críticos):
   // casi no cuentan hasta el último tramo.
-  const base = n.type === NODE.KEYSTONE ? (si === STAGES.length - 1 ? 4 : 0.1) : n.type === NODE.NOTABLE ? 3 : n.type === NODE.JEWEL ? 0.3 : 1;
+  const base = n.type === NODE.KEYSTONE ? (si >= STAGES.length - 1 ? 4 : 0.1) : n.type === NODE.NOTABLE ? 3 : n.type === NODE.JEWEL ? 0.3 : 1;
   if (!n.stats.length) return 0.2;
   let v = 0;
   for (const line of n.stats) { const k = statKind(line); v += k === "def" ? defW : k === "dmg" ? 1 : 0.5; if (/maximum Life/i.test(line)) v += 1; }
@@ -133,17 +133,19 @@ function reachable(taken: Set<string>, final: Set<string>): Map<string, string> 
   return parent;
 }
 
+/** Qué pedirle a growTrees para un tramo: cuántos puntos llevar gastados al acabarlo, su nivel, su título y cuánto pesa la defensa (0 = tramo temprano, 3 = el último). */
+export interface TreeTarget { points: number; level: number; title: string; weight: number }
+
 /**
- * Árbol de leveling sugerido: crece desde el inicio de la clase solo por nodos del árbol final y, en cada paso,
- * coge el camino que más aporta por punto gastado. Puntos por tramo ≈ nivel − 1 + puntos de misión (≈22 en la campaña, +2 si se matan los bandidos).
+ * Árbol de leveling: crece desde el inicio de la clase solo por nodos del árbol final y, en cada paso, coge el camino que más
+ * aporta por punto gastado. Cada objetivo de `targets` devuelve los nodos que hay al llegar a sus puntos (acumulados, por orden).
  */
-export function suggestTrees(tree: BuildTree, killBandits: boolean): TreeStage[] {
+export function growTrees(tree: BuildTree, targets: TreeTarget[]): TreeStage[] {
   const start = tree.classId ? CLASS_STARTS[tree.classId] : undefined;
   if (!start) return [];
   const final = new Set(tree.nodes.filter(id => NODES[id].type !== NODE.MASTERY && !NODES[id].ascendancy && id !== start));
   const taken = new Set([start]), out: TreeStage[] = [];
-  for (const [si, [, last]] of STAGES.entries()) {
-    const level = actLevel(last), points = level - 1 + Math.round(22 * last / 10) + (killBandits && last >= 2 ? 2 : 0);
+  for (const { points, level, title, weight } of targets) {
     let budget = points - (taken.size - 1);
     while (budget > 0) {
       const parent = reachable(taken, final);
@@ -152,14 +154,25 @@ export function suggestTrees(tree: BuildTree, killBandits: boolean): TreeStage[]
         const path: string[] = [];
         for (let c = t; !taken.has(c); c = parent.get(c)!) path.push(c);
         if (path.length > budget) continue;
-        const score = path.reduce((s, id) => s + levelingValue(id, si), 0) / path.length;
+        const score = path.reduce((s, id) => s + levelingValue(id, weight), 0) / path.length;
         if (!best || score > best.score) best = { score, path };
       }
       if (!best) break;
       best.path.forEach(id => taken.add(id));
       budget -= best.path.length;
     }
-    out.push({ title: `Actos ${STAGES[si][0]}-${last}`, level, points, nodes: [...taken].filter(id => id !== start) });
+    out.push({ title, level, points, nodes: [...taken].filter(id => id !== start) });
   }
   return out;
+}
+
+/** Puntos del árbol que se llevan gastados al llegar a un nivel: ≈ nivel − 1 más los de misión (≈22 en toda la campaña, +2 si se matan los bandidos). */
+export const treePoints = (level: number, act: number, killBandits: boolean): number => level - 1 + Math.round(22 * act / 10) + (killBandits && act >= 2 ? 2 : 0);
+
+/** Árbol de leveling sugerido: un árbol por tramo de la campaña (ver growTrees). */
+export function suggestTrees(tree: BuildTree, killBandits: boolean): TreeStage[] {
+  return growTrees(tree, STAGES.map(([first, last], si) => {
+    const level = actLevel(last);
+    return { points: treePoints(level, last, killBandits), level, title: `Actos ${first}-${last}`, weight: si };
+  }));
 }
