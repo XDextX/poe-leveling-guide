@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { exportLoadouts } from "../src/js/pob/leveling";
 import { decode, encode, parseBuild } from "../src/js/pob";
+import { parseTree } from "../src/js/pob/tree";
 import { gemId } from "./helpers";
 
 const cleave = gemId("Cleave"), melee = gemId("Melee Physical Damage Support"), vaal = gemId("Vaal Cleave");
@@ -47,5 +48,63 @@ describe("exportLoadouts", () => {
     ]);
     expect(back.notes).toBe("Notas del autor");
     expect(back.tree.stages).toEqual([]);
+  });
+});
+
+const parse = (xml: string) => new DOMParser().parseFromString(xml, "application/xml");
+const titles = (d: Document, q: string) => [...d.querySelectorAll(q)].map(e => e.getAttribute("title"));
+
+describe("exportLoadouts repetido y con Loadouts del autor", () => {
+  it("al exportar dos veces quedan solo los tramos de la segunda, y los números del conjunto de objetos no se acumulan", () => {
+    const once = exportLoadouts(XML, stages), twice = exportLoadouts(once, [stages[0]]);
+    const d = parse(twice);
+    expect(titles(d, "Tree > Spec")).toEqual(["Final", "Leveling 1 (nv 1-12) {1}"]);
+    expect(titles(d, "Skills > SkillSet")).toEqual(["Default", "Leveling 1 (nv 1-12) {1}"]);
+    expect(titles(d, "ItemSet")).toEqual(["Default {1}", "Otro"]);
+    expect(d.querySelector("Notes")?.textContent).toBe("Notas del autor\n\n== Mi leveling (poe-leveling-guide) ==\nLeveling 1 (nv 1-12): usa Cleave");
+  });
+
+  it("numera por encima de los Loadouts del autor, también si su {…} no va al final", () => {
+    const xml = XML.replace('title="Final"', 'title="{3} Final"').replace('<ItemSet id="1" title="Default"/>', '<ItemSet id="1" title="Default {1,2}"/>');
+    const d = parse(exportLoadouts(xml, stages));
+    expect(titles(d, "Tree > Spec").slice(1)).toEqual(["Leveling 1 (nv 1-12) {4}", "Leveling 2 (nv 13-28) {5}"]);
+    expect(titles(d, "ItemSet")[0]).toBe("Default {1,2,4,5}");
+  });
+
+  it("los conjuntos de ajustes también se enlazan, y el activo puede no ser el primero", () => {
+    const xml = XML.replace("<Notes>", '<Config activeConfigSet="2"><ConfigSet id="1" title="A"/><ConfigSet id="2" title="B"/></Config><Notes>').replace('activeItemSet="1"', 'activeItemSet="2"');
+    const d = parse(exportLoadouts(xml, stages));
+    expect(titles(d, "ConfigSet")).toEqual(["A", "B {1,2}"]);
+    expect(titles(d, "ItemSet")).toEqual(["Default", "Otro {1,2}"]);
+  });
+
+  it("un código con el formato antiguo, sin SkillSet, conserva sus grupos", () => {
+    const old = XML.replace('<SkillSet id="1" title="Default">', "").replace("</SkillSet>", "");
+    const d = parse(exportLoadouts(old, stages));
+    expect(d.querySelectorAll("Skills > SkillSet")).toHaveLength(3);
+    expect(d.querySelector("Skills > SkillSet")?.querySelectorAll("Gem")).toHaveLength(2);
+  });
+
+  it("un tramo sin habilidad principal vuelve sin ella aunque tenga otras habilidades", () => {
+    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [vaal], nodes: [], note: "" }]);
+    expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [vaal], points: 0, note: "" }]);
+  });
+
+  it("si PoB dejó activo un tramo, el árbol final es el primero que no lo es", () => {
+    const d = parse(exportLoadouts(XML, stages).replace('activeSpec="1"', 'activeSpec="2"'));
+    expect(parseTree(d).classId).toBe("1");
+    expect(parseTree(d).stages).toEqual([]);
+  });
+
+  it("un gemId como «constructor» no cuenta como gema", () => {
+    const xml = '<PathOfBuilding><Build/><Tree><Spec nodes=""/></Tree><Skills><Skill><Gem gemId="Metadata/Items/Gems/constructor" nameSpec="x"/></Skill></Skills></PathOfBuilding>';
+    expect(parseBuild(xml).gems.map(g => g.id)).toEqual([null]);
+  });
+});
+
+describe("decode", () => {
+  it("rechaza un código que se expande a más de 20 MB", async () => {
+    const bomb = await encode("<a>" + "x".repeat(25 * 1024 * 1024) + "</a>");
+    await expect(decode(bomb)).rejects.toThrow("demasiado grande");
   });
 });

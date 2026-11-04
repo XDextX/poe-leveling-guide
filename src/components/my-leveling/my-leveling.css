@@ -1,18 +1,27 @@
 /* Mi leveling: el editor de los tramos y sus botones. */
 .my-leveling .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-.my-leveling .toolbar button, .my-stage button { font: inherit; font-size: .8rem; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.my-leveling .toolbar button, .my-leveling .undo, .my-stage button { min-height: 32px; font: inherit; font-size: .8rem; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
 .my-leveling .toolbar button.primary { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
-.my-leveling .toolbar button:hover, .my-stage button:hover { border-color: var(--accent); }
-.my-leveling .state { font-size: .82rem; color: var(--muted); margin: 0 0 8px; }
+.my-leveling .toolbar button:hover, .my-leveling .undo:hover, .my-stage button:hover { border-color: var(--accent); }
+.my-leveling .status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 8px; }
+.my-leveling .state { font-size: .82rem; color: var(--muted); margin: 0; }
+.my-leveling .undo[hidden] { display: none; }
+.my-leveling .copy-box { width: 100%; box-sizing: border-box; min-height: 5em; margin-bottom: 8px; font: .75rem var(--mono); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; }
 .my-stages { display: grid; gap: 10px; }
 .my-stage { display: grid; gap: 8px; padding: 10px 12px; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; }
-.my-stage h3 { margin: 0; font-size: .95rem; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-.my-stage h3 .acts { margin-left: auto; display: flex; gap: 6px; }
-.my-stage label { display: grid; gap: 3px; font-size: .78rem; color: var(--muted); font-weight: 600; }
-.my-stage input { font: inherit; font-weight: 400; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; min-width: 0; }
+.my-stage .stage-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.my-stage h3 { margin: 0; font-size: .95rem; }
+.my-stage .until { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+.my-stage .acts { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+.my-stage .field { display: grid; gap: 3px; font-size: .78rem; color: var(--muted); font-weight: 600; }
+.my-stage .field-label { font-size: .78rem; color: var(--muted); font-weight: 600; }
+.my-stage .gem-field { display: grid; gap: 2px; }
+.my-stage .field-error { font-size: .78rem; color: var(--kill); }
+.my-stage input[aria-invalid="true"] { border-color: var(--kill); }
+.my-stage input { min-height: 32px; box-sizing: border-box; font: inherit; font-weight: 400; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; min-width: 0; }
 .my-stage input.level { width: 4.5em; }
 .my-stage .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.my-stage .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 8px; border: 1px solid var(--line); border-radius: 12px; font-size: .8rem; font-weight: 400; color: var(--fg); background: var(--card); }
-.my-stage .chip button { border: 0; background: none; padding: 0 4px; color: var(--muted); font-size: 1rem; line-height: 1; }
+.my-stage .chip { display: inline-flex; align-items: center; gap: 0; padding: 0 0 0 10px; border: 1px solid var(--line); border-radius: 12px; font-size: .8rem; font-weight: 400; color: var(--fg); background: var(--card); }
+.my-stage .chip button { min-width: 32px; min-height: 32px; border: 0; background: none; padding: 0 4px; color: var(--muted); font-size: 1.1rem; line-height: 1; }
 .my-stage .warn { margin: 0; padding-left: 18px; font-size: .8rem; color: var(--kill); }
 .my-stage .hint { margin: 0; font-size: .78rem; color: var(--muted); }

@@ -68,3 +68,20 @@ export function stageNodes(build: Build, stages: MyStage[], treesSuggested: bool
   const trees = growTrees(build.tree, stages.map((s, i) => ({ points: s.points ?? 0, level: s.to, title: `Tramo ${i + 1}`, weight: i })));
   return stages.map((_, i) => trees[i]?.nodes ?? []);
 }
+
+const isId = (id: unknown): id is string => typeof id === "string" && Object.hasOwn(GEMS, id);
+
+/**
+ * Los tramos que se leyeron del navegador o de un código, comprobados: lo que no es un tramo válido se descarta y los ids de gema
+ * que ya no existen (otra versión de los datos) se quitan. undefined si no queda ningún tramo o los niveles no suben.
+ */
+export function sanitizeLeveling(raw: unknown): MyStage[] | undefined {
+  if (!Array.isArray(raw) || !raw.length || raw.length > 50) return undefined;
+  const out: MyStage[] = [];
+  for (const r of raw as Record<string, unknown>[]) {
+    const to = Number(r?.to), ids = (v: unknown): string[] => Array.isArray(v) ? [...new Set(v.filter(isId))] : [];
+    if (!Number.isInteger(to) || to < 1 || to > MAX_LEVEL || (out.length && to <= out[out.length - 1].to)) return undefined;
+    out.push({ to, skill: isId(r.skill) ? r.skill : null, supports: ids(r.supports), others: ids(r.others), points: r.points === null ? null : Math.max(0, Math.round(Number(r.points)) || 0), note: typeof r.note === "string" ? r.note.slice(0, 300) : "" });
+  }
+  return out;
+}

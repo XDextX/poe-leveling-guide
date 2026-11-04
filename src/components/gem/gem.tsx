@@ -12,10 +12,30 @@ export let suggested = new Set<string>();
 export function setSuggested(ids: Set<string>): void { suggested = ids; }
 
 /**
- * Clave con que se guardan en el navegador las gemas marcadas y las elecciones de una build vista con una clase. Va por la
- * habilidad principal y no por todas las gemas: volver a pegar la build con una gema más o menos no debe perder el avance.
+ * Clave con que se guardan en el navegador las gemas marcadas y las elecciones de una build vista con una clase. Va por la habilidad
+ * principal y la ascendencia y no por todas las gemas: volver a pegar la build con una gema más o menos no debe perder el avance, y
+ * dos builds de la misma clase y habilidad pero distinta ascendencia no deben compartirlo.
  */
-export const buildKey = (cls: string, build: Build): string => "poe-gemas:" + cls + ":" + (build.main?.id ?? build.gems[0]?.name ?? "");
+export const buildKey = (cls: string, build: Build): string => "poe-gemas:" + cls + ":" + (build.main?.id ?? build.gems[0]?.name ?? "") + ":" + (build.ascend ?? "");
+
+/** Los avances de los datos guardados por cada build: sufijos de buildKey con lo que se guarda aparte (elecciones, acto, mi leveling). */
+const SUFFIXES = ["", ":eleccion", ":acto", ":mi-leveling"];
+
+/**
+ * Pasa lo guardado con las claves antiguas (todas las gemas por su nombre, y habilidad principal sin ascendencia) a la clave actual,
+ * si esta aún no tiene nada. No borra las antiguas: otra build de la misma clase y habilidad puede seguir usándolas.
+ */
+export function migrateKeys(cls: string, build: Build): void {
+  const old = ["poe-gemas:" + cls + ":" + build.gems.map(g => g.name).join("|"), "poe-gemas:" + cls + ":" + (build.main?.id ?? build.gems[0]?.name ?? "")];
+  try {
+    for (const suffix of SUFFIXES) {
+      const now = buildKey(cls, build) + suffix;
+      if (localStorage.getItem(now) !== null) continue;
+      const from = old.map(k => localStorage.getItem(k + suffix)).find(v => v !== null);
+      if (from !== undefined && from !== null) localStorage.setItem(now, from);
+    }
+  } catch {}
+}
 
 // Gemas marcadas como conseguidas, por build; si el navegador no deja guardar, la guía funciona igual.
 export const doneStore = {

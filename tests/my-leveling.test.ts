@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clearLeveling, defaultLeveling, fromOf, mergeStage, setPoints, setTo, splitStage, warnings } from "../src/js/my-leveling";
+import { clearLeveling, defaultLeveling, fromOf, mergeStage, sanitizeLeveling, setPoints, setTo, splitStage, warnings } from "../src/js/my-leveling";
 import { gemId } from "./helpers";
 
 const stage = (to: number, over: Partial<MyStage> = {}): MyStage => ({ to, skill: null, supports: [], others: [], points: 10, note: "", ...over });
@@ -53,5 +53,26 @@ describe("warnings", () => {
     expect(warnings(stage(60, { skill: cleave, supports: [melee] }))).toEqual([]);
     expect(warnings(stage(12, { skill: cleave, supports: [melee, melee, melee, melee] })).some(w => w.includes("soportes"))).toBe(true);
     expect(warnings(stage(1, { skill: cleave, supports: [melee] })).some(w => w.includes("pide nivel"))).toBe(true);
+  });
+
+  it("un soporte que no apoya a la habilidad, una habilidad que no lo es y soportes sin habilidad", () => {
+    const melee = gemId("Melee Physical Damage Support"), fireball = gemId("Fireball");
+    expect(warnings(stage(60, { skill: fireball, supports: [melee] })).some(w => w.includes("no puede apoyar"))).toBe(true);
+    expect(warnings(stage(60, { skill: melee })).some(w => w.includes("no es una habilidad"))).toBe(true);
+    expect(warnings(stage(60, { supports: [melee] }))).toEqual(["Hay soportes pero ninguna habilidad."]);
+  });
+});
+
+describe("sanitizeLeveling", () => {
+  const cleave = gemId("Cleave");
+
+  it("deja pasar tramos válidos y quita los ids de gema que no existen", () => {
+    expect(sanitizeLeveling([{ to: 12, skill: cleave, supports: [cleave, "nada", "constructor"], others: ["__proto__"], points: 5.4, note: "x" }]))
+      .toEqual([{ to: 12, skill: cleave, supports: [cleave], others: [], points: 5, note: "x" }]);
+    expect(sanitizeLeveling([{ to: 12, skill: "constructor", supports: [], others: [], points: null, note: 3 }])).toEqual([{ to: 12, skill: null, supports: [], others: [], points: null, note: "" }]);
+  });
+
+  it("descarta lo que no es una lista de tramos con niveles que suben", () => {
+    for (const bad of [null, {}, [], "x", [{ to: "a" }], [{ to: 0 }], [{ to: 20 }, { to: 20 }], [{ to: 30 }, { to: 20 }], [{ to: 101 }], [null]]) expect(sanitizeLeveling(bad), JSON.stringify(bad)).toBeUndefined();
   });
 });

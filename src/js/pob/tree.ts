@@ -6,7 +6,9 @@ import { isStageTitle } from "./leveling";
 /** El <Spec> (árbol) que la build tiene activo y todos los demás. */
 export function treeSpecs(doc: Document): { active: Element | undefined; all: Element[] } {
   const specs = [...doc.querySelectorAll("Tree > Spec")];
-  const active = specs[(Number(doc.querySelector("Tree")?.getAttribute("activeSpec")) || 1) - 1] || specs[0];
+  // Si PoB dejó activo un tramo de "Mi leveling" (un Loadout elegido), el árbol final es el primero que no lo es.
+  const chosen = specs[(Number(doc.querySelector("Tree")?.getAttribute("activeSpec")) || 1) - 1];
+  const active = chosen && !isStageTitle(chosen.getAttribute("title")) ? chosen : specs.find(s => !isStageTitle(s.getAttribute("title"))) ?? specs[0];
   return { active, all: specs };
 }
 

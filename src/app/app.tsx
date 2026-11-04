@@ -4,11 +4,11 @@ import { CLASSES } from "../js/data";
 import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
 import type { GuideData } from "../js/guide";
-import { fromOf, stageNodes } from "../js/my-leveling";
+import { fromOf, sanitizeLeveling, stageNodes } from "../js/my-leveling";
 import { decode, encode, exportLoadouts, parseBuild } from "../js/pob";
 import { hideProgress, initProgress } from "../components/progress/progress";
 import { initActGems, setActGems } from "../components/act-gems/act-gems-panel";
-import { buildKey, doneStore, setSuggested } from "../components/gem/gem";
+import { buildKey, doneStore, migrateKeys, setSuggested } from "../components/gem/gem";
 import { Guide } from "../components/guide/guide";
 import { setRedrawHeat } from "../components/heatmap/heatmap";
 import { Page } from "../components/page/page";
@@ -20,7 +20,7 @@ const pickKey = (cls: string, build: Build): string => buildKey(cls, build) + ":
 const loadPicks = (key: string): Record<number, string> => { try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? {}; } catch { return {}; } };
 
 const levelingKey = (cls: string, build: Build): string => buildKey(cls, build) + ":mi-leveling";
-const loadLeveling = (key: string): MyStage[] | undefined => { try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? undefined; } catch { return undefined; } };
+const loadLeveling = (key: string): MyStage[] | undefined => { try { return sanitizeLeveling(JSON.parse(localStorage.getItem(key) ?? "null")); } catch { return undefined; } };
 const saveLeveling = (key: string, stages: MyStage[]): void => { try { localStorage.setItem(key, JSON.stringify(stages)); } catch {} };
 
 const HOW_TO_COPY = "en Path of Building, Import/Export Build → Generate";
@@ -38,6 +38,8 @@ export const App: Component<{}, HTMLElement> = () => {
   let picks: Record<number, string> = {};
   /** El XML del código pegado, para escribir "Mi leveling" en él; y si los tramos del editor salen de ese código (hasta que el jugador los cambie). */
   let xml = "", levelingFromCode = false;
+  /** Los tramos que había guardados antes de que el código pegado los sustituyera, para poder deshacerlo. */
+  let replacedLeveling: MyStage[] | undefined;
   /** Cuenta las lecturas: si se pulsa "Crear guía" otra vez antes de acabar, solo cuenta la última. */
   let reads = 0;
 
@@ -54,6 +56,7 @@ export const App: Component<{}, HTMLElement> = () => {
   function rerender(): void {
     if (!build) return;
     const opts = options();
+    migrateKeys(opts.cls, build);
     if (computed?.cls !== opts.cls || computed.leagueStart !== opts.leagueStart) {
       picks = loadPicks(pickKey(opts.cls, build));
       computed = { cls: opts.cls, leagueStart: opts.leagueStart, data: buildGuide(build, { ...opts, picks }) };
@@ -65,7 +68,7 @@ export const App: Component<{}, HTMLElement> = () => {
     setRedrawHeat(null);
     hideProgress();
     const key = levelingKey(opts.cls, build);
-    const leveling = { saved: loadLeveling(key), imported: levelingFromCode, onSave: (stages: MyStage[]) => { levelingFromCode = false; saveLeveling(key, stages); }, onExport: exportLeveling };
+    const leveling = { saved: loadLeveling(key), imported: levelingFromCode, replaced: replacedLeveling, onSave: (stages: MyStage[]) => { levelingFromCode = false; saveLeveling(key, stages); }, onExport: exportLeveling };
     guide.replaceChildren(<Guide data={data} showZones={opts.showZones} onPick={pickSkill} leveling={leveling} />);
     guide.hidden = false;
     setActGems(data);
@@ -125,8 +128,14 @@ export const App: Component<{}, HTMLElement> = () => {
     build = read; xml = text;
     if (build.cls && CLASSES.includes(build.cls)) form.cls.value = build.cls;
     // Un código con los Loadouts de "Mi leveling" los trae al editor, en lugar de lo que hubiera guardado.
-    levelingFromCode = !!build.leveling;
-    if (build.leveling) saveLeveling(levelingKey(form.cls.value, build), build.leveling);
+    const imported = sanitizeLeveling(build.leveling);
+    levelingFromCode = !!imported; replacedLeveling = undefined;
+    if (imported) {
+      migrateKeys(form.cls.value, build);
+      const key = levelingKey(form.cls.value, build);
+      replacedLeveling = loadLeveling(key);
+      saveLeveling(key, imported);
+    }
     rerender();
     say(`Build leída: ${build.gems.length} gemas.`);
   }
