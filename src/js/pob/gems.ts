@@ -2,6 +2,7 @@
 
 import { GEMS } from "../data";
 import { isActive, isSupport } from "../gems";
+import { isStageTitle } from "./leveling";
 
 // Nombre en minúsculas → id, para las gemas que PoB da por nombre. PoB omite " Support" en las de soporte, así que se
 // registran ambas formas.
@@ -49,7 +50,9 @@ export function parseGems(doc: Document): BuildGem[] {
 
 /** Los grupos de gemas del conjunto de habilidades activo, tal como vienen en PoB. */
 const activeGroups = (doc: Document): Element[] => {
-  const set = doc.querySelector(`Skills > SkillSet[id="${doc.querySelector("Skills")?.getAttribute("activeSkillSet")}"]`) || doc.querySelector("Skills > SkillSet") || doc.querySelector("Skills");
+  const chosen = doc.querySelector(`Skills > SkillSet[id="${doc.querySelector("Skills")?.getAttribute("activeSkillSet")}"]`) || doc.querySelector("Skills > SkillSet");
+  // Si PoB dejó activo un tramo de "Mi leveling" (un Loadout elegido), las habilidades de la build son las del primer conjunto que no lo es.
+  const set = chosen && isStageTitle(chosen.getAttribute("title")) ? [...doc.querySelectorAll("Skills > SkillSet")].find(s => !isStageTitle(s.getAttribute("title"))) ?? chosen : chosen || doc.querySelector("Skills");
   return [...(set?.querySelectorAll(":scope > Skill") || [])];
 };
 const groupIds = (group: Element | undefined): string[] => [...(group?.querySelectorAll("Gem") || [])].map(gemIdOf).filter((id): id is string => !!id);

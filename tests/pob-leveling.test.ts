@@ -96,6 +96,13 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
     expect(parseTree(d).stages).toEqual([]);
   });
 
+  it("si PoB dejó activo el conjunto de habilidades de un tramo, la habilidad principal sigue siendo la del autor", () => {
+    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [vaal], nodes: [], note: "" }]);
+    const build = parseBuild(out.replace('activeSkillSet="1"', 'activeSkillSet="2"'));
+    expect(build.main?.id).toBe(cleave);
+    expect(build.groups).toEqual([[cleave, melee]]);
+  });
+
   it("un gemId como «constructor» no cuenta como gema", () => {
     const xml = '<PathOfBuilding><Build/><Tree><Spec nodes=""/></Tree><Skills><Skill><Gem gemId="Metadata/Items/Gems/constructor" nameSpec="x"/></Skill></Skills></PathOfBuilding>';
     expect(parseBuild(xml).gems.map(g => g.id)).toEqual([null]);
