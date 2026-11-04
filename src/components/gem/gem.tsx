@@ -2,6 +2,7 @@
 
 import { cost, shortCurrency } from "../../js/cost";
 import { GEMS } from "../../js/data";
+import { isSupport } from "../../js/gems";
 import { hideGemTip, moveGemTip, showGemTip } from "../gem-tip/gem-tip";
 import { gemIcon } from "../item-icon/item-icon";
 import "./gem.css";
@@ -66,11 +67,22 @@ export function costText(ids: string[]): string {
 const hideIcon = (e: Event) => { (e.target as HTMLImageElement).parentElement!.hidden = true; };
 // El CDN sirve las gemas de habilidad como capas lado a lado en una tira (decoración | vacío | gema de color), no como un
 // cuadrado: se superponen con dos fondos en la misma caja. Las de soporte ya son un cuadrado y se quedan como <img>.
+const layer = (box: HTMLElement, src: string) => { box.style.backgroundImage = `url(${src}), url(${src})`; box.classList.add("layered"); };
+// Las de habilidad salen ya superpuestas, sin esperar a que cargue la imagen para saberlo; al cargar se confirma por la forma
+// (una tira es más ancha que alta) y, si resulta ser un cuadrado, se deja como <img>.
 const layerIcon = (e: Event) => {
-  const img = e.target as HTMLImageElement;
-  if (img.naturalWidth <= img.naturalHeight) return;
-  img.parentElement!.style.backgroundImage = `url(${img.src}), url(${img.src})`;
-  img.parentElement!.classList.add("layered");
+  const img = e.target as HTMLImageElement, box = img.parentElement!;
+  if (img.naturalWidth > img.naturalHeight) layer(box, img.src);
+  else { box.classList.remove("layered"); box.style.backgroundImage = ""; }
+};
+
+/** El dibujo de una gema (24 px), o nada si no tiene: <GemIcon id={id} />. */
+export const GemIcon: Component<{ id: string }, HTMLSpanElement | null> = ({ id }) => {
+  const { icon } = GEMS[id];
+  if (!icon) return null;
+  const box = <span class="gem-ico"><img src={gemIcon(icon)} alt="" loading="lazy" onLoad={layerIcon} onError={hideIcon} /></span> as HTMLSpanElement;
+  if (!isSupport(id)) layer(box, gemIcon(icon));
+  return box;
 };
 
 interface GemProps {
@@ -81,7 +93,7 @@ interface GemProps {
 
 /** Una gema: <Gem id={id} withCost />. Marcarla la guarda como conseguida en este navegador. */
 export const Gem: Component<GemProps, HTMLLabelElement> = ({ id, withCost }) => {
-  const { name, attr, level, icon } = GEMS[id];
+  const { name, attr, level } = GEMS[id];
   const isDone = doneStore.ids.has(id);
   // La misma gema sale en varios sitios (ruta, etapas, equipo…): marcarla en uno la marca en todos.
   const toggle = (e: Event) => {
@@ -96,7 +108,7 @@ export const Gem: Component<GemProps, HTMLLabelElement> = ({ id, withCost }) => 
     <label class={"gem" + (isDone ? " done" : "")} data-id={id} onMouseenter={(e: MouseEvent) => showGemTip(id, e)} onMousemove={moveGemTip} onMouseleave={hideGemTip}>
       <input type="checkbox" checked={isDone} onChange={toggle} />
       <i class={attr} />
-      {icon && <span class="gem-ico"><img src={gemIcon(icon)} alt="" loading="lazy" onLoad={layerIcon} onError={hideIcon} /></span>}
+      <GemIcon id={id} />
       <span>{name}</span>
       <small>{`nv ${level}${withCost ? " · " + shortCost(level) : ""}`}</small>
       {suggested.has(id) && <em class="sug" title="Sugerencia automática de leveling: no está en tu build">sugerida</em>}

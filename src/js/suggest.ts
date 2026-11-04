@@ -38,6 +38,8 @@ function rpn(expr: string[], types: string[]): boolean {
   return st.some(Boolean);
 }
 export const canSupport = (sup: string, skill: string): boolean => {
+  // Algunas gemas de los datos no tienen entrada en SKILLS (soportes sin usar): no se sabe, así que no se descarta.
+  if (!SKILLS[sup] || !SKILLS[skill]) return true;
   const { allowed, excluded } = SKILLS[sup], types = SKILLS[skill].types;
   return allowed.length > 0 && rpn(allowed, types) && !(excluded.length && rpn(excluded, types));
 };
