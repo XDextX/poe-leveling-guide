@@ -3,6 +3,7 @@
 import { AuthorNotes } from "../author-notes/author-notes";
 import { GearSection } from "../gear/gear";
 import { LevelingSection } from "../leveling/leveling";
+import { MyLevelingSection } from "../my-leveling/my-leveling";
 import { ProgressSection } from "../progress/progress";
 import { OtherWays } from "../other-ways/other-ways";
 import { RouteSections } from "../route/route";
@@ -17,18 +18,24 @@ interface GuideProps {
   showZones: boolean;
   /** Elige otra habilidad para un tramo del leveling sugerido. */
   onPick?: (stage: number, id: string) => void;
+  /** Lo que necesita "Mi leveling": los tramos guardados, de dónde vienen, cómo guardarlos y cómo exportarlos. */
+  leveling?: Omit<Parameters<typeof MyLevelingSection>[0], "data">;
 }
 
 /** Las secciones de la guía; cada una sale solo si la build tiene con qué rellenarla. */
-export const Guide: Component<GuideProps, DocumentFragment> = ({ data: { build, plan, cls, ascend, skills, others, damage, damageForm, treeStages, treesSuggested, levelingTrees }, showZones, onPick }) => (
-  <>
-    <Summary build={build} plan={plan} cls={cls} ascend={ascend} />
-    {build.notes && <AuthorNotes notes={build.notes} />}
-    {(plan.got.size > 0 || plan.start.length > 0) && <ProgressSection plan={plan} />}
-    {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} onPick={onPick} authorLeveling={mentionsLeveling(build.notes)} />}
-    {build.items.length > 0 && <GearSection items={build.items} />}
-    {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}
-    <RouteSections steps={plan.out} start={plan.start} showZones={showZones} />
-    <OtherWays build={build} plan={plan} />
-  </>
-) as DocumentFragment;
+export const Guide: Component<GuideProps, DocumentFragment> = ({ data, showZones, onPick, leveling }) => {
+  const { build, plan, cls, ascend, skills, others, damage, damageForm, treeStages, treesSuggested, levelingTrees } = data;
+  return (
+    <>
+      <Summary build={build} plan={plan} cls={cls} ascend={ascend} />
+      {build.notes && <AuthorNotes notes={build.notes} />}
+      {(plan.got.size > 0 || plan.start.length > 0) && <ProgressSection plan={plan} />}
+      {(skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} onPick={onPick} authorLeveling={mentionsLeveling(build.notes)} />}
+      {leveling && (skills.length > 0 || others.length > 0) && <MyLevelingSection data={data} {...leveling} />}
+      {build.items.length > 0 && <GearSection items={build.items} />}
+      {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}
+      <RouteSections steps={plan.out} start={plan.start} showZones={showZones} />
+      <OtherWays build={build} plan={plan} />
+    </>
+  ) as DocumentFragment;
+};

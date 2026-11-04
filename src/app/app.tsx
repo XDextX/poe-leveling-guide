@@ -4,7 +4,8 @@ import { CLASSES } from "../js/data";
 import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
 import type { GuideData } from "../js/guide";
-import { decode, parseBuild } from "../js/pob";
+import { fromOf, stageNodes } from "../js/my-leveling";
+import { decode, encode, exportLoadouts, parseBuild } from "../js/pob";
 import { hideProgress, initProgress } from "../components/progress/progress";
 import { initActGems, setActGems } from "../components/act-gems/act-gems-panel";
 import { buildKey, doneStore, setSuggested } from "../components/gem/gem";
@@ -17,6 +18,10 @@ import type { FormControls } from "./session";
 
 const pickKey = (cls: string, build: Build): string => buildKey(cls, build) + ":eleccion";
 const loadPicks = (key: string): Record<number, string> => { try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? {}; } catch { return {}; } };
+
+const levelingKey = (cls: string, build: Build): string => buildKey(cls, build) + ":mi-leveling";
+const loadLeveling = (key: string): MyStage[] | undefined => { try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? undefined; } catch { return undefined; } };
+const saveLeveling = (key: string, stages: MyStage[]): void => { try { localStorage.setItem(key, JSON.stringify(stages)); } catch {} };
 
 const HOW_TO_COPY = "en Path of Building, Import/Export Build → Generate";
 
@@ -31,6 +36,8 @@ export const App: Component<{}, HTMLElement> = () => {
   let computed: { cls: string; leagueStart: boolean; data: GuideData } | null = null;
   /** Las habilidades que el usuario eligió en cada tramo del leveling, por posición; se guardan por build y clase. */
   let picks: Record<number, string> = {};
+  /** El XML del código pegado, para escribir "Mi leveling" en él; y si los tramos del editor salen de ese código (hasta que el jugador los cambie). */
+  let xml = "", levelingFromCode = false;
   /** Cuenta las lecturas: si se pulsa "Crear guía" otra vez antes de acabar, solo cuenta la última. */
   let reads = 0;
 
@@ -57,7 +64,9 @@ export const App: Component<{}, HTMLElement> = () => {
     doneStore.load(opts.cls, build);
     setRedrawHeat(null);
     hideProgress();
-    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} onPick={pickSkill} />);
+    const key = levelingKey(opts.cls, build);
+    const leveling = { saved: loadLeveling(key), imported: levelingFromCode, onSave: (stages: MyStage[]) => { levelingFromCode = false; saveLeveling(key, stages); }, onExport: exportLeveling };
+    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} onPick={pickSkill} leveling={leveling} />);
     guide.hidden = false;
     setActGems(data);
     renderToc();
@@ -71,6 +80,14 @@ export const App: Component<{}, HTMLElement> = () => {
     try { localStorage.setItem(pickKey(opts.cls, build), JSON.stringify(picks)); } catch {}
     computed = null;
     rerender();
+  }
+
+  /** "Mi leveling" como código de PoB (o su XML), con un Loadout por tramo. */
+  async function exportLeveling(stages: MyStage[], kind: "code" | "xml"): Promise<string> {
+    if (!build || !computed) throw new Error("no hay build");
+    const nodes = stageNodes(build, stages, computed.data.treesSuggested);
+    const out = exportLoadouts(xml, stages.map((s, i) => ({ from: fromOf(stages, i), to: s.to, skill: s.skill, supports: s.supports, others: s.others, note: s.note, nodes: nodes[i] })));
+    return kind === "xml" ? out : encode(out);
   }
 
   /** Sin guía (campo vacío o código inválido) tampoco hay índice; se vacía para que la anterior no siga viva. */
@@ -90,10 +107,11 @@ export const App: Component<{}, HTMLElement> = () => {
     // Sin código válido no queda ninguna build: si no, cambiar una opción volvería a mostrar la anterior.
     build = computed = null;
     if (!form.code.value.trim()) { hideGuide(); say(`Primero pega el código de tu build: ${HOW_TO_COPY}.`); return; }
-    let read: Build;
+    let read: Build, text: string;
     // Solo leer el código va en el try: un fallo al dibujar la guía es un error de la app, no un código mal copiado.
     try {
-      read = parseBuild(await decode(form.code.value));
+      text = await decode(form.code.value);
+      read = parseBuild(text);
       if (!read.gems.length) throw userError("la build no tiene gemas");
     } catch (e) {
       if (id !== reads) return;
@@ -104,8 +122,11 @@ export const App: Component<{}, HTMLElement> = () => {
       return;
     }
     if (id !== reads) return;
-    build = read;
+    build = read; xml = text;
     if (build.cls && CLASSES.includes(build.cls)) form.cls.value = build.cls;
+    // Un código con los Loadouts de "Mi leveling" los trae al editor, en lugar de lo que hubiera guardado.
+    levelingFromCode = !!build.leveling;
+    if (build.leveling) saveLeveling(levelingKey(form.cls.value, build), build.leveling);
     rerender();
     say(`Build leída: ${build.gems.length} gemas.`);
   }
