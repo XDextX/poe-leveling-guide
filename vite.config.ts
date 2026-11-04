@@ -70,15 +70,17 @@ function hideUnstyledInDev(): Plugin {
   };
 }
 
-export default defineConfig({
+// npm run dev:leveling (modo "leveling") sirve la app bajo /leveling/, como si viviera en una subruta; --base no vale porque esta config lo fija.
+export default defineConfig(({ mode }) => ({
   ...shared,
   // Rutas relativas: la web vive en una subcarpeta de GitHub Pages y también se abre con doble clic.
-  base: "./",
+  base: mode === "leveling" ? "/leveling/" : "./",
   // La fecha y la licencia las necesita la app para volver a crear <Sources> en el navegador.
   define: { PAGE_DATE: JSON.stringify(date), PAGE_LICENSE: JSON.stringify(license) },
-  plugins: [prerender(), hideUnstyledInDev(), viteSingleFile()],
+  // viteSingleFile solo en el build: su config fuerza base "./" y en dev no hace falta (y impediría servir bajo /leveling/).
+  plugins: [prerender(), hideUnstyledInDev(), { ...viteSingleFile(), apply: "build" }],
   build: { outDir: "dist", emptyOutDir: true },
   // npm test (Vitest): la lógica de src/js/ en Node, con los mismos imports y JSX que la app. tests/setup.ts pone los
   // datos del juego en window.DATA, como hacen gamedata/*.js en el navegador.
   test: { include: ["tests/**/*.test.ts"], setupFiles: ["tests/setup.ts"], environment: "node" },
-});
+}));

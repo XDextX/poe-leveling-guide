@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:leveling": "vite --mode leveling --host 127.0.0.1 --port 80 --strictPort",
     "build": "vite build",
     "serve": "vite preview",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
