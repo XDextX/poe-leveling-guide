@@ -101,6 +101,16 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
     expect(parseBuild(out).leveling).toEqual([{ to: 40, skill: cleave, supports: [melee, melee, melee, melee], others: [{ skill: herald, supports: [] }, { skill: dash, supports: [] }], points: 0, note: "" }]);
   });
 
+  it("dos habilidades unidas en un grupo vuelven cada una con sus propios soportes, y la ida y vuelta se estabiliza", () => {
+    const herald = gemId("Herald of Ash"), dash = gemId("Flame Dash"), fast = gemId("Faster Attacks Support");
+    // Nivel 50: la principal llena el pecho (6) y las otras dos, con un soporte cada una (4 casillas), caen juntas en el casco.
+    const stage = { from: 1, to: 50, skill: cleave, supports: [melee, melee, melee, melee, melee], others: [{ skill: herald, supports: [melee] }, { skill: dash, supports: [fast] }], nodes: [], note: "" };
+    const once = parseBuild(exportLoadouts(XML, [stage])).leveling!;
+    expect(once[0].others).toEqual([{ skill: herald, supports: [melee] }, { skill: dash, supports: [fast] }]);
+    const again = parseBuild(exportLoadouts(XML, [{ ...stage, ...once[0], from: 1, nodes: [] }])).leveling!;
+    expect(again).toEqual(once);
+  });
+
   it("un tramo sin habilidad principal vuelve sin ella aunque tenga otras habilidades", () => {
     const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
     expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], points: 0, note: "" }]);

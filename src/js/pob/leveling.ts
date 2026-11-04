@@ -147,10 +147,12 @@ export function parseLoadouts(doc: Document, idOf: (gem: Element) => string | nu
     const mainIds = ids(main), skill = mainIds.find(isActive) ?? null;
     return {
       to: Number(m![3]), skill, supports: skill ? mainIds.filter(id => id !== skill && isSupport(id)) : [],
-      // Un grupo con varias habilidades (las de una misma pieza del equipo) da una "otra" por cada una; sus soportes, a la primera.
+      // Un grupo con varias habilidades (las de una misma pieza del equipo) da una "otra" por cada una; cada soporte, a la habilidad
+      // que tiene delante en el grupo (así se escribió y PoB conserva el orden), de modo que la ida y vuelta no cambia nada.
       others: all.filter(g => g !== main).flatMap((g): MyOther[] => {
-        const gem = ids(g), actives = gem.filter(isActive), supports = gem.filter(id => !isActive(id) && isSupport(id));
-        return actives.map((skill, k) => ({ skill, supports: k === 0 ? supports : [] }));
+        const out: MyOther[] = [];
+        for (const id of ids(g)) { if (isActive(id)) out.push({ skill: id, supports: [] }); else if (isSupport(id) && out.length) out[out.length - 1].supports.push(id); }
+        return out;
       }),
       points: (s.getAttribute("nodes") || "").split(",").filter(Boolean).length, note: noteLines.get(`Leveling ${m![1]} (nv ${m![2]}-${m![3]})`) ?? "",
     };
