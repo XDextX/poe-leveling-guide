@@ -8,8 +8,11 @@ import type { HeatView } from "../heatmap/heatmap";
 import { NodeTip } from "../node-tip/node-tip";
 import "./heat-controls.css";
 
-/** Añade la ficha y los botones de zoom junto al canvas, dentro de su contenedor, y engancha los gestos. `masteries` son las maestrías elegidas. */
-export function heatControls(canvas: HTMLCanvasElement, redraw: () => void, masteries: [node: string, effect: string][]): void {
+/**
+ * Añade la ficha y los botones de zoom junto al canvas, dentro de su contenedor, y engancha los gestos. `masteries` son las maestrías
+ * elegidas. `onNode`, si se da, se llama con el id del nodo en que se hace clic (o se toca, sin arrastrar).
+ */
+export function heatControls(canvas: HTMLCanvasElement, redraw: () => void, masteries: [node: string, effect: string][], onNode?: (id: string) => void): void {
   const chosen = new Map(masteries);
   const v: HeatView = { z: 1, x: 0, y: 0 }; heatViews.set(canvas, v);
   const tip = <div class="heat-tip" hidden /> as HTMLDivElement;
@@ -29,14 +32,19 @@ export function heatControls(canvas: HTMLCanvasElement, redraw: () => void, mast
   // Ctrl+rueda (y el pellizco del trackpad, que llega así): la rueda sola sigue desplazando la página.
   canvas.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.004), ...at(e)); }, { passive: false });
 
-  // Ficha del nodo más cercano al punto, a menos de 12 px.
-  const showTip = (cx: number, cy: number) => {
-    let best: TreeNode | null = null, bestId = "", bd = 12 ** 2;
+  // El nodo más cercano al punto, a menos de 12 px.
+  const nearest = (cx: number, cy: number): [id: string, node: TreeNode] | null => {
+    let best: [string, TreeNode] | null = null, bd = 12 ** 2;
     for (const [id, n] of Object.entries(NODES)) {
       if (n.ascendancy || !v.pos) continue;
       const [x, y] = v.pos(n), d = (x - cx) ** 2 + (y - cy) ** 2;
-      if (d < bd) { bd = d; best = n; bestId = id; }
+      if (d < bd) { bd = d; best = [id, n]; }
     }
+    return best;
+  };
+  // Ficha del nodo más cercano al punto.
+  const showTip = (cx: number, cy: number) => {
+    const hit = nearest(cx, cy), best = hit?.[1], bestId = hit?.[0] ?? "";
     tip.hidden = !best; if (!best) return;
     const taken = !!v.taken?.has(bestId);
     const effect = best.type === NODE.MASTERY && taken ? MASTERIES[bestId]?.[chosen.get(bestId) ?? ""] ?? "" : "";
@@ -59,7 +67,12 @@ export function heatControls(canvas: HTMLCanvasElement, redraw: () => void, mast
     down.set(e.pointerId, p); moved += Math.abs(p[0] - prev[0]) + Math.abs(p[1] - prev[1]);
     if (v.z > 1) { v.x += p[0] - prev[0]; v.y += p[1] - prev[1]; tip.hidden = true; redraw(); }
   });
-  const up = (e: PointerEvent) => { if (down.delete(e.pointerId) && moved < 6 && e.type === "pointerup") showTip(...at(e)); };
+  const up = (e: PointerEvent) => {
+    if (!down.delete(e.pointerId) || moved >= 6 || e.type !== "pointerup") return;
+    const hit = onNode && nearest(...at(e));
+    if (hit) onNode!(hit[0]);
+    showTip(...at(e));
+  };
   canvas.addEventListener("pointerup", up);
   canvas.addEventListener("pointercancel", up);
   canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !down.size) tip.hidden = true; });

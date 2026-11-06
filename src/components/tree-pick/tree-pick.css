@@ -1,0 +1,7 @@
+/* Árbol de un tramo de Mi leveling: el desplegable, el mapa y su aviso. */
+.tree-pick { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 6px 10px; }
+.tree-pick > summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--fg); min-height: 32px; display: flex; align-items: center; }
+.tree-pick .heat-wrap { margin-top: 6px; }
+.tree-pick .tree-warning { color: var(--kill); margin: 6px 0 0; }
+.tree-pick .tree-warning:empty { display: none; }
+.tree-pick .note { font-size: .78rem; color: var(--muted); margin: 6px 0 0; }
