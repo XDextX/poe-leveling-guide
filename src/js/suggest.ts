@@ -1,12 +1,13 @@
 /* Sugerencias de leveling: heurísticas que la interfaz muestra siempre como "sugerencia automática". */
 
-import { AREAS, CLASSES, CLASS_STARTS, EDGES, GEMS, NODES, SKILLS, START } from "./data";
+import { AREAS, CLASSES, CLASS_STARTS, GEMS, NODES, SKILLS, START } from "./data";
 import { isSupport } from "./gems";
 import { elementFit, formFit } from "./damage";
 import type { Damage } from "./damage";
 import { isHex, isMark } from "./limits";
 import { maxSockets } from "./sockets";
 import { NODE } from "./node-types";
+import { ADJ } from "./tree-graph";
 import { parseRoute, questOffers } from "./route";
 import { statKind } from "./stats";
 
@@ -103,14 +104,6 @@ export function suggestSkills(main: MainSkill, cls: string, defs: Set<string>, d
     prev = skill; from = to;
   }
   return out;
-}
-
-// Vecinos de cada nodo del árbol, en los dos sentidos.
-const ADJ = new Map<string, string[]>();
-for (let i = 0; i < EDGES.length; i += 2) {
-  const a = String(EDGES[i]), b = String(EDGES[i + 1]);
-  ADJ.has(a) || ADJ.set(a, []); ADJ.has(b) || ADJ.set(b, []);
-  ADJ.get(a)!.push(b); ADJ.get(b)!.push(a);
 }
 
 /** Valor de un nodo para el árbol de leveling en el tramo `si`: la defensa pesa más al principio. */
