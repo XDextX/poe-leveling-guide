@@ -5,7 +5,7 @@
 /// <reference types="vitest/config" />
 import fs from "node:fs";
 import path from "node:path";
-import { createServer, defineConfig, type Plugin, type UserConfig, type ViteDevServer } from "vite";
+import { createServer, defineConfig, type Plugin, type PluginOption, type UserConfig, type ViteDevServer } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { SITE, jsonLd, sitemap } from "./scripts/lib/site.mts";
 import { serviceWorker } from "./scripts/lib/sw.mts";
@@ -54,6 +54,9 @@ function prerender(): Plugin {
   };
 }
 
+/** Un plugin que solo actúa en el build (viteSingleFile devuelve un PluginOption, que no se puede extender tal cual). */
+const buildOnly = (plugin: PluginOption): Plugin => ({ ...(plugin as Plugin), apply: "build" });
+
 /**
  * En dev, Vite mete el CSS desde JavaScript: al recargar se ve un momento la página sin estilos. Se oculta el cuerpo hasta que
  * main.tsx (con su CSS) se ha ejecutado; el script va después del suyo y los módulos se ejecutan en orden. En el build no hace
@@ -78,7 +81,7 @@ export default defineConfig(({ mode }) => ({
   // La fecha y la licencia las necesita la app para volver a crear <Sources> en el navegador.
   define: { PAGE_DATE: JSON.stringify(date), PAGE_LICENSE: JSON.stringify(license) },
   // viteSingleFile solo en el build: su config fuerza base "./" y en dev no hace falta (y impediría servir bajo /leveling/).
-  plugins: [prerender(), hideUnstyledInDev(), { ...viteSingleFile(), apply: "build" }],
+  plugins: [prerender(), hideUnstyledInDev(), buildOnly(viteSingleFile())],
   build: { outDir: "dist", emptyOutDir: true },
   // npm test (Vitest): la lógica de src/js/ en Node, con los mismos imports y JSX que la app. tests/setup.ts pone los
   // datos del juego en window.DATA, como hacen gamedata/*.js en el navegador.
