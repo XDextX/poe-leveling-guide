@@ -17,7 +17,7 @@ import { onCurrentSection } from "../toc-nav/toc-nav";
 
 const panel = () => document.getElementById("act-gems")!, treePanel = () => document.getElementById("act-tree")!;
 
-let guide: GuideData | null = null, shownAct = 0, suggestedOn = true;
+let guide: GuideData | null = null, shownAct = 0, suggestedOn = true, lastSection: string | null = null;
 
 interface ActContentProps { data: GuideData; act: number; showSuggested: boolean }
 
@@ -81,6 +81,9 @@ export function setActGems(data: GuideData | null, showSuggested = true): void {
   suggestedOn = showSuggested;
   shownAct = 0;
   if (!data) panel().hidden = treePanel().hidden = true;
+  // Al cambiar la guía o la casilla se repintan ya los paneles de la sección que se está leyendo: si no, quedan los de antes hasta el
+  // siguiente cambio de sección (con la casilla apagada seguiría viéndose el árbol sugerido).
+  else update(lastSection);
 }
 
 /** Coloca el árbol justo bajo el índice, que mide lo que le toque según sus enlaces; el resto de la altura es su máximo. */
@@ -92,6 +95,7 @@ function placeTree(): void {
 
 /** Lo que se está leyendo: si es un acto ("acto-N"), se enseñan sus gemas (a la derecha) y su árbol (a la izquierda); si no, se esconden. */
 function update(id: string | null): void {
+  lastSection = id;
   const act = guide ? +(/^acto-(\d+)$/.exec(id ?? "")?.[1] ?? 0) : 0;
   if (act === shownAct && !panel().hidden === !!act) return;
   shownAct = act;
