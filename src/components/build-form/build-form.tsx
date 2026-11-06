@@ -10,7 +10,7 @@ interface BuildFormProps {
 }
 
 /**
- * Formulario de la build. Los controles llevan id (code, cls, league, zones, go, msg) porque el resto de la app los lee
+ * Formulario de la build. Los controles llevan id (code, cls, league, zones, suggested, go, msg) porque el resto de la app los lee
  * por id (`form` en src/js/data.ts y la sesión).
  */
 export const BuildForm: Component<BuildFormProps, HTMLElement> = ({ classes, onBuild, onOptionsChange }) => (
@@ -22,6 +22,7 @@ export const BuildForm: Component<BuildFormProps, HTMLElement> = ({ classes, onB
       <label class="field">Clase <select id="cls" onChange={onOptionsChange}>{classes.map(c => <option value={c}>{c}</option>)}</select></label>
       <label class="check"><input type="checkbox" id="league" checked onChange={onOptionsChange} /> Inicio de liga</label>
       <label class="check"><input type="checkbox" id="zones" checked onChange={onOptionsChange} /> Actividades de zona</label>
+      <label class="check"><input type="checkbox" id="suggested" onChange={onOptionsChange} /> Leveling sugerido</label>
       <button class="primary" id="go" onClick={onBuild}>Crear guía</button>
     </div>
     <div id="msg" aria-live="polite" />

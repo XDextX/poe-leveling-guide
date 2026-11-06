@@ -46,11 +46,11 @@ export const App: Component<{}, HTMLElement> = () => {
   const page = <Page classes={CLASSES} date={PAGE_DATE} license={PAGE_LICENSE} onBuild={() => void run()} onOptionsChange={() => rerender()} /> as HTMLElement;
   // Los elementos de la propia página que hay que leer o cambiar.
   const find = <T extends HTMLElement = HTMLElement>(id: string): T => page.querySelector<T>("#" + id)!;
-  const form: FormControls = { code: find("code"), cls: find("cls"), league: find("league"), zones: find("zones") };
+  const form: FormControls = { code: find("code"), cls: find("cls"), league: find("league"), zones: find("zones"), suggested: find("suggested") };
   const guide = find("out"), msg = find("msg");
 
   const say = (text: string, error = false) => { msg.className = error ? "error" : ""; msg.textContent = text; };
-  const options = (): GuideOptions => ({ cls: form.cls.value, leagueStart: form.league.checked, showZones: form.zones.checked });
+  const options = (): GuideOptions => ({ cls: form.cls.value, leagueStart: form.league.checked, showZones: form.zones.checked, showSuggested: form.suggested.checked });
 
   /** Compone la guía de la build actual con las opciones del formulario. */
   function rerender(): void {
@@ -69,7 +69,7 @@ export const App: Component<{}, HTMLElement> = () => {
     hideProgress();
     const key = levelingKey(opts.cls, build);
     const leveling = { saved: loadLeveling(key), imported: levelingFromCode, replaced: replacedLeveling, onSave: (stages: MyStage[]) => { levelingFromCode = false; saveLeveling(key, stages); }, onExport: exportLeveling };
-    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} onPick={pickSkill} leveling={leveling} />);
+    guide.replaceChildren(<Guide data={data} showZones={opts.showZones} showSuggested={opts.showSuggested} onPick={pickSkill} leveling={leveling} />);
     guide.hidden = false;
     setActGems(data);
     renderToc();

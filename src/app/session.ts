@@ -8,6 +8,7 @@ export interface FormControls {
   cls: HTMLSelectElement;
   league: HTMLInputElement;
   zones: HTMLInputElement;
+  suggested: HTMLInputElement;
 }
 
 /** Lo que la sesión necesita de la app: el formulario, el contenedor de la guía y cómo leer el código y recomponer. */
@@ -19,7 +20,7 @@ export interface SessionTarget {
 }
 
 /** Lo que se guarda: la build, las opciones y la vista. */
-interface Saved { code: string; cls: string; league: boolean; zones: boolean; open: string[]; stage: string; mode: string; scroll: number }
+interface Saved { code: string; cls: string; league: boolean; zones: boolean; suggested?: boolean; open: string[]; stage: string; mode: string; scroll: number }
 
 /**
  * Engancha el guardado (al recargar, cerrar o pasar a segundo plano) y restaura la sesión anterior si la hay.
@@ -38,7 +39,7 @@ export async function startSession({ form, guide, run, rerender }: SessionTarget
     try {
       if (!form.code.value.trim() || guide.hidden) { localStorage.removeItem(SESSION_KEY); return; }
       const saved: Saved = {
-        code: form.code.value, cls: form.cls.value, league: form.league.checked, zones: form.zones.checked,
+        code: form.code.value, cls: form.cls.value, league: form.league.checked, zones: form.zones.checked, suggested: form.suggested.checked,
         open: [...guide.querySelectorAll<HTMLDetailsElement>("details[id]")].filter(d => d.open).map(d => d.id),
         stage: pressedValue(".stages") ?? "-1", mode: pressedValue(".kinds") ?? "both",
         scroll: scrollY,
@@ -59,6 +60,8 @@ export async function startSession({ form, guide, run, rerender }: SessionTarget
   form.code.value = saved.code;
   form.league.checked = saved.league;
   form.zones.checked = saved.zones;
+  // Las sesiones guardadas antes de esta casilla no la traen: sin marcar, como al empezar.
+  form.suggested.checked = saved.suggested ?? false;
   await run();
   if (guide.hidden) return done();
   // run() pone la clase de la build; si se estaba viendo otra, se recompone con ella.

@@ -142,7 +142,7 @@ declare namespace JSX {
   }
   interface IntrinsicElements { [tag: string]: HtmlProps }
 }
-interface GuideOptions { cls: string; leagueStart: boolean; showZones: boolean }
+interface GuideOptions { cls: string; leagueStart: boolean; showZones: boolean; showSuggested: boolean }
 type StatKind = "dmg" | "def" | "other";
 /** Una entrada del índice: destino de una sección marcada con data-toc. */
 /** group agrupa entradas como chips; parent (el id de otro destino) la anida bajo él. */
