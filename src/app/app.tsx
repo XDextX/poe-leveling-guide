@@ -42,6 +42,8 @@ export const App: Component<{}, HTMLElement> = () => {
   let replacedLeveling: MyStage[] | undefined;
   /** Cuenta las lecturas: si se pulsa "Crear guía" otra vez antes de acabar, solo cuenta la última. */
   let reads = 0;
+  /** Guarda la sesión ahora (lo da startSession); hasta que arranca no hay nada que guardar. */
+  let saveSession: (() => void) | undefined;
 
   const page = <Page classes={CLASSES} date={PAGE_DATE} license={PAGE_LICENSE} onBuild={() => void run()} onOptionsChange={() => rerender()} /> as HTMLElement;
   // Los elementos de la propia página que hay que leer o cambiar.
@@ -137,6 +139,7 @@ export const App: Component<{}, HTMLElement> = () => {
       saveLeveling(key, imported);
     }
     rerender();
+    saveSession?.();
     say(`Build leída: ${build.gems.length} gemas.`);
   }
 
@@ -146,7 +149,7 @@ export const App: Component<{}, HTMLElement> = () => {
     initToc();
     initActGems();
     initProgress();
-    void startSession({ form, guide, run, rerender });
+    void startSession({ form, guide, run, rerender }).then(save => { saveSession = save; });
   });
   return page;
 };
