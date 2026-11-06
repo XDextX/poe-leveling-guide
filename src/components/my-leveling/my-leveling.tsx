@@ -1,12 +1,14 @@
 /* Mi leveling: el jugador edita los tramos que la guía le sugiere y se lleva el resultado como Loadouts de Path of Building. */
 
-import { GEMS, SKILLS } from "../../js/data";
-import { clearLeveling, defaultLeveling, fromOf, mergeStage, setPoints, setTo, slotLines, splitStage, warnings } from "../../js/my-leveling";
+import { GEMS, NODES, SKILLS } from "../../js/data";
+import { applyTreeChange, clearLeveling, defaultLeveling, fromOf, mergeStage, setTo, slotLines, splitStage, treeWarning, warnings } from "../../js/my-leveling";
+import { toggleNode } from "../../js/tree-graph";
 import type { GuideData } from "../../js/guide";
 import { isActive, isSupport } from "../../js/gems";
 import { GemIcon } from "../gem/gem";
 import { focusQuietly, GemPicker } from "../gem-picker/gem-picker";
 import { Section } from "../section/section";
+import { refreshTree, TreePick } from "../tree-pick/tree-pick";
 import "./my-leveling.css";
 
 interface MyLevelingProps {
@@ -38,6 +40,10 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
   let undo: MyStage[] | null = imported && replaced?.length ? replaced : null;
   /** A dónde va el foco tras el próximo dibujo, si no es el control que lo tenía. */
   let want: Focus | null = null;
+  /** Los mapas de árbol que hay a la vista (uno por tramo) y cuáles están desplegados: un cambio de árbol los repinta sin rehacer los tramos. */
+  let pickers: HTMLElement[] = [];
+  const openTrees = new Set<number>();
+  const classId = data.build.tree.classId;
   const state = <p class="state" role="status" /> as HTMLElement, list = <div class="my-stages" /> as HTMLElement;
   const undoButton = <button type="button" class="undo" onClick={() => { if (!undo) return; const back = undo; undo = null; change(back); say("Deshecho."); }}>Deshacer</button> as HTMLButtonElement;
   const copyBox = <textarea class="copy-box" readonly hidden aria-label="Código para Path of Building" onFocus={(e: Event) => (e.target as HTMLTextAreaElement).select()} /> as HTMLTextAreaElement;
@@ -55,6 +61,19 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
   );
   // El cambio llega al salir del campo: se aplica después de que el foco llegue al siguiente, para devolverlo allí y no robarlo.
   const pick = (fn: (id: string) => void) => (id: string) => later(() => fn(id));
+
+  /** Lo que fija el encuadre de todos los mapas: el árbol final de la build y los nodos de todos los tramos (así se ven en el mismo sitio). */
+  const frameNodes = (): string[] => [...data.build.tree.nodes.filter(id => Object.hasOwn(NODES, id) && !NODES[id].ascendancy), ...stages.flatMap(s => s.nodes)];
+
+  /** Se pulsa un nodo del mapa de un tramo: se coge (con su camino) o se quita; los tramos siguientes lo siguen y se guarda. */
+  function pickNode(i: number, id: string): void {
+    if (!classId) return;
+    const next = toggleNode(stages[i].nodes, classId, id);
+    if (next === stages[i].nodes) return;
+    stages = applyTreeChange(stages, i, next, classId);
+    onSave(stages);
+    pickers.forEach(p => refreshTree.get(p)?.());
+  }
 
   function stageCard(s: MyStage, i: number): HTMLElement {
     const from = fromOf(stages, i), last = i === stages.length - 1, problems = warnings(s), n = i + 1;
@@ -96,9 +115,10 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
             <ul class="slots">{slotLines(s).map(line => <li>{line}</li>)}</ul>
           </div>
         )}
-        {s.points === null
-          ? <p class="hint">Árbol: el de tu build para este tramo (la app no lo puede cambiar).</p>
-          : <label class="field">Puntos del árbol al acabar el tramo <input class="level" type="number" min="0" value={s.points} data-field="points" aria-label={`Puntos del árbol del tramo ${n}`} onChange={(e: Event) => { const v = +(e.target as HTMLInputElement).value; later(() => change(setPoints(stages, i, v))); }} /></label>}
+        {classId
+          ? <TreePick classId={classId} nodes={() => stages[i]?.nodes ?? []} frame={frameNodes} masteries={data.build.tree.masteries} warning={() => stages[i] ? treeWarning(stages[i]) : ""}
+              open={openTrees.has(i)} onToggle={open => { open ? openTrees.add(i) : openTrees.delete(i); }} onNode={id => pickNode(i, id)} />
+          : <p class="hint">Tu build no trae árbol, así que no se puede elegir el de cada tramo.</p>}
         <label class="field">Nota <input type="text" value={s.note} data-field="note" placeholder="Ej.: cambia a Cleave al llegar al acto 2" aria-label={`Nota del tramo ${n}`} onChange={(e: Event) => { const v = (e.target as HTMLInputElement).value; later(() => edit(i, { note: v })); }} /></label>
         {problems.length > 0 && <ul class="warn">{problems.map(p => <li><b>Ojo:</b> {p}</li>)}</ul>}
       </div>
@@ -112,6 +132,7 @@ export const MyLevelingSection: Component<MyLevelingProps, HTMLDetailsElement> =
     const target = want ?? (card && cur?.dataset.field ? { stage: [...list.children].indexOf(card), field: cur.dataset.field } : null);
     want = null;
     list.replaceChildren(...stages.map(stageCard));
+    pickers = [...list.querySelectorAll<HTMLElement>(".tree-pick")];
     const field = target && (list.children[Math.min(target.stage, stages.length - 1)] as HTMLElement | undefined)?.querySelector<HTMLElement>(`[data-field="${target.field}"]`);
     if (field) focusQuietly(() => field.focus());
   }

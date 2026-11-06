@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { exportLoadouts } from "../src/js/pob/leveling";
 import { decode, encode, parseBuild } from "../src/js/pob";
 import { parseTree } from "../src/js/pob/tree";
+import { CLASS_STARTS, NODES } from "../src/js/data";
+import { NODE } from "../src/js/node-types";
+import { pickable } from "../src/js/tree-graph";
 import { gemId } from "./helpers";
 
 const cleave = gemId("Cleave"), melee = gemId("Melee Physical Damage Support"), vaal = gemId("Vaal Cleave");
@@ -43,8 +46,8 @@ describe("exportLoadouts", () => {
   it("al leer el código exportado vuelven los tramos y las notas del autor quedan sin el bloque", async () => {
     const back = parseBuild(await decode(await encode(out)));
     expect(back.leveling).toEqual([
-      { to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [melee] }], points: 0, note: "usa Cleave" },
-      { to: 28, skill: null, supports: [], others: [], points: 0, note: "" },
+      { to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [melee] }], nodes: [], note: "usa Cleave" },
+      { to: 28, skill: null, supports: [], others: [], nodes: [], note: "" },
     ]);
     expect(back.notes).toBe("Notas del autor");
     expect(back.tree.stages).toEqual([]);
@@ -98,7 +101,32 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
     const out = exportLoadouts(XML, [{ from: 1, to: 40, skill: cleave, supports: [melee, melee, melee, melee], others: [{ skill: herald, supports: [] }, { skill: dash, supports: [] }], nodes: [], note: "" }]);
     const groups = [...parse(out).querySelectorAll("SkillSet")[1].querySelectorAll(":scope > Skill")].map(g => [g.getAttribute("slot"), g.querySelectorAll("Gem").length]);
     expect(groups).toEqual([["Body Armour", 5], ["Helmet", 2]]);
-    expect(parseBuild(out).leveling).toEqual([{ to: 40, skill: cleave, supports: [melee, melee, melee, melee], others: [{ skill: herald, supports: [] }, { skill: dash, supports: [] }], points: 0, note: "" }]);
+    expect(parseBuild(out).leveling).toEqual([{ to: 40, skill: cleave, supports: [melee, melee, melee, melee], others: [{ skill: herald, supports: [] }, { skill: dash, supports: [] }], nodes: [], note: "" }]);
+  });
+
+  it("los nodos del árbol de cada tramo se escriben tal cual y vuelven al importar; los ids que no existen no", () => {
+    const real = Object.keys(NODES).filter(id => pickable(id, "1")).slice(0, 5);
+    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [], nodes: real, note: "" }]);
+    expect(parse(out).querySelectorAll("Tree > Spec")[1].getAttribute("nodes")).toBe(real.join(","));
+    expect(parseBuild(out).leveling![0].nodes).toEqual(real);
+    const sucio = out.replace(`nodes="${real.join(",")}"`, `nodes="${real.join(",")},no-existe,constructor"`);
+    expect(parseBuild(sucio).leveling![0].nodes).toEqual(real);
+  });
+
+  it("los árboles de los tramos salen sin las maestrías del árbol final de la build, aunque el árbol activo las traiga", () => {
+    const withMasteries = XML.replace('masteryEffects=""', 'masteryEffects="{1,2}"');
+    const specs = parse(exportLoadouts(withMasteries, [{ from: 1, to: 12, skill: null, supports: [], others: [], nodes: [], note: "" }])).querySelectorAll("Tree > Spec");
+    expect(specs[0].getAttribute("masteryEffects")).toBe("{1,2}");
+    expect(specs[1].getAttribute("masteryEffects")).toBe("");
+  });
+
+  it("al importar solo entran los nodos que se pueden coger: sin maestrías, ascendencia ni inicios", () => {
+    const keys = Object.keys(NODES);
+    const asc = keys.find(id => NODES[id].ascendancy)!, mastery = keys.find(id => NODES[id].type === NODE.MASTERY && !NODES[id].ascendancy)!;
+    const plain = keys.find(id => !NODES[id].ascendancy && NODES[id].type === NODE.SMALL)!, starts = Object.values(CLASS_STARTS);
+    const tree = [plain, asc, mastery, ...starts].join(",");
+    const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [], nodes: [], note: "" }]).replace(/(Leveling 1 [^>]*?nodes=")"/, `$1${tree}"`);
+    expect(parseBuild(out).leveling![0].nodes).toEqual([plain]);
   });
 
   it("dos habilidades unidas en un grupo vuelven cada una con sus propios soportes, y la ida y vuelta se estabiliza", () => {
@@ -113,7 +141,7 @@ describe("exportLoadouts repetido y con Loadouts del autor", () => {
 
   it("un tramo sin habilidad principal vuelve sin ella aunque tenga otras habilidades", () => {
     const out = exportLoadouts(XML, [{ from: 1, to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
-    expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], points: 0, note: "" }]);
+    expect(parseBuild(out).leveling).toEqual([{ to: 12, skill: null, supports: [], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
   });
 
   it("si PoB dejó activo un tramo, el árbol final es el primero que no lo es", () => {

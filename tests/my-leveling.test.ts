@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { clearLeveling, defaultLeveling, fromOf, mergeStage, sanitizeLeveling, setPoints, setTo, slotGroups, slotLines, splitStage, warnings } from "../src/js/my-leveling";
+import { applyTreeChange, clearLeveling, defaultLeveling, fromOf, mergeStage, ownOf, pointsAvailable, sanitizeLeveling, setTo, slotGroups, slotLines, splitStage, treeWarning, warnings } from "../src/js/my-leveling";
+import { ADJ } from "../src/js/tree-graph";
+import { CLASS_STARTS, NODES } from "../src/js/data";
+import { NODE } from "../src/js/node-types";
 import { gemId } from "./helpers";
 
-const stage = (to: number, over: Partial<MyStage> = {}): MyStage => ({ to, skill: null, supports: [], others: [], points: 10, note: "", ...over });
+const stage = (to: number, over: Partial<MyStage> = {}): MyStage => ({ to, skill: null, supports: [], others: [], nodes: [], note: "", ...over });
+/** Una cadena de nodos conectados que sale del inicio de la clase 1 (cogibles: sin maestrías ni ascendencia), para probar con el árbol real. */
+function chain(length: number): { start: string; line: string[] } {
+  const start = CLASS_STARTS["1"], line: string[] = [], seen = new Set([start]);
+  let cur = start;
+  while (line.length < length) {
+    const next = (ADJ.get(cur) ?? []).find(id => !seen.has(id) && !NODES[id].ascendancy && NODES[id].type !== NODE.MASTERY);
+    if (!next) throw new Error("el árbol no tiene una cadena tan larga desde el inicio");
+    line.push(next); seen.add(next); cur = next;
+  }
+  return { start, line };
+}
 const levels = (stages: MyStage[]) => stages.map((s, i) => [fromOf(stages, i), s.to]);
 
 describe("tramos", () => {
@@ -29,12 +43,62 @@ describe("tramos", () => {
     expect(mergeStage(stages, 2)).toBe(stages);
   });
 
-  it("setPoints no baja de los puntos del tramo anterior", () => {
-    expect(setPoints([stage(12, { points: 20 }), stage(28)], 1, 5)[1].points).toBe(20);
+  it("applyTreeChange: lo que se coge en un tramo pasa a los siguientes y los anteriores no cambian", () => {
+    const { line } = chain(4);
+    const three = [line[0], line[1], line[2]];
+    const base = [stage(10), stage(20), stage(30, { nodes: [line[0]] })];
+    const grown = applyTreeChange(base, 1, three, "1");
+    expect(grown.map(s => s.nodes)).toEqual([[], three, [line[0], line[1], line[2]]]);
+    // El tramo 3 ya tenía el primero por su cuenta: no se duplica.
+    expect(grown[2].nodes.filter(id => id === line[0])).toHaveLength(1);
+  });
+
+  it("applyTreeChange: al quitar un nodo solo se quita de los tramos que lo heredaron de este", () => {
+    const { line } = chain(3);
+    // El tramo 1 coge los tres y el 2 los hereda; al quitar el tercero en el 1, el 2 lo pierde también.
+    let stages = applyTreeChange([stage(10), stage(20)], 0, line, "1");
+    expect(stages[1].nodes).toEqual(line);
+    expect(ownOf(stages, 1)).toEqual([]);
+    stages = applyTreeChange(stages, 0, line.slice(0, 2), "1");
+    expect(stages.map(s => s.nodes)).toEqual([line.slice(0, 2), line.slice(0, 2)]);
+  });
+
+  it("applyTreeChange: lo que un tramo cogió por su cuenta se queda al quitarlo en uno anterior", () => {
+    const { line } = chain(4);
+    // El tramo 2 planea sus cuatro nodos por su cuenta; el tramo 1 coge los tres primeros y los vuelve a quitar.
+    let stages: MyStage[] = [stage(10), stage(20, { nodes: line, own: line })];
+    stages = applyTreeChange(stages, 0, [line[0], line[1], line[2]], "1");
+    expect(stages[0].nodes).toEqual([line[0], line[1], line[2]]);
+    expect(stages[1].nodes).toEqual(line);
+    stages = applyTreeChange(stages, 0, [], "1");
+    expect(stages[0].nodes).toEqual([]);
+    expect(stages[1].nodes).toEqual(line);
+  });
+
+  it("applyTreeChange: de lo heredado se quita lo que sobra, pero no el camino hasta lo que el tramo cogió por su cuenta", () => {
+    const { line } = chain(4);
+    // El tramo 2 hereda los dos primeros y coge por su cuenta el tercero y el cuarto.
+    let stages = applyTreeChange([stage(10), stage(20)], 0, [line[0], line[1]], "1");
+    stages = applyTreeChange(stages, 1, line, "1");
+    expect(ownOf(stages, 1)).toEqual([line[2], line[3]]);
+    // Al quitar el segundo en el tramo 1, el 2 lo necesita para llegar a lo suyo: se queda.
+    stages = applyTreeChange(stages, 0, [line[0]], "1");
+    expect(stages[0].nodes).toEqual([line[0]]);
+    expect(stages[1].nodes).toEqual(line);
+  });
+
+  it("pointsAvailable: un punto por nivel menos el primero y 24 de misiones", () => {
+    expect([1, 10, 50].map(pointsAvailable)).toEqual([24, 33, 73]);
+  });
+
+  it("treeWarning avisa solo si se gastan más puntos de los que hay al nivel del tramo", () => {
+    const nodes = Array.from({ length: pointsAvailable(10) + 1 }, (_, i) => String(i));
+    expect(treeWarning({ nodes, to: 10 })).toContain("hay como mucho");
+    expect(treeWarning({ nodes: nodes.slice(1), to: 10 })).toBe("");
   });
 
   it("clearLeveling vacía el contenido y mantiene dónde acaba cada tramo", () => {
-    expect(clearLeveling([stage(12, { skill: "x", note: "n" }), stage(28, { points: null })])).toEqual([stage(12, { points: 0 }), stage(28, { points: null })]);
+    expect(clearLeveling([stage(12, { skill: "x", note: "n" }), stage(28, { nodes: ["1"] })])).toEqual([stage(12), stage(28)]);
   });
 });
 
@@ -42,8 +106,8 @@ describe("defaultLeveling", () => {
   it("parte de lo sugerido para la habilidad principal y las demás", () => {
     const cleave = gemId("Cleave"), melee = gemId("Melee Physical Damage Support"), vaal = gemId("Vaal Cleave");
     const sug = (skill: string | null, supports: string[], to: number) => ({ acts: [1, 2], from: 1, to, skill, own: true, supports, mainAt: null, links: 4, options: [], recommended: null }) as StageSkill;
-    const got = defaultLeveling({ skills: [sug(cleave, [melee], 12)], others: [{ skill: { id: vaal, supports: [] }, kind: "damage", stages: [sug(vaal, [], 12)] }], levelingTrees: [{ title: "t", nodes: [], points: 20 }], treesSuggested: true });
-    expect(got).toEqual([{ to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [] }], points: 20, note: "" }]);
+    const got = defaultLeveling({ skills: [sug(cleave, [melee], 12)], others: [{ skill: { id: vaal, supports: [] }, kind: "damage", stages: [sug(vaal, [], 12)] }] });
+    expect(got).toEqual([{ to: 12, skill: cleave, supports: [melee], others: [{ skill: vaal, supports: [] }], nodes: [], note: "" }]);
   });
 });
 
@@ -113,18 +177,25 @@ describe("slotGroups", () => {
 });
 
 describe("sanitizeLeveling", () => {
-  const cleave = gemId("Cleave");
+  const cleave = gemId("Cleave"), real = Object.keys(NODES)[0];
 
   it("deja pasar tramos válidos y quita los ids de gema que no existen", () => {
-    expect(sanitizeLeveling([{ to: 12, skill: cleave, supports: [cleave, "nada", "constructor"], others: ["__proto__"], points: 5.4, note: "x" }]))
-      .toEqual([{ to: 12, skill: cleave, supports: [cleave], others: [], points: 5, note: "x" }]);
-    expect(sanitizeLeveling([{ to: 12, skill: "constructor", supports: [], others: [], points: null, note: 3 }])).toEqual([{ to: 12, skill: null, supports: [], others: [], points: null, note: "" }]);
+    expect(sanitizeLeveling([{ to: 12, skill: cleave, supports: [cleave, "nada", "constructor"], others: ["__proto__"], nodes: [real, "nada", "constructor", real], note: "x" }]))
+      .toEqual([{ to: 12, skill: cleave, supports: [cleave], others: [], nodes: [real], note: "x" }]);
+    expect(sanitizeLeveling([{ to: 12, skill: "constructor", supports: [], others: [], nodes: null, note: 3 }])).toEqual([{ to: 12, skill: null, supports: [], others: [], nodes: [], note: "" }]);
   });
 
   it("entiende las otras habilidades guardadas antes como un id suelto, y con sus soportes", () => {
     const melee = gemId("Melee Physical Damage Support"), vaal = gemId("Vaal Cleave");
     const got = sanitizeLeveling([{ to: 12, skill: null, supports: [], others: [vaal, { skill: cleave, supports: [melee, "nada"] }, { skill: "constructor", supports: [] }, null], points: 0, note: "" }]);
     expect(got?.[0].others).toEqual([{ skill: vaal, supports: [] }, { skill: cleave, supports: [melee] }]);
+  });
+
+  it("guarda qué nodos cogió el jugador en cada tramo, solo los que están en el tramo", () => {
+    const [a, b] = Object.keys(NODES);
+    const got = sanitizeLeveling([{ to: 12, nodes: [a], own: [a, b, "nada"] }, { to: 20, nodes: [a, b], own: "no" }]);
+    expect(got?.[0].own).toEqual([a]);
+    expect(got?.[1].own).toBeUndefined();
   });
 
   it("descarta lo que no es una lista de tramos con niveles que suben", () => {

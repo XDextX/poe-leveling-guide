@@ -4,7 +4,7 @@ import { CLASSES } from "../js/data";
 import { isUserError, userError } from "../js/errors";
 import { buildGuide } from "../js/guide";
 import type { GuideData } from "../js/guide";
-import { fromOf, sanitizeLeveling, stageNodes } from "../js/my-leveling";
+import { fromOf, sanitizeLeveling } from "../js/my-leveling";
 import { decode, encode, exportLoadouts, parseBuild } from "../js/pob";
 import { hideProgress, initProgress } from "../components/progress/progress";
 import { initActGems, setActGems } from "../components/act-gems/act-gems-panel";
@@ -89,9 +89,8 @@ export const App: Component<{}, HTMLElement> = () => {
 
   /** "Mi leveling" como código de PoB (o su XML), con un Loadout por tramo. */
   async function exportLeveling(stages: MyStage[], kind: "code" | "xml"): Promise<string> {
-    if (!build || !computed) throw new Error("no hay build");
-    const nodes = stageNodes(build, stages, computed.data.treesSuggested);
-    const out = exportLoadouts(xml, stages.map((s, i) => ({ from: fromOf(stages, i), to: s.to, skill: s.skill, supports: s.supports, others: s.others, note: s.note, nodes: nodes[i] })));
+    if (!build) throw new Error("no hay build");
+    const out = exportLoadouts(xml, stages.map((s, i) => ({ ...s, from: fromOf(stages, i) })));
     return kind === "xml" ? out : encode(out);
   }
 

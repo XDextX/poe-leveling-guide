@@ -70,10 +70,10 @@ interface Item {
 interface TreeStage { title: string; nodes: string[]; level?: number; points?: number }
 interface BuildTree { nodes: string[]; masteries: [node: string, effect: string][]; classId: string | null; stages: TreeStage[] }
 interface MainSkill { id: string; supports: string[] }
-/** Un tramo de "Mi leveling": hasta qué nivel llega (empieza donde acaba el anterior), la habilidad con sus soportes, otras habilidades, puntos de árbol gastados y una nota. */
+/** Un tramo de "Mi leveling": hasta qué nivel llega (empieza donde acaba el anterior), la habilidad con sus soportes, otras habilidades, los nodos del árbol que se llevan cogidos al acabarlo y una nota. */
 /** Una habilidad más de un tramo (un aura, movimiento…) con sus propios soportes. */
 interface MyOther { skill: string; supports: string[] }
-interface MyStage { to: number; skill: string | null; supports: string[]; others: MyOther[]; points: number | null; note: string }
+interface MyStage { to: number; skill: string | null; supports: string[]; others: MyOther[]; nodes: string[]; /** Los nodos que el jugador cogió directamente en este tramo (los demás los heredó de los anteriores); si falta, se deduce. */ own?: string[]; note: string }
 interface Build {
   cls: string | null; ascend: string | null; bandit: string;
   gems: BuildGem[]; items: Item[]; tree: BuildTree; main: MainSkill | null;

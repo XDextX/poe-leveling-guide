@@ -6,10 +6,11 @@
 
 import { GEMS } from "../data";
 import { isActive, isSupport } from "../gems";
+import { pickable } from "../tree-graph";
 import { slotGroups } from "../my-leveling";
 
 /** Un tramo listo para escribir: sus niveles, sus gemas, sus nodos de árbol y su nota. */
-export interface LoadoutStage extends Omit<MyStage, "points"> { from: number; nodes: string[] }
+export interface LoadoutStage extends MyStage { from: number }
 
 const GEM_PATH = "Metadata/Items/Gems/";
 export const NOTES_MARK = "== Mi leveling (poe-leveling-guide) ==";
@@ -154,7 +155,8 @@ export function parseLoadouts(doc: Document, idOf: (gem: Element) => string | nu
         for (const id of ids(g)) { if (isActive(id)) out.push({ skill: id, supports: [] }); else if (isSupport(id) && out.length) out[out.length - 1].supports.push(id); }
         return out;
       }),
-      points: (s.getAttribute("nodes") || "").split(",").filter(Boolean).length, note: noteLines.get(`Leveling ${m![1]} (nv ${m![2]}-${m![3]})`) ?? "",
+      // Solo lo que se puede coger a mano (sin maestrías, ascendencia ni inicios): lo demás no se puede quitar ni mantener conectado desde aquí.
+      nodes: (s.getAttribute("nodes") || "").split(",").filter(id => pickable(id, s.getAttribute("classId") ?? "")), note: noteLines.get(`Leveling ${m![1]} (nv ${m![2]}-${m![3]})`) ?? "",
     };
   });
 }

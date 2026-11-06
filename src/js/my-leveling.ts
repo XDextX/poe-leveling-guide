@@ -1,8 +1,9 @@
 /* "Mi leveling": los tramos que edita el jugador, partiendo de lo sugerido. Sin interfaz. */
 
-import { GEMS } from "./data";
+import { CLASS_STARTS, GEMS, NODES } from "./data";
 import type { GuideData } from "./guide";
-import { canSupport, growTrees } from "./suggest";
+import { canSupport } from "./suggest";
+import { connectingPaths, stayConnected } from "./tree-graph";
 import { isActive } from "./gems";
 import { assignSlots, maxSockets, slotCapacities, slotName } from "./sockets";
 
@@ -13,17 +14,18 @@ export const MAX_LEVEL = 100;
 export const fromOf = (stages: MyStage[], i: number): number => (i ? stages[i - 1].to + 1 : 1);
 
 /** Los tramos que la guía sugiere (los de la habilidad principal o, sin ella, los de la primera de las otras), listos para editar. */
-export function defaultLeveling({ skills, others, levelingTrees, treesSuggested }: Pick<GuideData, "skills" | "others" | "levelingTrees" | "treesSuggested">): MyStage[] {
+/** El árbol de cada tramo empieza en blanco: lo elige el jugador (ver applyTreeChange). */
+export function defaultLeveling({ skills, others }: Pick<GuideData, "skills" | "others">): MyStage[] {
   const base = skills.length ? skills : others[0]?.stages ?? [];
   return base.map((s, i) => ({
     to: s.to, skill: skills[i]?.skill ?? null, supports: [...(skills[i]?.supports ?? [])],
     others: others.flatMap(o => o.stages[i]?.skill ? [{ skill: o.stages[i].skill!, supports: [] }] : []),
-    points: treesSuggested ? levelingTrees[i]?.points ?? null : null, note: "",
+    nodes: [], note: "",
   }));
 }
 
 /** Los mismos tramos sin contenido: para empezar de cero sin perder dónde acaba cada uno. */
-export const clearLeveling = (stages: MyStage[]): MyStage[] => stages.map(s => ({ to: s.to, skill: null, supports: [], others: [], points: s.points === null ? null : 0, note: "" }));
+export const clearLeveling = (stages: MyStage[]): MyStage[] => stages.map(s => ({ to: s.to, skill: null, supports: [], others: [], nodes: [], note: "" }));
 
 /** Cambia el nivel en que acaba el tramo `i`, sin pasar del siguiente ni quedar por debajo de donde empieza. */
 export function setTo(stages: MyStage[], i: number, to: number): MyStage[] {
@@ -35,16 +37,40 @@ export function setTo(stages: MyStage[], i: number, to: number): MyStage[] {
 export function splitStage(stages: MyStage[], i: number): MyStage[] {
   const from = fromOf(stages, i), mid = from + Math.floor((stages[i].to - from) / 2);
   if (mid >= stages[i].to) return stages;
-  const first = { ...stages[i], to: mid, supports: [...stages[i].supports], others: stages[i].others.map(o => ({ ...o, supports: [...o.supports] })) };
+  const first = { ...stages[i], to: mid, supports: [...stages[i].supports], others: stages[i].others.map(o => ({ ...o, supports: [...o.supports] })), nodes: [...stages[i].nodes], own: stages[i].own && [...stages[i].own!] };
   return [...stages.slice(0, i), first, ...stages.slice(i)];
 }
 
 /** Junta el tramo `i` con el siguiente: queda el contenido del siguiente, que ahora empieza donde empezaba el `i`. */
 export const mergeStage = (stages: MyStage[], i: number): MyStage[] => i < stages.length - 1 ? stages.filter((_, j) => j !== i) : stages;
 
-/** Cambia los puntos de árbol de un tramo; nunca por debajo de los del anterior (el árbol solo crece). */
-export function setPoints(stages: MyStage[], i: number, points: number): MyStage[] {
-  return stages.map((s, j) => j === i ? { ...s, points: Math.max(j && stages[j - 1].points !== null ? stages[j - 1].points! : 0, Math.round(points) || 0) } : s);
+/** Los puntos de árbol que se pueden haber gastado al llegar a ese nivel: uno por nivel menos el primero, más los de las misiones (≈24 con los bandidos). */
+export const pointsAvailable = (level: number): number => level - 1 + 24;
+
+/** El aviso del árbol de un tramo si gasta más puntos de los que hay a ese nivel; "" si no. */
+export const treeWarning = ({ nodes, to }: Pick<MyStage, "nodes" | "to">): string =>
+  nodes.length > pointsAvailable(to) ? `Gastas ${nodes.length} puntos y con nivel ${to} hay como mucho ≈${pointsAvailable(to)} (uno por nivel y ≈24 de misiones).` : "";
+
+/** Los nodos que el jugador cogió directamente en el tramo `j`; si no se guardó, los que no tiene el tramo anterior. */
+export const ownOf = (stages: MyStage[], j: number): string[] => stages[j].own ?? stages[j].nodes.filter(id => !(j && stages[j - 1].nodes.includes(id)));
+
+/**
+ * Cambia los nodos del árbol del tramo `i` (el árbol de cada tramo parte del anterior). Lo que se añade se añade también a los tramos
+ * siguientes. Lo que se quita solo se quita de un tramo siguiente si lo había heredado de este: lo que ese tramo cogió por su cuenta se
+ * queda, y también el camino que lo une al inicio. Los tramos anteriores no cambian.
+ */
+export function applyTreeChange(stages: MyStage[], i: number, nodes: string[], classId: string): MyStage[] {
+  const start = CLASS_STARTS[classId], had = new Set(stages[i].nodes), now = new Set(nodes);
+  const added = nodes.filter(id => !had.has(id)), removed = new Set(stages[i].nodes.filter(id => !now.has(id)));
+  const own = stages.map((_, j) => ownOf(stages, j));
+  return stages.map((s, j) => {
+    if (j < i) return s;
+    if (j === i) return { ...s, nodes, own: [...own[i].filter(id => !removed.has(id)), ...added] };
+    const mine = new Set(own[j]), grown = [...s.nodes, ...added.filter(id => !s.nodes.includes(id))];
+    const needed = start ? connectingPaths(grown, start, own[j]) : new Set<string>();
+    const left = grown.filter(id => !removed.has(id) || mine.has(id) || needed.has(id));
+    return { ...s, nodes: start ? stayConnected(left, start) : left, own: own[j] };
+  });
 }
 
 /** Avisos de un tramo (de `from` a `to`): gemas que piden más nivel, soportes que no valen para la habilidad y más soportes que enlaces. */
@@ -110,13 +136,6 @@ export const slotLines = (stage: Pick<MyStage, "skill" | "supports" | "others" |
     return `${slotName(g.slot!)} — ${names}${g.ids.length > g.parts.length ? ` (${g.ids.length} enlazadas)` : ""}`;
   });
 
-/** Los nodos de árbol de cada tramo: los que salen de sus puntos (si el árbol es sugerido) o los árboles del autor, por posición. */
-export function stageNodes(build: Build, stages: MyStage[], treesSuggested: boolean): string[][] {
-  if (!treesSuggested) return stages.map((_, i) => (build.tree.stages[i] ?? { nodes: build.tree.nodes }).nodes);
-  const trees = growTrees(build.tree, stages.map((s, i) => ({ points: s.points ?? 0, level: s.to, title: `Tramo ${i + 1}`, weight: i })));
-  return stages.map((_, i) => trees[i]?.nodes ?? []);
-}
-
 const isId = (id: unknown): id is string => typeof id === "string" && Object.hasOwn(GEMS, id);
 
 const uniqueIds = (v: unknown): string[] => Array.isArray(v) ? [...new Set(v.filter(isId))] : [];
@@ -134,11 +153,11 @@ export function sanitizeLeveling(raw: unknown): MyStage[] | undefined {
   if (!Array.isArray(raw) || !raw.length || raw.length > 50) return undefined;
   const out: MyStage[] = [];
   for (const r of raw as Record<string, unknown>[]) {
-    const to = Number(r?.to);
+    const to = Number(r?.to), nodes = Array.isArray(r?.nodes) ? [...new Set((r.nodes as unknown[]).filter((id): id is string => typeof id === "string" && Object.hasOwn(NODES, id)))] : [];
     if (!Number.isInteger(to) || to < 1 || to > MAX_LEVEL || (out.length && to <= out[out.length - 1].to)) return undefined;
     out.push({
       to, skill: isId(r.skill) ? r.skill : null, supports: uniqueIds(r.supports), others: Array.isArray(r.others) ? r.others.flatMap(otherOf) : [],
-      points: r.points === null ? null : Math.max(0, Math.round(Number(r.points)) || 0), note: typeof r.note === "string" ? r.note.slice(0, 300) : "",
+      nodes, own: Array.isArray(r.own) ? [...new Set((r.own as unknown[]).filter((id): id is string => typeof id === "string" && nodes.includes(id)))] : undefined, note: typeof r.note === "string" ? r.note.slice(0, 300) : "",
     });
   }
   return out;
