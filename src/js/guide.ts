@@ -53,7 +53,7 @@ export interface GuideData {
 }
 
 /** Calcula la guía de una build para la clase y el modo (inicio de liga o no) dados. Mostrar las zonas es cosa del dibujo. */
-export function buildGuide(build: Build, { cls, leagueStart, picks }: Pick<GuideOptions, "cls" | "leagueStart"> & { picks?: Record<number, string> }): GuideData {
+export function buildGuide(build: Build, { cls, leagueStart, picks, showSuggested = true }: Pick<GuideOptions, "cls" | "leagueStart"> & { picks?: Record<number, string>; showSuggested?: boolean }): GuideData {
   const defs = routeDefs(build, leagueStart, { library: true });
   const damage = damageOf(build);
   const skills = build.main && SKILLS[build.main.id] ? suggestSkills(build.main, cls, defs, damage, false, picks) : [];
@@ -76,9 +76,10 @@ export function buildGuide(build: Build, { cls, leagueStart, picks }: Pick<Guide
   const own = new Set(build.gems.flatMap(g => [g.id, g.base]).filter((id): id is string => !!id));
   const suggested = new Set([...skills, ...others.flatMap(o => o.stages)].flatMap(s => [s.skill, ...s.supports]).filter((id): id is string => !!id && !own.has(id)));
   return {
-    build, skills, others, damage: mainElements(damage.profile), damageForm: damage.form, suggested, treeStages, treesSuggested,
+    // Sin el leveling sugerido (la casilla del formulario) la ruta y el avance son solo las gemas de la build: ni gemas extra ni insignias.
+    build, skills, others, damage: mainElements(damage.profile), damageForm: damage.form, suggested: showSuggested ? suggested : new Set(), treeStages, treesSuggested,
     levelingTrees: treesSuggested ? treeStages : [],
     cls, ascend: cls === build.cls && build.ascend && build.ascend !== "None" ? build.ascend : null,
-    plan: plan(build, cls, leagueStart, [...suggested]),
+    plan: plan(build, cls, leagueStart, showSuggested ? [...suggested] : []),
   };
 }

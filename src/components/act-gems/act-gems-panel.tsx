@@ -17,15 +17,16 @@ import { onCurrentSection } from "../toc-nav/toc-nav";
 
 const panel = () => document.getElementById("act-gems")!, treePanel = () => document.getElementById("act-tree")!;
 
-let guide: GuideData | null = null, shownAct = 0;
+let guide: GuideData | null = null, shownAct = 0, suggestedOn = true;
 
-interface ActContentProps { data: GuideData; act: number }
+interface ActContentProps { data: GuideData; act: number; showSuggested: boolean }
 
 /** Lo que va en el panel de un acto, o null si no hay nada que enseñar. */
-const ActContent: Component<ActContentProps, DocumentFragment | null> = ({ data, act }) => {
+export const ActContent: Component<ActContentProps, DocumentFragment | null> = ({ data, act, showSuggested }) => {
   const inAct = (st: StageSkill) => st.acts[0] <= act && act <= st.acts[1];
-  const stage = data.skills.find(inAct), mainId = data.build.main?.id;
-  const others = data.others.flatMap(other => { const st = other.stages.find(inAct); return st ? [{ other, stage: st }] : []; });
+  // Sin la casilla "Leveling sugerido" el panel solo enseña lo de la build, sin el montaje sugerido del tramo.
+  const stage = showSuggested ? data.skills.find(inAct) : undefined, mainId = data.build.main?.id;
+  const others = !showSuggested ? [] : data.others.flatMap(other => { const st = other.stages.find(inAct); return st ? [{ other, stage: st }] : []; });
   // De cada habilidad de la build, las gemas que ya se tienen al llegar a este acto: las del inicio y las que da la ruta hasta aquí.
   const has = (id: string) => data.plan.start.includes(id) || (data.plan.got.get(id)?.act ?? Infinity) <= act;
   const firstActive = (ids: string[]) => ids.find(isActive);
@@ -52,7 +53,8 @@ const ActContent: Component<ActContentProps, DocumentFragment | null> = ({ data,
 let redrawTree: (() => void) | null = null;
 
 /** El árbol del tramo de un acto, para el margen izquierdo, o null si no hay (solo hay uno por tramo cuando es sugerido). Es el mismo mapa de calor de la sección del árbol, con sus gestos y fichas, encuadrado en los nodos del tramo. */
-const ActTree: Component<ActContentProps, DocumentFragment | null> = ({ data, act }) => {
+export const ActTree: Component<ActContentProps, DocumentFragment | null> = ({ data, act, showSuggested }) => {
+  if (!showSuggested) { redrawTree = null; return null; }
   const at = data.skills.findIndex(s => s.acts[0] <= act && act <= s.acts[1]), tree = data.levelingTrees[at];
   if (!tree) { redrawTree = null; return null; }
   const nodes = tree.nodes.filter(id => !NODES[id].ascendancy);
@@ -74,8 +76,9 @@ const ActTree: Component<ActContentProps, DocumentFragment | null> = ({ data, ac
 };
 
 /** Cambia la guía de la que sale el panel (null sin guía). */
-export function setActGems(data: GuideData | null): void {
+export function setActGems(data: GuideData | null, showSuggested = true): void {
   guide = data;
+  suggestedOn = showSuggested;
   shownAct = 0;
   if (!data) panel().hidden = treePanel().hidden = true;
 }
@@ -93,8 +96,8 @@ function update(id: string | null): void {
   if (act === shownAct && !panel().hidden === !!act) return;
   shownAct = act;
   const show = (el: HTMLElement, content: Node | null) => { el.replaceChildren(...(content ? [content] : [])); el.hidden = !content; };
-  show(panel(), act && guide ? <ActContent data={guide} act={act} /> : null);
-  show(treePanel(), act && guide ? <ActTree data={guide} act={act} /> : null);
+  show(panel(), act && guide ? <ActContent data={guide} act={act} showSuggested={suggestedOn} /> : null);
+  show(treePanel(), act && guide ? <ActTree data={guide} act={act} showSuggested={suggestedOn} /> : null);
   placeTree();
   redrawTree?.();
 }

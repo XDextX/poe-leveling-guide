@@ -16,6 +16,18 @@ describe("buildGuide", () => {
     expect(data.plan.got.has(cleave)).toBe(true);
   });
 
+  it("sin el leveling sugerido la ruta y el avance son solo las gemas de la build, sin insignias de sugerida", () => {
+    const cleave = gemId("Cleave"), mine = build({ gems: [{ name: "Cleave", id: cleave, kind: "normal" }], main: { id: cleave, supports: [] } });
+    const con = buildGuide(mine, { cls: "Marauder", leagueStart: true }), sin = buildGuide(mine, { cls: "Marauder", leagueStart: true, showSuggested: false });
+    expect(con.suggested.size).toBeGreaterThan(0);
+    expect([...con.suggested].every(id => con.plan.got.has(id))).toBe(true);
+    expect(sin.suggested.size).toBe(0);
+    expect([...con.suggested].some(id => sin.plan.got.has(id))).toBe(false);
+    expect(sin.plan.got.size).toBeLessThan(con.plan.got.size);
+    // Lo sugerido se sigue calculando: «Mi leveling» parte de ello aunque la sección no se vea.
+    expect(sin.skills).toEqual(con.skills);
+  });
+
   it("da la ascendencia solo si se ve la clase de la build y no es None", () => {
     const shadow = build({ cls: "Shadow", ascend: "Assassin" });
     expect(buildGuide(shadow, { cls: "Shadow", leagueStart: true })).toMatchObject({ cls: "Shadow", ascend: "Assassin" });

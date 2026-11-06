@@ -35,7 +35,7 @@ export const Guide: Component<GuideProps, DocumentFragment> = ({ data, showZones
       {showSuggested && (skills.length > 0 || others.length > 0) && <LevelingSection skills={skills} others={others} damage={damage} form={damageForm} trees={levelingTrees} treesSuggested={treesSuggested} mainId={build.main?.id ?? null} onPick={onPick} authorLeveling={mentionsLeveling(build.notes)} />}
       {leveling && (skills.length > 0 || others.length > 0) && <MyLevelingSection data={data} {...leveling} />}
       {build.items.length > 0 && <GearSection items={build.items} />}
-      {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={treeStages} stagesSuggested={treesSuggested} />}
+      {build.tree.nodes.length > 0 && <TreeSection tree={build.tree} stages={showSuggested || !treesSuggested ? treeStages : []} stagesSuggested={treesSuggested} />}
       <RouteSections steps={plan.out} start={plan.start} showZones={showZones} />
       <OtherWays build={build} plan={plan} />
     </>

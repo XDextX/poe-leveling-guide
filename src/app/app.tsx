@@ -33,7 +33,7 @@ export const App: Component<{}, HTMLElement> = () => {
   /** La última build leída sin errores; null si no hay ninguna (campo vacío o código inválido). */
   let build: Build | null = null;
   /** La guía calculada de esa build y para qué clase y modo: si solo cambia "Actividades de zona", no se recalcula. */
-  let computed: { cls: string; leagueStart: boolean; data: GuideData } | null = null;
+  let computed: { cls: string; leagueStart: boolean; showSuggested: boolean; data: GuideData } | null = null;
   /** Las habilidades que el usuario eligió en cada tramo del leveling, por posición; se guardan por build y clase. */
   let picks: Record<number, string> = {};
   /** El XML del código pegado, para escribir "Mi leveling" en él; y si los tramos del editor salen de ese código (hasta que el jugador los cambie). */
@@ -59,9 +59,9 @@ export const App: Component<{}, HTMLElement> = () => {
     if (!build) return;
     const opts = options();
     migrateKeys(opts.cls, build);
-    if (computed?.cls !== opts.cls || computed.leagueStart !== opts.leagueStart) {
+    if (computed?.cls !== opts.cls || computed.leagueStart !== opts.leagueStart || computed.showSuggested !== opts.showSuggested) {
       picks = loadPicks(pickKey(opts.cls, build));
-      computed = { cls: opts.cls, leagueStart: opts.leagueStart, data: buildGuide(build, { ...opts, picks }) };
+      computed = { cls: opts.cls, leagueStart: opts.leagueStart, showSuggested: opts.showSuggested, data: buildGuide(build, { ...opts, picks }) };
     }
     const { data } = computed;
     // Estado que leen los componentes de las gemas y del mapa de calor (TreeSection engancha el mapa nuevo).
@@ -73,7 +73,7 @@ export const App: Component<{}, HTMLElement> = () => {
     const leveling = { saved: loadLeveling(key), imported: levelingFromCode, replaced: replacedLeveling, onSave: (stages: MyStage[]) => { levelingFromCode = false; saveLeveling(key, stages); }, onExport: exportLeveling };
     guide.replaceChildren(<Guide data={data} showZones={opts.showZones} showSuggested={opts.showSuggested} onPick={pickSkill} leveling={leveling} />);
     guide.hidden = false;
-    setActGems(data);
+    setActGems(data, opts.showSuggested);
     renderToc();
   }
 
